@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "dev.galacticraft.dynworlds.impl.mixin.server",
+  "plugin": "dev.galacticraft.dynworlds.impl.DynWorldsMixinPlugin",
+  "compatibilityLevel": "JAVA_17",
+  "server": [
+    "MainMixin"
+  ],
+  "minVersion": "0.8.0",
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

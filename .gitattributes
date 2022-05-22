@@ -1,0 +1,18 @@
+# Windows files (CRLF)
+*.bat           text eol=crlf
+
+# Text
+*.properties    text
+
+# Java
+*.java          text diff=java
+*.gradle        text diff=java
+*.gradle.kts    text diff=java
+
+# Binary
+*.class         binary
+*.dll           binary
+*.ear           binary
+*.jar           binary
+*.so            binary
+*.war           binary
