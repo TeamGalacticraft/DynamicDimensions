@@ -20,11 +20,15 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl.mixin.server;
+package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.minecraft.server.Main;
+import net.minecraft.server.world.ChunkTicketManager;
+import net.minecraft.server.world.ServerChunkManager;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(Main.class)
-public abstract class MainMixin {
+@Mixin(ServerChunkManager.class)
+public interface ServerChunkManagerAccessor {
+    @Accessor("ticketManager")
+    ChunkTicketManager getTicketManager();
 }

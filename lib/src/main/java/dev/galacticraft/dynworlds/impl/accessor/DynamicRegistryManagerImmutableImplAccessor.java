@@ -22,17 +22,9 @@
 
 package dev.galacticraft.dynworlds.impl.accessor;
 
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Pair;
-import net.minecraft.world.dimension.DimensionOptions;
+import dev.galacticraft.dynworlds.impl.RegistryAppender;
 import net.minecraft.world.dimension.DimensionType;
 
-import java.util.Map;
-
-public interface SavePropertiesAccessor {
-    void addDynamicWorld(Identifier id, DimensionOptions options, DimensionType type);
-
-    void removeDynamicWorld(Identifier id);
-
-    Map<Identifier, Pair<DimensionOptions, DimensionType>> getDynamicWorlds();
+public interface DynamicRegistryManagerImmutableImplAccessor {
+    void unfreezeTypes(RegistryAppender<DimensionType> appender);
 }

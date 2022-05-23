@@ -22,9 +22,17 @@
 
 package dev.galacticraft.dynworlds.api;
 
-import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.util.Identifier;
 import net.minecraft.world.dimension.DimensionOptions;
+import net.minecraft.world.dimension.DimensionType;
+import org.jetbrains.annotations.ApiStatus;
 
 public interface DynamicWorldRegistry {
-    void addDynamicWorld(RegistryKey<DimensionOptions> world, DimensionOptions options);
+    void addDynamicWorld(Identifier id, DimensionOptions options, DimensionType type);
+
+    boolean worldExists(Identifier id);
+
+    // NYI
+    @ApiStatus.Experimental
+    void removeDynamicWorld(Identifier id);
 }

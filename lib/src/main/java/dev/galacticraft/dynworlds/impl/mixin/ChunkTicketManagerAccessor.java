@@ -20,7 +20,14 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.api;
+package dev.galacticraft.dynworlds.impl.mixin;
 
-public interface ServerWorldProvider {
+import net.minecraft.server.world.ChunkTicketManager;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+@Mixin(ChunkTicketManager.class)
+public interface ChunkTicketManagerAccessor {
+    @Accessor("simulationDistance")
+    int getSimulationDistance();
 }

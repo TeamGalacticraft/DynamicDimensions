@@ -20,19 +20,14 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl.accessor;
+package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Pair;
-import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.server.world.ThreadedAnvilChunkStorage;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-import java.util.Map;
-
-public interface SavePropertiesAccessor {
-    void addDynamicWorld(Identifier id, DimensionOptions options, DimensionType type);
-
-    void removeDynamicWorld(Identifier id);
-
-    Map<Identifier, Pair<DimensionOptions, DimensionType>> getDynamicWorlds();
+@Mixin(ThreadedAnvilChunkStorage.class)
+public interface ThreadedAnvilChunkStorageAccessor {
+    @Accessor("watchDistance")
+    int getRenderDistance();
 }

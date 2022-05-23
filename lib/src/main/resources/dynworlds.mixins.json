@@ -4,8 +4,13 @@
   "plugin": "dev.galacticraft.dynworlds.impl.DynWorldsMixinPlugin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "ChunkTicketManagerAccessor",
+    "DynamicRegistryManagerImmutableImplMixin",
     "LevelPropertiesMixin",
-    "MinecraftServerMixin"
+    "MinecraftServerMixin",
+    "ServerChunkManagerAccessor",
+    "SimpleRegistryAccessor",
+    "ThreadedAnvilChunkStorageAccessor"
   ],
   "minVersion": "0.8.0",
   "injectors": {

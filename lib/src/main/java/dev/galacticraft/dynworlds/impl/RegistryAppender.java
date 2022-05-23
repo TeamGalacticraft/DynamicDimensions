@@ -20,19 +20,10 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl.accessor;
+package dev.galacticraft.dynworlds.impl;
 
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Pair;
-import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.util.registry.MutableRegistry;
 
-import java.util.Map;
-
-public interface SavePropertiesAccessor {
-    void addDynamicWorld(Identifier id, DimensionOptions options, DimensionType type);
-
-    void removeDynamicWorld(Identifier id);
-
-    Map<Identifier, Pair<DimensionOptions, DimensionType>> getDynamicWorlds();
+public interface RegistryAppender<T> {
+    void register(MutableRegistry<T> registry);
 }

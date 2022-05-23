@@ -2,7 +2,6 @@
   "schemaVersion": 1,
   "id": "$modid",
   "version": "$version",
-
   "name": "$mod_name",
   "icon": "assets/${modid}/icon.png",
   "description": "Dynamic world library.",
@@ -32,6 +31,7 @@
   "environment": "*",
   "entrypoints": {
     "client": [
+      "dev.galacticraft.dynworlds.impl.DynWorldsClient"
     ],
     "main": [
       "dev.galacticraft.dynworlds.impl.DynWorlds"
@@ -39,8 +39,7 @@
   },
   "mixins": [
     "${modid}.mixins.json",
-    "${modid}.client.mixins.json",
-    "${modid}.server.mixins.json"
+    "${modid}.client.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.13.3",
@@ -57,7 +56,9 @@
   },
   "custom": {
     "modmenu": {
-      "badges": [ "library" ],
+      "badges": [
+        "library"
+      ],
       "parent": "galacticraft-api"
     }
   }
