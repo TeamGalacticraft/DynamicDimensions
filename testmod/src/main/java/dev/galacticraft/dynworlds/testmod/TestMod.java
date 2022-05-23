@@ -22,18 +22,42 @@
 
 package dev.galacticraft.dynworlds.testmod;
 
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import dev.galacticraft.dynworlds.api.DynamicWorldRegistry;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.minecraft.command.argument.IdentifierArgumentType;
+import net.minecraft.command.argument.NbtCompoundArgumentType;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.text.LiteralText;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.dynamic.RegistryOps;
+import net.minecraft.world.dimension.DimensionOptions;
+import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public class TestMod implements ModInitializer {
     public static final String MOD_ID = "dynworlds-test";
+    SimpleCommandExceptionType ID_EXISTS = new SimpleCommandExceptionType(new LiteralText("A world with that ID already exists!"));
 
     @Override
     public void onInitialize() {
-        assert FabricLoader.getInstance().isDevelopmentEnvironment() : "Test mod loaded outside of development environment!?";
+        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
+            dispatcher.register(CommandManager.literal("dynworlds:create").requires(s -> s.hasPermissionLevel(2)).then(CommandManager.argument("id", IdentifierArgumentType.identifier()).then(CommandManager.argument("type", NbtCompoundArgumentType.nbtCompound()).then(CommandManager.argument("options", NbtCompoundArgumentType.nbtCompound()).executes(ctx -> {
+                Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
+                RegistryOps<NbtElement> ops = RegistryOps.of(NbtOps.INSTANCE, ctx.getSource().getRegistryManager());
+                DimensionType type = DimensionType.CODEC.decode(ops, NbtCompoundArgumentType.getNbtCompound(ctx, "type")).get().orThrow().getFirst();
+                DimensionOptions options = DimensionOptions.CODEC.decode(ops, NbtCompoundArgumentType.getNbtCompound(ctx, "options")).get().orThrow().getFirst();
+                if (((DynamicWorldRegistry) ctx.getSource().getServer()).worldExists(id)) {
+                    throw ID_EXISTS.create();
+                }
+                ((DynamicWorldRegistry) ctx.getSource().getServer()).addDynamicWorld(id, options, type);
+                return 1;
+            })))));
+        });
     }
 
     @Contract("_ -> new")

@@ -141,6 +141,7 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
         overworld.getWorldBorder().addListener(new WorldBorderListener.WorldBorderSyncer(world.getWorldBorder()));
         world.getChunkManager().applySimulationDistance(((ChunkTicketManagerAccessor) ((ServerChunkManagerAccessor) overworld.getChunkManager()).getTicketManager()).getSimulationDistance());
         world.getChunkManager().applyViewDistance(((ThreadedAnvilChunkStorageAccessor) overworld.getChunkManager().threadedAnvilChunkStorage).getRenderDistance());
+        ((SavePropertiesAccessor) this.saveProperties).addDynamicWorld(id, options, type);
         this.enqueuedWorlds.put(worldKey, world); //prevent comodification
 
         PacketByteBuf packetByteBuf = PacketByteBufs.create();
@@ -152,11 +153,13 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
 
     @Override
     public boolean worldExists(Identifier id) {
-        return ((SavePropertiesAccessor) this.saveProperties).getDynamicWorlds().containsKey(id);
+        return this.getRegistryManager().get(Registry.DIMENSION_TYPE_KEY).containsId(id)
+                || this.getRegistryManager().get(Registry.DIMENSION_KEY).containsId(id)
+                || ((SavePropertiesAccessor) this.saveProperties).getDynamicWorlds().containsKey(id);
     }
 
     @Override
-    public void removeDynamicWorld(Identifier id) { //todo!
-        throw new UnsupportedOperationException("Removing a dynamic world is not supported yet.");
+    public void removeDynamicWorld(Identifier id) { //todo: remove the world at runtime
+        ((SavePropertiesAccessor) this.saveProperties).removeDynamicWorld(id);
     }
 }

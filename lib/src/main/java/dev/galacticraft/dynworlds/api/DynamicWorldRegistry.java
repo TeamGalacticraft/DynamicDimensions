@@ -25,14 +25,42 @@ package dev.galacticraft.dynworlds.api;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.gen.GeneratorOptions;
 import org.jetbrains.annotations.ApiStatus;
 
+/**
+ * The registry for dynamic worlds.
+ * Cast {@link net.minecraft.server.MinecraftServer} to this class to access the registry.
+ *
+ * @since 0.1.0
+ */
 public interface DynamicWorldRegistry {
+    /**
+     * Registers a new world and updates all clients with the new world.
+     *
+     * @param id      The ID of the world.
+     *                This ID must be unique and unused in the {@link net.minecraft.util.registry.Registry#DIMENSION_TYPE_KEY} registry and the {@link GeneratorOptions#getDimensions()} registry.
+     * @param options The dimension options for the world.
+     * @param type    The dimension type of the world.
+     * @since 0.1.0
+     */
     void addDynamicWorld(Identifier id, DimensionOptions options, DimensionType type);
 
+    /**
+     * Tests if a world with the given ID exists.
+     *
+     * @param id The ID of the world.
+     * @return True if the world exists, false otherwise.
+     * If the world exists, you should not call {@link #addDynamicWorld(Identifier, DimensionOptions, DimensionType)} with the same ID.
+     * @since 0.1.0
+     */
     boolean worldExists(Identifier id);
 
-    // NYI
+    /**
+     * Removes a world. It will not be removed from the running server, however, it will be removed once the server restarts.
+     *
+     * @param id The ID of the world.
+     */
     @ApiStatus.Experimental
     void removeDynamicWorld(Identifier id);
 }

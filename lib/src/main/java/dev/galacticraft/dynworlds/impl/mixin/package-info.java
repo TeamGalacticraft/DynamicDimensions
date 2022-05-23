@@ -20,22 +20,7 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl;
+@ApiStatus.Internal
+package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.fabricmc.api.ModInitializer;
-import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-
-public class DynWorlds implements ModInitializer {
-    public static final String MOD_ID = "dynworlds";
-
-    @Override
-    public void onInitialize() {
-    }
-
-    @Contract("_ -> new")
-    public static @NotNull Identifier id(String id) {
-        return new Identifier(MOD_ID, id);
-    }
-}
+import org.jetbrains.annotations.ApiStatus;
