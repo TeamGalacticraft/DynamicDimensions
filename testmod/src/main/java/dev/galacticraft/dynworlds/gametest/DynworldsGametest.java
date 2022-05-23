@@ -29,17 +29,22 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
 
-public interface DynworldsGametest extends FabricGameTest {
-    String EMPTY_STRUCTURE = "dynworlds-test:empty";
+public class DynworldsGametest implements FabricGameTest {
+    private static final String EMPTY_STRUCTURE = "dynworlds-test:empty";
 
-    default void beforeEach(@NotNull TestContext context) {
+    void beforeEach(@NotNull TestContext context) {
     }
 
-    default void afterEach(@NotNull TestContext context) {
+    void afterEach(@NotNull TestContext context) {
+    }
+
+    @GameTest(structureName = EMPTY_STRUCTURE, tickLimit = 0)
+    void testEmptyStructure(@NotNull TestContext context) {
+        // no-op
     }
 
     @Override
-    default void invokeTestMethod(@NotNull TestContext context, @NotNull Method method) {
+    public void invokeTestMethod(@NotNull TestContext context, @NotNull Method method) {
         method.setAccessible(true);
         GameTest annotation = method.getAnnotation(GameTest.class);
         if (annotation == null) throw new AssertionError("Test method without gametest annotation?!");

@@ -34,6 +34,7 @@
       "dev.galacticraft.dynworlds.testmod.TestMod"
     ],
     "fabric-gametest": [
+      "dev.galacticraft.dynworlds.gametest.DynworldsGametest"
     ]
   },
   "depends": {
