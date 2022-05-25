@@ -5,9 +5,11 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "ChunkTicketManagerAccessor",
+    "DataPackContentsAccessor",
     "DynamicRegistryManagerImmutableImplMixin",
     "LevelPropertiesMixin",
     "MinecraftServerMixin",
+    "RegistryEntryReferenceMixin",
     "ServerChunkManagerAccessor",
     "SimpleRegistryAccessor",
     "ThreadedAnvilChunkStorageAccessor"

@@ -62,7 +62,12 @@ subprojects {
         sourceCompatibility = JavaVersion.VERSION_17
     }
 
-    extensions.getByType(net.fabricmc.loom.api.LoomGradleExtensionAPI::class).shareCaches()
+    extensions.getByType(net.fabricmc.loom.api.LoomGradleExtensionAPI::class).apply {
+        shareCaches()
+        if (project.file("src/main/resources/${modId}.accesswidener").exists()) {
+            accessWidenerPath.set(project.file("src/main/resources/${modId}.accesswidener"))
+        }
+    }
 
     dependencies {
         "minecraft"("com.mojang:minecraft:$minecraft")
@@ -83,7 +88,7 @@ subprojects {
         filesMatching("fabric.mod.json") {
             expand(
                 "version" to project.version,
-                "modid" to modId,
+                "mod_id" to modId,
                 "mod_name" to modName
             )
         }

@@ -37,6 +37,7 @@ import org.jetbrains.annotations.ApiStatus;
 public interface DynamicWorldRegistry {
     /**
      * Registers a new world and updates all clients with the new world.
+     * NOTE: The world will not be loaded until the next tick.
      *
      * @param id      The ID of the world.
      *                This ID must be unique and unused in the {@link net.minecraft.util.registry.Registry#DIMENSION_TYPE_KEY} registry and the {@link GeneratorOptions#getDimensions()} registry.
@@ -57,10 +58,13 @@ public interface DynamicWorldRegistry {
     boolean worldExists(Identifier id);
 
     /**
-     * Removes a world. It will not be removed from the running server, however, it will be removed once the server restarts.
+     * Erases a dynamic world from existence.
+     * Players will be removed from the world using the provided player destroyer.
+     * EXPERIMENTAL: This could cause UB and/or destroy the entire server.
      *
      * @param id The ID of the world.
+     * @param destroyer The method to remove players from the world.
      */
-    @ApiStatus.Experimental
-    void removeDynamicWorld(Identifier id);
+    @ApiStatus.Experimental // DANGEROUS!
+    void removeDynamicWorld(Identifier id, PlayerDestroyer destroyer);
 }

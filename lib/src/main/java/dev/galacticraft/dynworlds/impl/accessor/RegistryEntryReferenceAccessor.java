@@ -20,10 +20,10 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl;
+package dev.galacticraft.dynworlds.impl.accessor;
 
-import net.minecraft.util.registry.SimpleRegistry;
+import net.minecraft.util.registry.RegistryKey;
 
-public interface RegistryAppender<T> {
-    void register(SimpleRegistry<T> registry);
+public interface RegistryEntryReferenceAccessor<T> {
+    void callSetKeyAndValue(RegistryKey<T> key, T value);
 }

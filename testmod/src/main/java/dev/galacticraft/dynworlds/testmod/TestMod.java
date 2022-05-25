@@ -28,14 +28,17 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.command.argument.NbtCompoundArgumentType;
-import net.minecraft.nbt.NbtElement;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.network.MessageType;
 import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.util.dynamic.RegistryOps;
 import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,17 +49,32 @@ public class TestMod implements ModInitializer {
     @Override
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
-            dispatcher.register(CommandManager.literal("dynworlds:create").requires(s -> s.hasPermissionLevel(2)).then(CommandManager.argument("id", IdentifierArgumentType.identifier()).then(CommandManager.argument("type", NbtCompoundArgumentType.nbtCompound()).then(CommandManager.argument("options", NbtCompoundArgumentType.nbtCompound()).executes(ctx -> {
+            dispatcher.register(CommandManager.literal("dynworlds:create").requires(s -> s.hasPermissionLevel(2)).then(CommandManager.argument("id", IdentifierArgumentType.identifier()).then(CommandManager.argument("options", NbtCompoundArgumentType.nbtCompound()).executes(ctx -> {
                 Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
-                RegistryOps<NbtElement> ops = RegistryOps.of(NbtOps.INSTANCE, ctx.getSource().getRegistryManager());
-                DimensionType type = DimensionType.CODEC.decode(ops, NbtCompoundArgumentType.getNbtCompound(ctx, "type")).get().orThrow().getFirst();
-                DimensionOptions options = DimensionOptions.CODEC.decode(ops, NbtCompoundArgumentType.getNbtCompound(ctx, "options")).get().orThrow().getFirst();
+                DimensionOptions options = DimensionOptions.CODEC.decode(RegistryOps.of(NbtOps.INSTANCE, ctx.getSource().getRegistryManager()), NbtCompoundArgumentType.getNbtCompound(ctx, "options")).get().orThrow().getFirst();
                 if (((DynamicWorldRegistry) ctx.getSource().getServer()).worldExists(id)) {
                     throw ID_EXISTS.create();
                 }
-                ((DynamicWorldRegistry) ctx.getSource().getServer()).addDynamicWorld(id, options, type);
+                ((DynamicWorldRegistry) ctx.getSource().getServer()).addDynamicWorld(id, options, options.getDimensionTypeSupplier().getKeyOrValue().right().get());
                 return 1;
-            })))));
+            }))));
+
+            dispatcher.register(CommandManager.literal("dynworlds:remove").requires(s -> s.hasPermissionLevel(2)).then(CommandManager.argument("id", IdentifierArgumentType.identifier()).executes(ctx -> {
+                Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
+                if (!((DynamicWorldRegistry) ctx.getSource().getServer()).worldExists(id)) {
+                    throw ID_EXISTS.create();
+                }
+                ((DynamicWorldRegistry) ctx.getSource().getServer()).removeDynamicWorld(id, (server, player) -> {
+                    player.sendMessage(new LiteralText("World " + id.toString() + " was removed."), MessageType.SYSTEM, Util.NIL_UUID);
+                    player.giveItemStack(new ItemStack(Items.DIRT));
+                    ServerWorld overworld = server.getOverworld();
+                    player.teleport(overworld, player.getX(), 512, player.getZ(), player.getYaw(), player.getPitch());
+                    player.setVelocity((overworld.random.nextDouble() - 0.5) * 10.0, -overworld.random.nextDouble() * 10.0, (overworld.random.nextDouble() - 0.5) * 10.0);
+                    player.giveItemStack(new ItemStack(Items.APPLE));
+//                    player.fallDistance = 1000;
+                });
+                return 1;
+            })));
         });
     }
 

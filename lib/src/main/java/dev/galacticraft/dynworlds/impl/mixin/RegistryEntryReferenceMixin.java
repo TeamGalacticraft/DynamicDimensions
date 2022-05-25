@@ -20,10 +20,21 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl;
+package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.minecraft.util.registry.SimpleRegistry;
+import dev.galacticraft.dynworlds.impl.accessor.RegistryEntryReferenceAccessor;
+import net.minecraft.util.registry.RegistryEntry;
+import net.minecraft.util.registry.RegistryKey;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 
-public interface RegistryAppender<T> {
-    void register(SimpleRegistry<T> registry);
+@Mixin(RegistryEntry.Reference.class)
+public abstract class RegistryEntryReferenceMixin<T> implements RegistryEntryReferenceAccessor<T> {
+    @Shadow abstract void setKeyAndValue(RegistryKey<T> key, T value);
+
+    // for some reason this method breaks mixin compilation when it is a direct accessor
+    @Override
+    public void callSetKeyAndValue(RegistryKey<T> key, T value) {
+        setKeyAndValue(key, value);
+    }
 }

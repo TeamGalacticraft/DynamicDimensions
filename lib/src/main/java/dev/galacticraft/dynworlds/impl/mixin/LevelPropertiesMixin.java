@@ -31,12 +31,10 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Pair;
 import net.minecraft.util.dynamic.RegistryOps;
 import net.minecraft.util.registry.DynamicRegistryManager;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.level.LevelInfo;
 import net.minecraft.world.level.LevelProperties;
@@ -57,8 +55,8 @@ import java.util.UUID;
 
 @Mixin(LevelProperties.class)
 public abstract class LevelPropertiesMixin implements SavePropertiesAccessor {
-    private static final ThreadLocal<Map<Identifier, Pair<DimensionOptions, DimensionType>>> MAP = new ThreadLocal<>();
-    private @Unique Map<Identifier, Pair<DimensionOptions, DimensionType>> dynamicWorlds;
+    private static final ThreadLocal<Map<Identifier, DimensionOptions>> MAP = new ThreadLocal<>();
+    private @Unique Map<Identifier, DimensionOptions> dynamicWorlds;
 
     @Inject(method = "<init>(Lcom/mojang/datafixers/DataFixer;ILnet/minecraft/nbt/NbtCompound;ZIIIFJJIIIZIZZZLnet/minecraft/world/border/WorldBorder$Properties;IILjava/util/UUID;Ljava/util/Set;Lnet/minecraft/world/timer/Timer;Lnet/minecraft/nbt/NbtCompound;Lnet/minecraft/nbt/NbtCompound;Lnet/minecraft/world/level/LevelInfo;Lnet/minecraft/world/gen/GeneratorOptions;Lcom/mojang/serialization/Lifecycle;)V", at = @At("RETURN"))
     private void init(DataFixer dataFixer, int dataVersion, NbtCompound playerData, boolean modded, int spawnX, int spawnY, int spawnZ, float spawnAngle, long time, long timeOfDay, int version, int clearWeatherTime, int rainTime, boolean raining, int thunderTime, boolean thundering, boolean initialized, boolean difficultyLocked, WorldBorder.Properties worldBorder, int wanderingTraderSpawnDelay, int wanderingTraderSpawnChance, UUID wanderingTraderId, Set serverBrands, Timer scheduledEvents, NbtCompound customBossEvents, NbtCompound dragonFight, LevelInfo levelInfo, GeneratorOptions generatorOptions, Lifecycle lifecycle, CallbackInfo ci) {
@@ -71,32 +69,28 @@ public abstract class LevelPropertiesMixin implements SavePropertiesAccessor {
 
     @Inject(method = "readProperties", at = @At(value = "HEAD"))
     private static void readDynamicWorlds(Dynamic<NbtElement> dynamic, DataFixer dataFixer, int dataVersion, @Nullable NbtCompound playerData, LevelInfo levelInfo, SaveVersionInfo saveVersionInfo, GeneratorOptions generatorOptions, Lifecycle lifecycle, CallbackInfoReturnable<LevelProperties> cir) {
-        Map<Identifier, Pair<DimensionOptions, DimensionType>> value = new HashMap<>();
+        Map<Identifier, DimensionOptions> value = new HashMap<>();
         OptionalDynamic<NbtElement> dynWorlds = dynamic.get("DynamicWorlds");
         if (dynWorlds.result().isPresent()) {
-            dynWorlds.asMap(e -> new Identifier(e.asString().get().orThrow()), e -> new Pair<>(e.get("options").decode(DimensionOptions.CODEC), e.get("type").decode(DimensionType.CODEC))).forEach((id, pair) -> {
-                value.put(id, new Pair<>(pair.getLeft().get().orThrow().getFirst(), pair.getRight().get().orThrow().getFirst()));
-            });
+            dynWorlds.asMap(e -> new Identifier(e.asString().get().orThrow()), e -> e.decode(DimensionOptions.CODEC)).forEach((id, pair) -> value.put(id, pair.get().orThrow().getFirst()));
         }
         MAP.set(value);
     }
 
     @Inject(method = "updateProperties", at = @At("RETURN"))
     private void writeDynamicWorlds(DynamicRegistryManager registryManager, NbtCompound levelNbt, NbtCompound playerNbt, CallbackInfo ci) {
-        NbtCompound compound = new NbtCompound();
         RegistryOps<NbtElement> ops = RegistryOps.of(NbtOps.INSTANCE, registryManager);
-        this.dynamicWorlds.forEach((id, pair) -> {
-            NbtCompound nbt = new NbtCompound();
-            nbt.put("options", DimensionOptions.CODEC.encode(pair.getLeft(), ops, new NbtCompound()).get().orThrow());
-            nbt.put("type", DimensionType.CODEC.encode(pair.getRight(), ops, new NbtCompound()).get().orThrow());
-            compound.put(id.toString(), nbt);
-        });
+        NbtCompound compound = new NbtCompound();
+        this.dynamicWorlds.forEach((id, options) -> compound.put(id.toString(), DimensionOptions.CODEC.encode(options, ops, new NbtCompound()).get().orThrow()));
         levelNbt.put("DynamicWorlds", compound);
     }
 
     @Override
-    public void addDynamicWorld(Identifier id, DimensionOptions options, DimensionType type) {
-        this.dynamicWorlds.put(id, new Pair<>(options, type));
+    public void addDynamicWorld(Identifier id, DimensionOptions options) {
+        if (options.getDimensionTypeSupplier().getKeyOrValue().right().isEmpty()){
+            throw new IllegalArgumentException("Cannot add a dynamic world with no dimension type");
+        }
+        this.dynamicWorlds.put(id, options);
     }
 
     @Override
@@ -105,7 +99,7 @@ public abstract class LevelPropertiesMixin implements SavePropertiesAccessor {
     }
 
     @Override
-    public Map<Identifier, Pair<DimensionOptions, DimensionType>> getDynamicWorlds() {
+    public Map<Identifier, DimensionOptions> getDynamicWorlds() {
         return this.dynamicWorlds;
     }
 }

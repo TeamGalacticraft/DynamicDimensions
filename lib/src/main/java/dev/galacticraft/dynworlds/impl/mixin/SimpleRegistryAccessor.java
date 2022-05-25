@@ -22,15 +22,43 @@
 
 package dev.galacticraft.dynworlds.impl.mixin;
 
+import com.mojang.serialization.Lifecycle;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.ObjectList;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.RegistryEntry;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.util.registry.SimpleRegistry;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
+import java.util.List;
+import java.util.Map;
+
 @Mixin(SimpleRegistry.class)
 public interface SimpleRegistryAccessor<T> {
+    @Accessor
+    ObjectList<RegistryEntry.Reference<T>> getRawIdToEntry();
+    @Accessor 
+    Object2IntMap<T> getEntryToRawId();
+    @Accessor
+    Map<Identifier, RegistryEntry.Reference<T>> getIdToEntry();
+    @Accessor
+    Map<RegistryKey<T>, RegistryEntry.Reference<T>> getKeyToEntry();
+    @Accessor
+    Map<T, RegistryEntry.Reference<T>> getValueToEntry();
+    @Accessor
+    Map<T, Lifecycle> getEntryToLifecycle();
+
     @Accessor("frozen")
     boolean isFrozen();
 
     @Accessor("frozen")
     void setFrozen(boolean frozen);
+
+    @Accessor("cachedEntries")
+    void setCachedEntries(List<RegistryEntry.Reference<T>> o);
+
+    @Accessor("lifecycle")
+    void setLifecycle(Lifecycle base);
 }

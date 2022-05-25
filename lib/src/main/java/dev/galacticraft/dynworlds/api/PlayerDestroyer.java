@@ -20,10 +20,19 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl;
+package dev.galacticraft.dynworlds.api;
 
-import net.minecraft.util.registry.SimpleRegistry;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 
-public interface RegistryAppender<T> {
-    void register(SimpleRegistry<T> registry);
+@FunctionalInterface
+public interface PlayerDestroyer {
+    /**
+     * Called when a player is must be removed from the world.
+     * Will cause UB if the player is not actually removed from the world.
+     *
+     * @param server The server instance
+     * @param player The player to be removed
+     * */
+    void destroyPlayer(MinecraftServer server, ServerPlayerEntity player);
 }

@@ -20,10 +20,15 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl;
+package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.minecraft.util.registry.SimpleRegistry;
+import net.minecraft.server.DataPackContents;
+import net.minecraft.tag.TagManagerLoader;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-public interface RegistryAppender<T> {
-    void register(SimpleRegistry<T> registry);
+@Mixin(DataPackContents.class)
+public interface DataPackContentsAccessor {
+    @Accessor("registryTagManager")
+    TagManagerLoader getRegistryTagManager();
 }

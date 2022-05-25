@@ -25,10 +25,10 @@ package dev.galacticraft.dynworlds.impl.client.network;
 import com.mojang.serialization.Lifecycle;
 import dev.galacticraft.dynworlds.impl.DynWorlds;
 import dev.galacticraft.dynworlds.impl.accessor.DynamicRegistryManagerImmutableImplAccessor;
+import dev.galacticraft.dynworlds.impl.mixin.SimpleRegistryAccessor;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.dynamic.RegistryOps;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.dimension.DimensionType;
@@ -40,11 +40,33 @@ public class DynWorldsS2CPacketReceivers {
         ClientPlayNetworking.registerGlobalReceiver(DynWorlds.id("create_world"), (client, handler, buf, responseSender) -> {
             Identifier id = buf.readIdentifier();
             int rawId = buf.readInt();
-            DimensionType type = DimensionType.CODEC.decode(RegistryOps.of(NbtOps.INSTANCE, handler.getRegistryManager()), buf.readNbt()).get().orThrow().getFirst();
+            DimensionType type = DimensionType.CODEC.decode(NbtOps.INSTANCE, buf.readNbt()).get().orThrow().getFirst();
             ((DynamicRegistryManagerImmutableImplAccessor) handler.getRegistryManager()).unfreezeTypes(reg -> {
                 reg.replace(OptionalInt.of(rawId), RegistryKey.of(Registry.DIMENSION_TYPE_KEY, id), type, Lifecycle.stable());
             });
             handler.getWorldKeys().add(RegistryKey.of(Registry.WORLD_KEY, id));
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(DynWorlds.id("destroy_world"), (client, handler, buf, responseSender) -> {
+            Identifier id = buf.readIdentifier();
+            ((DynamicRegistryManagerImmutableImplAccessor) handler.getRegistryManager()).unfreezeTypes(reg -> {
+                DimensionType dimensionType = reg.get(id);
+                if (dimensionType != null) {
+                    ((SimpleRegistryAccessor<DimensionType>) reg).getEntryToLifecycle().remove(dimensionType);
+                    ((SimpleRegistryAccessor<DimensionType>) reg).getRawIdToEntry().remove(reg.getRawId(dimensionType));
+                    ((SimpleRegistryAccessor<DimensionType>) reg).getEntryToRawId().removeInt(dimensionType);
+                    ((SimpleRegistryAccessor<DimensionType>) reg).getValueToEntry().remove(dimensionType);
+                    ((SimpleRegistryAccessor<DimensionType>) reg).setCachedEntries(null);
+                    ((SimpleRegistryAccessor<DimensionType>) reg).getKeyToEntry().remove(RegistryKey.of(Registry.DIMENSION_TYPE_KEY, id));
+                    ((SimpleRegistryAccessor<DimensionType>) reg).getIdToEntry().remove(id);
+                    Lifecycle base = Lifecycle.stable();
+                    for (Lifecycle value : ((SimpleRegistryAccessor<DimensionType>) reg).getEntryToLifecycle().values()) {
+                        base.add(value);
+                    }
+                    ((SimpleRegistryAccessor<DimensionType>) reg).setLifecycle(base);
+                }
+            });
+            handler.getWorldKeys().remove(RegistryKey.of(Registry.WORLD_KEY, id));
         });
     }
 }

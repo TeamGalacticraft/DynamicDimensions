@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "$modid",
+  "id": "$mod_id",
   "version": "$version",
   "name": "$mod_name",
-  "icon": "assets/${modid}/icon.png",
+  "icon": "assets/${mod_id}/icon.png",
   "description": "Dynamic world library.",
   "license": "MIT",
   "contact": {
@@ -38,9 +38,10 @@
     ]
   },
   "mixins": [
-    "${modid}.mixins.json",
-    "${modid}.client.mixins.json"
+    "${mod_id}.mixins.json",
+    "${mod_id}.client.mixins.json"
   ],
+  "accessWidener": "${mod_id}.accesswidener",
   "depends": {
     "fabricloader": ">=0.13.3",
     "minecraft": ">=1.18.2",
