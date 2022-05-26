@@ -22,12 +22,51 @@
 
 package dev.galacticraft.dynworlds.impl;
 
-import dev.galacticraft.dynworlds.impl.client.network.DynWorldsS2CPacketReceivers;
+import com.mojang.serialization.Lifecycle;
+import dev.galacticraft.dynworlds.impl.accessor.DynamicRegistryManagerImmutableImplAccessor;
+import dev.galacticraft.dynworlds.impl.mixin.SimpleRegistryAccessor;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.dimension.DimensionType;
 
-public class DynWorldsClient implements ClientModInitializer {
+import java.util.OptionalInt;
+
+public final class DynWorldsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        DynWorldsS2CPacketReceivers.register();
+        ClientPlayNetworking.registerGlobalReceiver(Constant.id("create_world"), (client, handler, buf, responseSender) -> {
+            Identifier id = buf.readIdentifier();
+            int rawId = buf.readInt();
+            DimensionType type = DimensionType.CODEC.decode(NbtOps.INSTANCE, buf.readNbt()).get().orThrow().getFirst();
+            ((DynamicRegistryManagerImmutableImplAccessor) handler.getRegistryManager()).unfreezeTypes(reg -> reg.replace(OptionalInt.of(rawId), RegistryKey.of(Registry.DIMENSION_TYPE_KEY, id), type, Lifecycle.stable()));
+            handler.getWorldKeys().add(RegistryKey.of(Registry.WORLD_KEY, id));
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(Constant.id("destroy_world"), (client, handler, buf, responseSender) -> {
+            Identifier id = buf.readIdentifier();
+            ((DynamicRegistryManagerImmutableImplAccessor) handler.getRegistryManager()).unfreezeTypes(reg -> {
+                DimensionType dimensionType = reg.get(id);
+                if (dimensionType != null) {
+                    SimpleRegistryAccessor<DimensionType> accessor = (SimpleRegistryAccessor<DimensionType>) reg;
+                    accessor.getEntryToLifecycle().remove(dimensionType);
+                    accessor.getRawIdToEntry().remove(reg.getRawId(dimensionType));
+                    accessor.getEntryToRawId().removeInt(dimensionType);
+                    accessor.getValueToEntry().remove(dimensionType);
+                    accessor.setCachedEntries(null);
+                    accessor.getKeyToEntry().remove(RegistryKey.of(Registry.DIMENSION_TYPE_KEY, id));
+                    accessor.getIdToEntry().remove(id);
+                    Lifecycle base = Lifecycle.stable();
+                    for (Lifecycle value : accessor.getEntryToLifecycle().values()) {
+                        base.add(value);
+                    }
+                    accessor.setLifecycle(base);
+                }
+            });
+            handler.getWorldKeys().remove(RegistryKey.of(Registry.WORLD_KEY, id));
+        });
     }
 }

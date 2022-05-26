@@ -26,7 +26,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.gen.GeneratorOptions;
-import org.jetbrains.annotations.ApiStatus;
 
 /**
  * The registry for dynamic worlds.
@@ -60,11 +59,10 @@ public interface DynamicWorldRegistry {
     /**
      * Erases a dynamic world from existence.
      * Players will be removed from the world using the provided player destroyer.
-     * EXPERIMENTAL: This could cause UB and/or destroy the entire server.
      *
-     * @param id The ID of the world.
+     * @param id        The ID of the world.
      * @param destroyer The method to remove players from the world.
+     * @since 0.1.0
      */
-    @ApiStatus.Experimental // DANGEROUS!
     void removeDynamicWorld(Identifier id, PlayerDestroyer destroyer);
 }

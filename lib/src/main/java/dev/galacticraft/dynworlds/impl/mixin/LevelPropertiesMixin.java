@@ -30,6 +30,7 @@ import dev.galacticraft.dynworlds.impl.accessor.SavePropertiesAccessor;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.dynamic.RegistryOps;
 import net.minecraft.util.registry.DynamicRegistryManager;
@@ -40,6 +41,7 @@ import net.minecraft.world.level.LevelInfo;
 import net.minecraft.world.level.LevelProperties;
 import net.minecraft.world.level.storage.SaveVersionInfo;
 import net.minecraft.world.timer.Timer;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -58,17 +60,8 @@ public abstract class LevelPropertiesMixin implements SavePropertiesAccessor {
     private static final ThreadLocal<Map<Identifier, DimensionOptions>> MAP = new ThreadLocal<>();
     private @Unique Map<Identifier, DimensionOptions> dynamicWorlds;
 
-    @Inject(method = "<init>(Lcom/mojang/datafixers/DataFixer;ILnet/minecraft/nbt/NbtCompound;ZIIIFJJIIIZIZZZLnet/minecraft/world/border/WorldBorder$Properties;IILjava/util/UUID;Ljava/util/Set;Lnet/minecraft/world/timer/Timer;Lnet/minecraft/nbt/NbtCompound;Lnet/minecraft/nbt/NbtCompound;Lnet/minecraft/world/level/LevelInfo;Lnet/minecraft/world/gen/GeneratorOptions;Lcom/mojang/serialization/Lifecycle;)V", at = @At("RETURN"))
-    private void init(DataFixer dataFixer, int dataVersion, NbtCompound playerData, boolean modded, int spawnX, int spawnY, int spawnZ, float spawnAngle, long time, long timeOfDay, int version, int clearWeatherTime, int rainTime, boolean raining, int thunderTime, boolean thundering, boolean initialized, boolean difficultyLocked, WorldBorder.Properties worldBorder, int wanderingTraderSpawnDelay, int wanderingTraderSpawnChance, UUID wanderingTraderId, Set serverBrands, Timer scheduledEvents, NbtCompound customBossEvents, NbtCompound dragonFight, LevelInfo levelInfo, GeneratorOptions generatorOptions, Lifecycle lifecycle, CallbackInfo ci) {
-        this.dynamicWorlds = MAP.get();
-        MAP.set(null);
-        if (this.dynamicWorlds == null) {
-            this.dynamicWorlds = new HashMap<>(); // if the world is new, there won't be any properties to read
-        }
-    }
-
     @Inject(method = "readProperties", at = @At(value = "HEAD"))
-    private static void readDynamicWorlds(Dynamic<NbtElement> dynamic, DataFixer dataFixer, int dataVersion, @Nullable NbtCompound playerData, LevelInfo levelInfo, SaveVersionInfo saveVersionInfo, GeneratorOptions generatorOptions, Lifecycle lifecycle, CallbackInfoReturnable<LevelProperties> cir) {
+    private static void readDynamicWorlds(@NotNull Dynamic<NbtElement> dynamic, DataFixer dataFixer, int dataVersion, @Nullable NbtCompound playerData, LevelInfo levelInfo, SaveVersionInfo saveVersionInfo, GeneratorOptions generatorOptions, Lifecycle lifecycle, CallbackInfoReturnable<LevelProperties> cir) {
         Map<Identifier, DimensionOptions> value = new HashMap<>();
         OptionalDynamic<NbtElement> dynWorlds = dynamic.get("DynamicWorlds");
         if (dynWorlds.result().isPresent()) {
@@ -77,8 +70,17 @@ public abstract class LevelPropertiesMixin implements SavePropertiesAccessor {
         MAP.set(value);
     }
 
+    @Inject(method = "<init>(Lcom/mojang/datafixers/DataFixer;ILnet/minecraft/nbt/NbtCompound;ZIIIFJJIIIZIZZZLnet/minecraft/world/border/WorldBorder$Properties;IILjava/util/UUID;Ljava/util/Set;Lnet/minecraft/world/timer/Timer;Lnet/minecraft/nbt/NbtCompound;Lnet/minecraft/nbt/NbtCompound;Lnet/minecraft/world/level/LevelInfo;Lnet/minecraft/world/gen/GeneratorOptions;Lcom/mojang/serialization/Lifecycle;)V", at = @At("RETURN"))
+    private void init(DataFixer dataFixer, int dataVersion, NbtCompound playerData, boolean modded, int spawnX, int spawnY, int spawnZ, float spawnAngle, long time, long timeOfDay, int version, int clearWeatherTime, int rainTime, boolean raining, int thunderTime, boolean thundering, boolean initialized, boolean difficultyLocked, WorldBorder.Properties worldBorder, int wanderingTraderSpawnDelay, int wanderingTraderSpawnChance, UUID wanderingTraderId, Set<String> serverBrands, Timer<MinecraftServer> scheduledEvents, NbtCompound customBossEvents, NbtCompound dragonFight, LevelInfo levelInfo, GeneratorOptions generatorOptions, Lifecycle lifecycle, CallbackInfo ci) {
+        this.dynamicWorlds = MAP.get();
+        MAP.set(null);
+        if (this.dynamicWorlds == null) {
+            this.dynamicWorlds = new HashMap<>(); // if the world is new, there won't be any properties to read
+        }
+    }
+
     @Inject(method = "updateProperties", at = @At("RETURN"))
-    private void writeDynamicWorlds(DynamicRegistryManager registryManager, NbtCompound levelNbt, NbtCompound playerNbt, CallbackInfo ci) {
+    private void writeDynamicWorlds(DynamicRegistryManager registryManager, @NotNull NbtCompound levelNbt, NbtCompound playerNbt, CallbackInfo ci) {
         RegistryOps<NbtElement> ops = RegistryOps.of(NbtOps.INSTANCE, registryManager);
         NbtCompound compound = new NbtCompound();
         this.dynamicWorlds.forEach((id, options) -> compound.put(id.toString(), DimensionOptions.CODEC.encode(options, ops, new NbtCompound()).get().orThrow()));
@@ -86,8 +88,8 @@ public abstract class LevelPropertiesMixin implements SavePropertiesAccessor {
     }
 
     @Override
-    public void addDynamicWorld(Identifier id, DimensionOptions options) {
-        if (options.getDimensionTypeSupplier().getKeyOrValue().right().isEmpty()){
+    public void addDynamicWorld(Identifier id, @NotNull DimensionOptions options) {
+        if (options.getDimensionTypeSupplier().getKeyOrValue().right().isEmpty()) {
             throw new IllegalArgumentException("Cannot add a dynamic world with no dimension type");
         }
         this.dynamicWorlds.put(id, options);

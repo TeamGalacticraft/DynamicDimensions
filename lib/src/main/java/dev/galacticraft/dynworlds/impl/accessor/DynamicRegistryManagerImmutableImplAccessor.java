@@ -22,7 +22,7 @@
 
 package dev.galacticraft.dynworlds.impl.accessor;
 
-import dev.galacticraft.dynworlds.impl.RegistryAppender;
+import dev.galacticraft.dynworlds.impl.util.RegistryAppender;
 import net.minecraft.world.dimension.DimensionType;
 
 public interface DynamicRegistryManagerImmutableImplAccessor {

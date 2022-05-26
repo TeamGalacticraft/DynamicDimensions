@@ -39,14 +39,19 @@ import java.util.Map;
 public interface SimpleRegistryAccessor<T> {
     @Accessor
     ObjectList<RegistryEntry.Reference<T>> getRawIdToEntry();
-    @Accessor 
+
+    @Accessor
     Object2IntMap<T> getEntryToRawId();
+
     @Accessor
     Map<Identifier, RegistryEntry.Reference<T>> getIdToEntry();
+
     @Accessor
     Map<RegistryKey<T>, RegistryEntry.Reference<T>> getKeyToEntry();
+
     @Accessor
     Map<T, RegistryEntry.Reference<T>> getValueToEntry();
+
     @Accessor
     Map<T, Lifecycle> getEntryToLifecycle();
 

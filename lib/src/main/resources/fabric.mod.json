@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "$mod_id",
+  "id": "${mod_id}",
   "version": "$version",
   "name": "$mod_name",
   "icon": "assets/${mod_id}/icon.png",
@@ -32,14 +32,10 @@
   "entrypoints": {
     "client": [
       "dev.galacticraft.dynworlds.impl.DynWorldsClient"
-    ],
-    "main": [
-      "dev.galacticraft.dynworlds.impl.DynWorlds"
     ]
   },
   "mixins": [
-    "${mod_id}.mixins.json",
-    "${mod_id}.client.mixins.json"
+    "${mod_id}.mixins.json"
   ],
   "accessWidener": "${mod_id}.accesswidener",
   "depends": {

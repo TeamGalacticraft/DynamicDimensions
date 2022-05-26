@@ -22,8 +22,15 @@
 
 package dev.galacticraft.dynworlds.impl;
 
-import net.minecraft.util.registry.SimpleRegistry;
+import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-public interface RegistryAppender<T> {
-    void register(SimpleRegistry<T> registry);
+public interface Constant {
+    String MOD_ID = "dynworlds";
+
+    @Contract("_ -> new")
+    static @NotNull Identifier id(String id) {
+        return new Identifier(MOD_ID, id);
+    }
 }

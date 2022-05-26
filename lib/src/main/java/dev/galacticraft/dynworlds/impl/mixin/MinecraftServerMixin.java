@@ -26,9 +26,8 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Lifecycle;
 import dev.galacticraft.dynworlds.api.DynamicWorldRegistry;
 import dev.galacticraft.dynworlds.api.PlayerDestroyer;
-import dev.galacticraft.dynworlds.impl.DynWorlds;
+import dev.galacticraft.dynworlds.impl.Constant;
 import dev.galacticraft.dynworlds.impl.accessor.DynamicRegistryManagerImmutableImplAccessor;
-import dev.galacticraft.dynworlds.impl.accessor.RegistryEntryReferenceAccessor;
 import dev.galacticraft.dynworlds.impl.accessor.SavePropertiesAccessor;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.nbt.NbtCompound;
@@ -56,6 +55,7 @@ import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.UnmodifiableLevelProperties;
 import net.minecraft.world.level.storage.LevelStorage;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -77,18 +77,19 @@ import java.util.stream.Collectors;
 
 @Mixin(MinecraftServer.class)
 public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
-    @Shadow
-    @Final
-    private Executor workerExecutor;
-
+    private final Map<RegistryKey<World>, ServerWorld> enqueuedCreatedWorlds = new HashMap<>();
+    private final List<RegistryKey<World>> enqueuedDestroyedWorlds = new ArrayList<>();
     @Shadow
     @Final
     protected LevelStorage.Session session;
-
+    @Shadow
+    private MinecraftServer.ResourceManagerHolder resourceManagerHolder;
+    @Shadow
+    @Final
+    private Executor workerExecutor;
     @Shadow
     @Final
     private WorldGenerationProgressListenerFactory worldGenerationProgressListenerFactory;
-
     @Shadow
     @Final
     private Map<RegistryKey<World>, ServerWorld> worlds;
@@ -97,16 +98,13 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
     public abstract ServerWorld getOverworld();
 
     @Shadow
+    public abstract PlayerManager getPlayerManager();
+
+    @Shadow
     public abstract DynamicRegistryManager.Immutable getRegistryManager();
 
-    @Shadow private MinecraftServer.ResourceManagerHolder resourceManagerHolder;
-
-    @Shadow public abstract PlayerManager getPlayerManager();
-
-    @Shadow public abstract SaveProperties getSaveProperties();
-
-    private final Map<RegistryKey<World>, ServerWorld> enqueuedCreatedWorlds = new HashMap<>();
-    private final List<RegistryKey<World>> enqueuedDestroyedWorlds = new ArrayList<>();
+    @Shadow
+    public abstract SaveProperties getSaveProperties();
 
     @Inject(method = "createWorlds", at = @At("HEAD"))
     private void createDynamicWorlds(WorldGenerationProgressListener worldGenerationProgressListener, CallbackInfo ci) {
@@ -134,7 +132,7 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
                 ServerWorld serverWorld = this.worlds.remove(key);
 
                 for (ServerPlayerEntity player : serverWorld.getPlayers()) {
-                    player.networkHandler.disconnect(new LiteralText("The world you were in has been deleted.")); //todo: i18n, disconnect unsafe to use here?
+                    player.networkHandler.disconnect(new LiteralText("The world you were in has been deleted."));
                 }
 
                 try {
@@ -185,7 +183,7 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
                     accessor1.setLifecycle(base1);
                     PacketByteBuf packetByteBuf = PacketByteBufs.create();
                     packetByteBuf.writeIdentifier(key.getValue());
-                    this.getPlayerManager().sendToAll(new CustomPayloadS2CPacket(DynWorlds.id("destroy_world"), packetByteBuf));
+                    this.getPlayerManager().sendToAll(new CustomPayloadS2CPacket(Constant.id("destroy_world"), packetByteBuf));
                 });
             }
             reloadTags();
@@ -195,7 +193,7 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
     }
 
     @Override
-    public void addDynamicWorld(Identifier id, DimensionOptions options, DimensionType type) {
+    public void addDynamicWorld(Identifier id, @NotNull DimensionOptions options, DimensionType type) {
         if (worldExists(id) || this.worlds.containsKey(RegistryKey.of(Registry.WORLD_KEY, id))) {
             throw new IllegalArgumentException("World already exists!?");
         }
@@ -226,7 +224,7 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
         if (options.getDimensionTypeSupplier() instanceof RegistryEntry.Reference<DimensionType>
                 && (options.getDimensionTypeSupplier().getKeyOrValue().right().isEmpty()
                 || options.getDimensionTypeSupplier().value() != type)) {
-            ((RegistryEntryReferenceAccessor<DimensionType>) options.getDimensionTypeSupplier()).callSetKeyAndValue(options.getDimensionTypeSupplier().getKey().get(), type);
+            ((RegistryEntryReferenceInvoker<DimensionType>) options.getDimensionTypeSupplier()).callSetKeyAndValue(options.getDimensionTypeSupplier().getKey().get(), type);
         }
         ((SavePropertiesAccessor) this.getSaveProperties()).addDynamicWorld(id, options);
         this.enqueuedCreatedWorlds.put(worldKey, world); //prevent comodification
@@ -235,7 +233,7 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
         packetByteBuf.writeIdentifier(id);
         packetByteBuf.writeInt(this.getRegistryManager().get(Registry.DIMENSION_TYPE_KEY).getRawId(type));
         packetByteBuf.writeNbt((NbtCompound) DimensionType.CODEC.encode(type, NbtOps.INSTANCE, new NbtCompound()).get().orThrow());
-        this.getPlayerManager().sendToAll(new CustomPayloadS2CPacket(DynWorlds.id("create_world"), packetByteBuf));
+        this.getPlayerManager().sendToAll(new CustomPayloadS2CPacket(Constant.id("create_world"), packetByteBuf));
         reloadTags();
     }
 

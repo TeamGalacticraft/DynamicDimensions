@@ -23,14 +23,14 @@
 package dev.galacticraft.dynworlds.impl.mixin;
 
 import com.google.common.collect.ImmutableMap;
-import dev.galacticraft.dynworlds.impl.RegistryAppender;
 import dev.galacticraft.dynworlds.impl.accessor.DynamicRegistryManagerImmutableImplAccessor;
+import dev.galacticraft.dynworlds.impl.util.RegistryAppender;
 import net.minecraft.util.registry.*;
 import net.minecraft.world.dimension.DimensionType;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 
 import java.util.Map;
 
@@ -41,23 +41,19 @@ public abstract class DynamicRegistryManagerImmutableImplMixin implements Dynami
     private Map<? extends RegistryKey<? extends Registry<?>>, ? extends Registry<?>> registries;
 
     @Override
-    public void unfreezeTypes(RegistryAppender<DimensionType> appender) {
-        dynworlds_addToRegistry(Registry.DIMENSION_TYPE_KEY, appender);
-    }
-
-    @Unique
-    private <T> void dynworlds_addToRegistry(RegistryKey<Registry<T>> registryKey, RegistryAppender<T> appender) { // prefix as this is hacky
-        Registry<T> registry = (Registry<T>) this.registries.get(registryKey);
+    public void unfreezeTypes(@NotNull RegistryAppender<DimensionType> appender) {
+        Registry<DimensionType> registry = (Registry<DimensionType>) this.registries.get(Registry.DIMENSION_TYPE_KEY);
         ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, Registry<?>> builder = new ImmutableMap.Builder<>();
         this.registries.forEach((k, v) -> {
-            if (k != registryKey) {
+            if (k != Registry.DIMENSION_TYPE_KEY) {
                 builder.put(k, v);
             }
         });
 
-        if (registry instanceof SimpleRegistry<T> simple && (simple.getClass() == SimpleRegistry.class || simple.getClass() == DefaultedRegistry.class)) {
-            if (((SimpleRegistryAccessor<T>) simple).isFrozen()) {
-                ((SimpleRegistryAccessor<T>) simple).setFrozen(false);  // safe as there should be no new intrusive holders of this registry as it was already frozen
+        if (registry instanceof SimpleRegistry<DimensionType> simple && (simple.getClass() == SimpleRegistry.class || simple.getClass() == DefaultedRegistry.class)) {
+            SimpleRegistryAccessor<DimensionType> accessor = ((SimpleRegistryAccessor<DimensionType>) simple);
+            if (accessor.isFrozen()) {
+                accessor.setFrozen(false);  // safe as there should be no new intrusive holders of this registry as it was already frozen
                 appender.register(simple);
                 simple.freeze();                                        // freeze it again - everything is recalculated so there should be no leftover references
             } else {

@@ -25,14 +25,17 @@ package dev.galacticraft.dynworlds.api;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+/**
+ * Removes players from a world.
+ */
 @FunctionalInterface
 public interface PlayerDestroyer {
     /**
-     * Called when a player is must be removed from the world.
+     * Called when a player must be removed from the world.
      * Will cause UB if the player is not actually removed from the world.
      *
      * @param server The server instance
      * @param player The player to be removed
-     * */
+     */
     void destroyPlayer(MinecraftServer server, ServerPlayerEntity player);
 }
