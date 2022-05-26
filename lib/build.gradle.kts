@@ -24,7 +24,7 @@ publishing {
     publications {
         register("mavenJava", MavenPublication::class) {
             groupId = "dev.galacticraft"
-            artifactId = project.property("mod.name").toString()
+            artifactId = project.property("mod.id").toString()
 
             from(components["java"])
         }
