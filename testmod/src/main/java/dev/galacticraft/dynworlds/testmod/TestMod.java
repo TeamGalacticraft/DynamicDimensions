@@ -52,7 +52,7 @@ public class TestMod implements ModInitializer {
             dispatcher.register(CommandManager.literal("dynworlds:create").requires(s -> s.hasPermissionLevel(2)).then(CommandManager.argument("id", IdentifierArgumentType.identifier()).then(CommandManager.argument("options", NbtCompoundArgumentType.nbtCompound()).executes(ctx -> {
                 Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
                 DimensionOptions options = DimensionOptions.CODEC.decode(RegistryOps.of(NbtOps.INSTANCE, ctx.getSource().getRegistryManager()), NbtCompoundArgumentType.getNbtCompound(ctx, "options")).get().orThrow().getFirst();
-                if (((DynamicWorldRegistry) ctx.getSource().getServer()).worldExists(id)) {
+                if (!((DynamicWorldRegistry) ctx.getSource().getServer()).canCreateWorld(id)) {
                     throw ID_EXISTS.create();
                 }
                 ((DynamicWorldRegistry) ctx.getSource().getServer()).addDynamicWorld(id, options, options.getDimensionTypeSupplier().getKeyOrValue().right().get());
@@ -61,7 +61,7 @@ public class TestMod implements ModInitializer {
 
             dispatcher.register(CommandManager.literal("dynworlds:remove").requires(s -> s.hasPermissionLevel(2)).then(CommandManager.argument("id", IdentifierArgumentType.identifier()).executes(ctx -> {
                 Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
-                if (!((DynamicWorldRegistry) ctx.getSource().getServer()).worldExists(id)) {
+                if (!((DynamicWorldRegistry) ctx.getSource().getServer()).canDestroyWorld(id)) {
                     throw ID_EXISTS.create();
                 }
                 ((DynamicWorldRegistry) ctx.getSource().getServer()).removeDynamicWorld(id, (server, player) -> {

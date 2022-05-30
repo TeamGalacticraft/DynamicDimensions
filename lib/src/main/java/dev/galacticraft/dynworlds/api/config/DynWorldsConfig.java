@@ -20,23 +20,12 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl;
+package dev.galacticraft.dynworlds.api.config;
 
-import dev.galacticraft.dynworlds.api.config.DynWorldsConfig;
-import dev.galacticraft.dynworlds.impl.config.DynWorldsConfigImpl;
-import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+public interface DynWorldsConfig {
+    boolean allowWorldCreation();
 
-public interface Constant {
-    String MOD_ID = "dynworlds";
-    Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    DynWorldsConfig CONFIG = DynWorldsConfigImpl.create();
+    boolean deleteRemovedWorlds();
 
-    @Contract("_ -> new")
-    static @NotNull Identifier id(String id) {
-        return new Identifier(MOD_ID, id);
-    }
+    boolean deleteWorldsWithPlayers();
 }

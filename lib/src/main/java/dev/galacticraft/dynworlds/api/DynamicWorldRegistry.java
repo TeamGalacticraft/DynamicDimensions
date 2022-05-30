@@ -30,6 +30,7 @@ import net.minecraft.world.gen.GeneratorOptions;
 /**
  * The registry for dynamic worlds.
  * Cast {@link net.minecraft.server.MinecraftServer} to this class to access the registry.
+ * It is not possible to access the registry from the client.
  *
  * @since 0.1.0
  */
@@ -55,6 +56,22 @@ public interface DynamicWorldRegistry {
      * @since 0.1.0
      */
     boolean worldExists(Identifier id);
+
+    /**
+     * Returns whether a world with the given ID can be created.
+     * @param id The ID of the world.
+     * @return {@code true} if the world can be created, {@code false} otherwise.
+     * @since 0.1.0
+     */
+    boolean canCreateWorld(Identifier id);
+
+    /**
+     * Returns whether a world with the given ID can be deleted.
+     * @param id The ID of the world.
+     * @return {@code true} if the world can be deleted, {@code false} otherwise.
+     * @since 0.1.0
+     */
+    boolean canDestroyWorld(Identifier id);
 
     /**
      * Erases a dynamic world from existence.

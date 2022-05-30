@@ -55,6 +55,7 @@ import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.UnmodifiableLevelProperties;
 import net.minecraft.world.level.storage.LevelStorage;
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -66,6 +67,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -136,16 +138,41 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
                 }
 
                 try {
+                    serverWorld.save(null, true, false);
                     serverWorld.close();
                 } catch (IOException e) {
+                    e.printStackTrace();
                     throw new RuntimeException(e); // oh no.
                 }
 
-                try {
-                    Files.move(session.getWorldDirectory(key), session.getWorldDirectory(key).resolveSibling(key.getValue().toString() + "_deleted"), StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                    e.printStackTrace();
-//                throw new RuntimeException(e);
+                Path worldDir = session.getWorldDirectory(key);
+                if (Constant.CONFIG.deleteRemovedWorlds()) {
+                    try {
+                        FileUtils.deleteDirectory(worldDir.toFile());
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to delete deleted world directory!", e);
+                    }
+                } else {
+                    try {
+                        Path resolved;
+                        if (worldDir.getParent().getFileName().toString().equals(key.getValue().getNamespace())) {
+                            resolved = worldDir.getParent().resolveSibling("deleted").resolve(key.getValue().toString());
+                        } else {
+                            resolved = worldDir.resolveSibling(key.getValue().toString() + "_deleted");
+                        }
+                        if (resolved.toFile().exists()) {
+                            FileUtils.deleteDirectory(resolved.toFile());
+                        }
+                        Files.move(worldDir, resolved, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException e) {
+                        Constant.LOGGER.error("Failed to move deleted world directory.", e);
+                        try {
+                            FileUtils.deleteDirectory(worldDir.toFile());
+                        } catch (IOException ex) {
+                            ex.addSuppressed(e);
+                            throw new RuntimeException("Failed to delete deleted world directory!", ex);
+                        }
+                    }
                 }
 
                 SimpleRegistry<DimensionOptions> reg = ((SimpleRegistry<DimensionOptions>) this.getSaveProperties().getGeneratorOptions().getDimensions());
@@ -156,7 +183,7 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
                 accessor.getEntryToRawId().removeInt(dimensionOptions);
                 accessor.getValueToEntry().remove(dimensionOptions);
                 accessor.setCachedEntries(null);
-                accessor.getKeyToEntry().remove(RegistryKey.of(Registry.DIMENSION_TYPE_KEY, key.getValue()));
+                accessor.getKeyToEntry().remove(RegistryKey.of(Registry.DIMENSION_KEY, key.getValue()));
                 accessor.getIdToEntry().remove(key.getValue());
                 accessor.getRawIdToEntry().remove(rawId);
                 Lifecycle base = Lifecycle.stable();
@@ -194,7 +221,7 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
 
     @Override
     public void addDynamicWorld(Identifier id, @NotNull DimensionOptions options, DimensionType type) {
-        if (worldExists(id) || this.worlds.containsKey(RegistryKey.of(Registry.WORLD_KEY, id))) {
+        if (!this.canCreateWorld(id)) {
             throw new IllegalArgumentException("World already exists!?");
         }
         ((MutableRegistry<DimensionOptions>) this.getSaveProperties().getGeneratorOptions().getDimensions()).add(RegistryKey.of(Registry.DIMENSION_KEY, id), options, Lifecycle.stable());
@@ -239,29 +266,41 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
 
     @Override
     public boolean worldExists(Identifier id) {
-        return this.getRegistryManager().get(Registry.DIMENSION_TYPE_KEY).containsId(id)
+        return this.worlds.containsKey(RegistryKey.of(Registry.WORLD_KEY, id))
+                && this.getRegistryManager().get(Registry.DIMENSION_TYPE_KEY).containsId(id)
                 || this.getSaveProperties().getGeneratorOptions().getDimensions().containsId(id)
                 || ((SavePropertiesAccessor) this.getSaveProperties()).getDynamicWorlds().containsKey(id);
     }
 
     @Override
-    public void removeDynamicWorld(Identifier id, @Nullable PlayerDestroyer destroyer) {
-        if (this.worldExists(id)) { //don't want to accidentally remove the overworld/nether/whatever
+    public boolean canCreateWorld(Identifier id) {
+        return Constant.CONFIG.allowWorldCreation() && !this.worldExists(id);
+    }
 
-            ((SavePropertiesAccessor) this.getSaveProperties()).removeDynamicWorld(id); //worst case, it'll just be gone on reload
-            RegistryKey<World> of = RegistryKey.of(Registry.WORLD_KEY, id);
-            for (ServerPlayerEntity serverPlayerEntity : this.getPlayerManager().getPlayerList()) {
-                if (serverPlayerEntity.world.getRegistryKey().equals(of)) {
-                    if (destroyer == null) {
-                        throw new IllegalArgumentException("Cannot remove world as it is currently loaded by a player!");
-                    } else {
-                        destroyer.destroyPlayer((MinecraftServer) (Object) this, serverPlayerEntity);
-                    }
+    @Override
+    public boolean canDestroyWorld(Identifier id) {
+        return this.worldExists(id) && (Constant.CONFIG.deleteWorldsWithPlayers() || this.worlds.get(RegistryKey.of(Registry.WORLD_KEY, id)).getPlayers().size() == 0);
+    }
+
+    @Override
+    public void removeDynamicWorld(Identifier id, @Nullable PlayerDestroyer destroyer) {
+        if (!this.canDestroyWorld(id)) {
+            throw new IllegalArgumentException("Cannot destroy world!");
+        }
+
+        ((SavePropertiesAccessor) this.getSaveProperties()).removeDynamicWorld(id); //worst case, it'll just be gone on reload
+        RegistryKey<World> of = RegistryKey.of(Registry.WORLD_KEY, id);
+        for (ServerPlayerEntity serverPlayerEntity : this.getPlayerManager().getPlayerList()) {
+            if (serverPlayerEntity.world.getRegistryKey().equals(of)) {
+                if (destroyer == null) {
+                    throw new IllegalArgumentException("Cannot remove world as it is currently loaded by a player!");
+                } else {
+                    destroyer.destroyPlayer((MinecraftServer) (Object) this, serverPlayerEntity);
                 }
             }
-
-            this.enqueuedDestroyedWorlds.add(of);
         }
+
+        this.enqueuedDestroyedWorlds.add(of);
     }
 
     private void reloadTags() {

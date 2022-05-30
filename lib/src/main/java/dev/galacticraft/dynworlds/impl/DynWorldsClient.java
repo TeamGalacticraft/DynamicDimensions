@@ -54,6 +54,7 @@ public final class DynWorldsClient implements ClientModInitializer {
                     SimpleRegistryAccessor<DimensionType> accessor = (SimpleRegistryAccessor<DimensionType>) reg;
                     accessor.getEntryToLifecycle().remove(dimensionType);
                     accessor.getRawIdToEntry().remove(reg.getRawId(dimensionType));
+                    accessor.getRawIdToEntry().size(accessor.getRawIdToEntry().size() - 1);
                     accessor.getEntryToRawId().removeInt(dimensionType);
                     accessor.getValueToEntry().remove(dimensionType);
                     accessor.setCachedEntries(null);
