@@ -19,6 +19,10 @@ publishing {
         register("mavenJava", MavenPublication::class) {
             groupId = "dev.galacticraft"
             artifactId = project.property("mod.id").toString()
+            version = "${project.version}"
+            if (System.getenv("SNAPSHOT") == "true") {
+                version += "-SNAPSHOT"
+            }
 
             from(components["java"])
         }
