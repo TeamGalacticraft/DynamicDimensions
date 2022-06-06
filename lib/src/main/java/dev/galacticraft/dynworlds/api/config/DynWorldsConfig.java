@@ -23,9 +23,21 @@
 package dev.galacticraft.dynworlds.api.config;
 
 public interface DynWorldsConfig {
+    /**
+     * Whether to allow the creation of dynamic worlds.
+     * @return Whether to allow the creation of dynamic worlds.
+     */
     boolean allowWorldCreation();
 
+    /**
+     * Whether to delete destroyed dynamic worlds, or move them into the 'deleted' folder.
+     * @return Whether to delete destroyed dynamic worlds, or move them into the 'deleted' folder.
+     */
     boolean deleteRemovedWorlds();
 
+    /**
+     * Whether to allow the destruction of worlds which have players online in them.
+     * @return Whether to allow the destruction of worlds which have players online in them.
+     */
     boolean deleteWorldsWithPlayers();
 }

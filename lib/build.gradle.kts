@@ -2,12 +2,6 @@ plugins {
     `maven-publish`
 }
 
-loom {
-    runs {
-        clear()
-    }
-}
-
 java {
     withSourcesJar()
     withJavadocJar()
@@ -15,7 +9,7 @@ java {
 
 tasks.javadoc {
     options.apply {
-        title = "DynWorlds ${project.version} API"
+        title = "${rootProject.name} ${project.version} API"
     }
     exclude("**/impl/**")
 }
@@ -30,11 +24,13 @@ publishing {
         }
     }
     repositories {
-        maven("https://maven.galacticraft.dev/") {
-            name = "maven"
-            credentials(PasswordCredentials::class)
-            authentication {
-                register("basic", BasicAuthentication::class)
+        if (System.getenv().containsKey("NEXUS_REPOSITORY_URL")) {
+            maven(System.getenv("NEXUS_REPOSITORY_URL")) {
+                name = "maven"
+                credentials(PasswordCredentials::class)
+                authentication {
+                    register("basic", BasicAuthentication::class)
+                }
             }
         }
     }

@@ -24,7 +24,6 @@ version = "0.0.0"
 
 loom {
     runs {
-        clear()
         register("testmodServer") {
             name("Test Mod Server")
             server()

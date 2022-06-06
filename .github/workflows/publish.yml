@@ -26,5 +26,6 @@ jobs:
         with:
           arguments: :lib:publish
         env:
-          ORG_GRADLE_PROJECT_mavenUsername: ${{ secrets.MAVEN_USER }}
-          ORG_GRADLE_PROJECT_mavenPassword: ${{ secrets.MAVEN_PASS }}
+          NEXUS_REPOSITORY_URL: ${{ env.RELEASE == 'true' && secrets.NEXUS_NEXUS_RELEASE_URL || secrets.NEXUS_SNAPSHOT_URL }}
+          ORG_GRADLE_PROJECT_mavenUsername: ${{ secrets.NEXUS_USER }}
+          ORG_GRADLE_PROJECT_mavenPassword: ${{ secrets.NEXUS_PASSWORD }}

@@ -21,7 +21,7 @@
  */
 
 plugins {
-    id("fabric-loom") version "0.11-SNAPSHOT" apply false
+    id("fabric-loom") version "0.12-SNAPSHOT" apply false
     id("io.github.juuxel.loom-quiltflower") version("1.7.2") apply false
     id("org.cadixdev.licenser") version "0.6.1" apply false
 }
