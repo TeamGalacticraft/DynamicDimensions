@@ -27,6 +27,6 @@ jobs:
           arguments: :lib:publish
         env:
           SNAPSHOT: ${{ env.release.prerelease }}
-          NEXUS_REPOSITORY_URL: ${{ env.release.prerelease == 'true' && secrets.NEXUS_SNAPSHOT_URL || secrets.NEXUS_NEXUS_RELEASE_URL }}
+          NEXUS_REPOSITORY_URL: ${{ env.release.prerelease == 'true' && secrets.NEXUS_SNAPSHOT_URL || secrets.NEXUS_RELEASE_URL }}
           NEXUS_USER: ${{ secrets.NEXUS_USER }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
