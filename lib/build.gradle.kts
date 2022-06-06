@@ -30,12 +30,11 @@ publishing {
     repositories {
         if (System.getenv().containsKey("NEXUS_REPOSITORY_URL")) {
             maven(System.getenv("NEXUS_REPOSITORY_URL")) {
-                name = "maven"
                 credentials(PasswordCredentials::class)
-                authentication {
-                    register("basic", BasicAuthentication::class)
-                }
             }
+        } else {
+            println("No nexus repository url found, publishing to local maven repo")
+            mavenLocal()
         }
     }
 }

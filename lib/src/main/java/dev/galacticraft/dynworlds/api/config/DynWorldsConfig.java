@@ -22,6 +22,10 @@
 
 package dev.galacticraft.dynworlds.api.config;
 
+/**
+ * Basic configuration file for DynWorlds.
+ * Does not support changing options once the file is loaded.
+ */
 public interface DynWorldsConfig {
     /**
      * Whether to allow the creation of dynamic worlds.
