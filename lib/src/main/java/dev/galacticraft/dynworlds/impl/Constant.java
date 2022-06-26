@@ -24,7 +24,7 @@ package dev.galacticraft.dynworlds.impl;
 
 import dev.galacticraft.dynworlds.api.config.DynWorldsConfig;
 import dev.galacticraft.dynworlds.impl.config.DynWorldsConfigImpl;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -36,7 +36,7 @@ public interface Constant {
     DynWorldsConfig CONFIG = DynWorldsConfigImpl.create();
 
     @Contract("_ -> new")
-    static @NotNull Identifier id(String id) {
-        return new Identifier(MOD_ID, id);
+    static @NotNull ResourceLocation id(String id) {
+        return new ResourceLocation(MOD_ID, id);
     }
 }

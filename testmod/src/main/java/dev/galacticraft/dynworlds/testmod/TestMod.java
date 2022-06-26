@@ -26,51 +26,51 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import dev.galacticraft.dynworlds.api.DynamicWorldRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
-import net.minecraft.command.argument.IdentifierArgumentType;
-import net.minecraft.command.argument.NbtCompoundArgumentType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.Util;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.CompoundTagArgument;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.network.MessageType;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Util;
-import net.minecraft.util.dynamic.RegistryOps;
-import net.minecraft.world.dimension.DimensionOptions;
+import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.dimension.LevelStem;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public class TestMod implements ModInitializer {
     public static final String MOD_ID = "dynworlds-test";
-    SimpleCommandExceptionType ID_EXISTS = new SimpleCommandExceptionType(new LiteralText("A world with that ID already exists!"));
+    SimpleCommandExceptionType ID_EXISTS = new SimpleCommandExceptionType(new TextComponent("A world with that ID already exists!"));
 
     @Override
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
-            dispatcher.register(CommandManager.literal("dynworlds:create").requires(s -> s.hasPermissionLevel(2)).then(CommandManager.argument("id", IdentifierArgumentType.identifier()).then(CommandManager.argument("options", NbtCompoundArgumentType.nbtCompound()).executes(ctx -> {
-                Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
-                DimensionOptions options = DimensionOptions.CODEC.decode(RegistryOps.of(NbtOps.INSTANCE, ctx.getSource().getRegistryManager()), NbtCompoundArgumentType.getNbtCompound(ctx, "options")).get().orThrow().getFirst();
+            dispatcher.register(Commands.literal("dynworlds:create").requires(s -> s.hasPermission(2)).then(Commands.argument("id", ResourceLocationArgument.id()).then(Commands.argument("options", CompoundTagArgument.compoundTag()).executes(ctx -> {
+                ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
+                LevelStem options = LevelStem.CODEC.decode(RegistryOps.create(NbtOps.INSTANCE, ctx.getSource().registryAccess()), CompoundTagArgument.getCompoundTag(ctx, "options")).get().orThrow().getFirst();
                 if (!((DynamicWorldRegistry) ctx.getSource().getServer()).canCreateWorld(id)) {
                     throw ID_EXISTS.create();
                 }
-                ((DynamicWorldRegistry) ctx.getSource().getServer()).addDynamicWorld(id, options, options.getDimensionTypeSupplier().getKeyOrValue().right().get());
+                ((DynamicWorldRegistry) ctx.getSource().getServer()).addDynamicWorld(id, options, options.typeHolder().unwrap().right().get());
                 return 1;
             }))));
 
-            dispatcher.register(CommandManager.literal("dynworlds:remove").requires(s -> s.hasPermissionLevel(2)).then(CommandManager.argument("id", IdentifierArgumentType.identifier()).executes(ctx -> {
-                Identifier id = IdentifierArgumentType.getIdentifier(ctx, "id");
+            dispatcher.register(Commands.literal("dynworlds:remove").requires(s -> s.hasPermission(2)).then(Commands.argument("id", ResourceLocationArgument.id()).executes(ctx -> {
+                ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
                 if (!((DynamicWorldRegistry) ctx.getSource().getServer()).canDestroyWorld(id)) {
                     throw ID_EXISTS.create();
                 }
                 ((DynamicWorldRegistry) ctx.getSource().getServer()).removeDynamicWorld(id, (server, player) -> {
-                    player.sendMessage(new LiteralText("World " + id.toString() + " was removed."), MessageType.SYSTEM, Util.NIL_UUID);
-                    player.giveItemStack(new ItemStack(Items.DIRT));
-                    ServerWorld overworld = server.getOverworld();
-                    player.teleport(overworld, player.getX(), 512, player.getZ(), player.getYaw(), player.getPitch());
-                    player.setVelocity((overworld.random.nextDouble() - 0.5) * 10.0, -overworld.random.nextDouble() * 10.0, (overworld.random.nextDouble() - 0.5) * 10.0);
-                    player.giveItemStack(new ItemStack(Items.APPLE));
+                    player.sendMessage(new TextComponent("World " + id.toString() + " was removed."), ChatType.SYSTEM, Util.NIL_UUID);
+                    player.addItem(new ItemStack(Items.DIRT));
+                    ServerLevel overworld = server.overworld();
+                    player.teleportTo(overworld, player.getX(), 512, player.getZ(), player.getYRot(), player.getXRot());
+                    player.setDeltaMovement((overworld.random.nextDouble() - 0.5) * 10.0, -overworld.random.nextDouble() * 10.0, (overworld.random.nextDouble() - 0.5) * 10.0);
+                    player.addItem(new ItemStack(Items.APPLE));
 //                    player.fallDistance = 1000;
                 });
                 return 1;
@@ -79,7 +79,7 @@ public class TestMod implements ModInitializer {
     }
 
     @Contract("_ -> new")
-    public static @NotNull Identifier id(@NotNull String id) {
-        return new Identifier(MOD_ID, id);
+    public static @NotNull ResourceLocation id(@NotNull String id) {
+        return new ResourceLocation(MOD_ID, id);
     }
 }

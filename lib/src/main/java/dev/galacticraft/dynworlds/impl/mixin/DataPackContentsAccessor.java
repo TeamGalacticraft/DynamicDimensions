@@ -22,13 +22,13 @@
 
 package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.minecraft.server.DataPackContents;
-import net.minecraft.tag.TagManagerLoader;
+import net.minecraft.server.ReloadableServerResources;
+import net.minecraft.tags.TagManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(DataPackContents.class)
+@Mixin(ReloadableServerResources.class)
 public interface DataPackContentsAccessor {
-    @Accessor("registryTagManager")
-    TagManagerLoader getRegistryTagManager();
+    @Accessor("tagManager")
+    TagManager getTagManager();
 }

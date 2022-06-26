@@ -71,7 +71,7 @@ subprojects {
 
     dependencies {
         "minecraft"("com.mojang:minecraft:$minecraft")
-        "mappings"("net.fabricmc:yarn:$minecraft+build.$yarn:v2")
+        "mappings"(project.extensions.getByType(net.fabricmc.loom.api.LoomGradleExtensionAPI::class).officialMojangMappings())
         "modImplementation"("net.fabricmc:fabric-loader:$loader")
 
         val fabricApi = net.fabricmc.loom.configuration.FabricApiExtension(this@subprojects);

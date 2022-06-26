@@ -22,10 +22,10 @@
 
 package dev.galacticraft.dynworlds.api;
 
-import net.minecraft.util.Identifier;
-import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.gen.GeneratorOptions;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.levelgen.WorldGenSettings;
 
 /**
  * The registry for dynamic worlds.
@@ -40,46 +40,48 @@ public interface DynamicWorldRegistry {
      * NOTE: The world will not be loaded until the next tick.
      *
      * @param id      The ID of the world.
-     *                This ID must be unique and unused in the {@link net.minecraft.util.registry.Registry#DIMENSION_TYPE_KEY} registry and the {@link GeneratorOptions#getDimensions()} registry.
-     * @param options The dimension options for the world.
+     *                This ID must be unique and unused in the {@link net.minecraft.core.Registry#DIMENSION_TYPE_REGISTRY} registry and the {@link WorldGenSettings#dimensions()} registry.
+     * @param stem The dimension stem for the world.
      * @param type    The dimension type of the world.
      * @since 0.1.0
      */
-    void addDynamicWorld(Identifier id, DimensionOptions options, DimensionType type);
+    void addDynamicWorld(ResourceLocation id, LevelStem stem, DimensionType type);
 
     /**
      * Tests if a world with the given ID exists.
      *
      * @param id The ID of the world.
      * @return True if the world exists, false otherwise.
-     * If the world exists, you should not call {@link #addDynamicWorld(Identifier, DimensionOptions, DimensionType)} with the same ID.
+     * If the world exists, you should not call {@link #addDynamicWorld(ResourceLocation, LevelStem, DimensionType)} with the same ID.
      * @since 0.1.0
      */
-    boolean worldExists(Identifier id);
+    boolean worldExists(ResourceLocation id);
 
     /**
      * Returns whether a world with the given ID can be created.
+     *
      * @param id The ID of the world.
      * @return {@code true} if the world can be created, {@code false} otherwise.
      * @since 0.1.0
      */
-    boolean canCreateWorld(Identifier id);
+    boolean canCreateWorld(ResourceLocation id);
 
     /**
      * Returns whether a world with the given ID can be deleted.
+     *
      * @param id The ID of the world.
      * @return {@code true} if the world can be deleted, {@code false} otherwise.
      * @since 0.1.0
      */
-    boolean canDestroyWorld(Identifier id);
+    boolean canDestroyWorld(ResourceLocation id);
 
     /**
      * Erases a dynamic world from existence.
-     * Players will be removed from the world using the provided player destroyer.
+     * Players will be removed from the world using the provided player remover.
      *
-     * @param id        The ID of the world.
-     * @param destroyer The method to remove players from the world.
+     * @param id      The ID of the world.
+     * @param remover The method to remove players from the world.
      * @since 0.1.0
      */
-    void removeDynamicWorld(Identifier id, PlayerDestroyer destroyer);
+    void removeDynamicWorld(ResourceLocation id, PlayerRemover remover);
 }

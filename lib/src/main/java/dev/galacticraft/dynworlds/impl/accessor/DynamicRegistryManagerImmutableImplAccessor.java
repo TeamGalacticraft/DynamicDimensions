@@ -23,8 +23,13 @@
 package dev.galacticraft.dynworlds.impl.accessor;
 
 import dev.galacticraft.dynworlds.impl.util.RegistryAppender;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.level.dimension.DimensionType;
 
 public interface DynamicRegistryManagerImmutableImplAccessor {
+    /**
+     * Unfreezes the DimensionType registry for the addition and removal of worlds.
+     *
+     * @param appender Callback to execute while the registry is unfrozen.
+     */
     void unfreezeTypes(RegistryAppender<DimensionType> appender);
 }

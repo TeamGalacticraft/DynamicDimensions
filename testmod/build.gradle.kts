@@ -54,3 +54,7 @@ loom {
 dependencies {
     implementation(project(path = ":lib", configuration = "namedElements"))
 }
+
+tasks.getByName("javadoc") {
+    enabled = false
+}

@@ -22,13 +22,13 @@
 
 package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.minecraft.util.registry.RegistryEntry;
-import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(RegistryEntry.Reference.class)
+@Mixin(Holder.Reference.class)
 public interface RegistryEntryReferenceInvoker<T> {
-    @Invoker("setKeyAndValue")
-    void callSetKeyAndValue(RegistryKey<T> key, T value);
+    @Invoker("bind")
+    void callBind(ResourceKey<T> key, T value);
 }

@@ -22,8 +22,8 @@
 
 package dev.galacticraft.dynworlds.impl.util;
 
-import net.minecraft.util.registry.SimpleRegistry;
+import net.minecraft.core.MappedRegistry;
 
 public interface RegistryAppender<T> {
-    void register(SimpleRegistry<T> registry);
+    void register(MappedRegistry<T> registry);
 }

@@ -23,8 +23,8 @@
 package dev.galacticraft.dynworlds.gametest;
 
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
-import net.minecraft.test.GameTest;
-import net.minecraft.test.TestContext;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
@@ -32,24 +32,24 @@ import java.lang.reflect.Method;
 public class DynworldsGametest implements FabricGameTest {
     private static final String EMPTY_STRUCTURE = "dynworlds-test:empty";
 
-    void beforeEach(@NotNull TestContext context) {
+    void beforeEach(@NotNull GameTestHelper context) {
     }
 
-    void afterEach(@NotNull TestContext context) {
+    void afterEach(@NotNull GameTestHelper context) {
     }
 
-    @GameTest(structureName = EMPTY_STRUCTURE, tickLimit = 0)
-    void testEmptyStructure(@NotNull TestContext context) {
+    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 0)
+    void testEmptyStructure(@NotNull GameTestHelper context) {
         // no-op
     }
 
     @Override
-    public void invokeTestMethod(@NotNull TestContext context, @NotNull Method method) {
+    public void invokeTestMethod(@NotNull GameTestHelper context, @NotNull Method method) {
         method.setAccessible(true);
         GameTest annotation = method.getAnnotation(GameTest.class);
         if (annotation == null) throw new AssertionError("Test method without gametest annotation?!");
-        if (annotation.tickLimit() == 0) {
-            context.addInstantFinalTask(() -> {
+        if (annotation.timeoutTicks() == 0) {
+            context.succeedWhen(() -> {
                 beforeEach(context);
                 FabricGameTest.super.invokeTestMethod(context, method);
                 afterEach(context);

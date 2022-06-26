@@ -22,15 +22,15 @@
 
 package dev.galacticraft.dynworlds.impl.accessor;
 
-import net.minecraft.util.Identifier;
-import net.minecraft.world.dimension.DimensionOptions;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.dimension.LevelStem;
 
 import java.util.Map;
 
 public interface SavePropertiesAccessor {
-    void addDynamicWorld(Identifier id, DimensionOptions options);
+    void addDynamicWorld(ResourceLocation id, LevelStem options);
 
-    void removeDynamicWorld(Identifier id);
+    void removeDynamicWorld(ResourceLocation id);
 
-    Map<Identifier, DimensionOptions> getDynamicWorlds();
+    Map<ResourceLocation, LevelStem> getDynamicWorlds();
 }

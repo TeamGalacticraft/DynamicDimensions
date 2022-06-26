@@ -22,11 +22,14 @@
 
 package dev.galacticraft.dynworlds.impl.mixin;
 
-import com.google.common.collect.ImmutableMap;
 import dev.galacticraft.dynworlds.impl.accessor.DynamicRegistryManagerImmutableImplAccessor;
 import dev.galacticraft.dynworlds.impl.util.RegistryAppender;
-import net.minecraft.util.registry.*;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.core.DefaultedRegistry;
+import net.minecraft.core.MappedRegistry;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,34 +37,29 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.Map;
 
-@Mixin(DynamicRegistryManager.ImmutableImpl.class)
+@Mixin(RegistryAccess.ImmutableRegistryAccess.class)
 public abstract class DynamicRegistryManagerImmutableImplMixin implements DynamicRegistryManagerImmutableImplAccessor {
     @Shadow
     @Final
-    private Map<? extends RegistryKey<? extends Registry<?>>, ? extends Registry<?>> registries;
+    private Map<? extends ResourceKey<? extends Registry<?>>, ? extends Registry<?>> registries;
 
     @Override
     public void unfreezeTypes(@NotNull RegistryAppender<DimensionType> appender) {
-        Registry<DimensionType> registry = (Registry<DimensionType>) this.registries.get(Registry.DIMENSION_TYPE_KEY);
-        ImmutableMap.Builder<RegistryKey<? extends Registry<?>>, Registry<?>> builder = new ImmutableMap.Builder<>();
-        this.registries.forEach((k, v) -> {
-            if (k != Registry.DIMENSION_TYPE_KEY) {
-                builder.put(k, v);
-            }
-        });
-
-        if (registry instanceof SimpleRegistry<DimensionType> simple && (simple.getClass() == SimpleRegistry.class || simple.getClass() == DefaultedRegistry.class)) {
+        Registry<DimensionType> registry = (Registry<DimensionType>) this.registries.get(Registry.DIMENSION_TYPE_REGISTRY);
+        if (registry instanceof MappedRegistry<DimensionType> simple
+                // if the registry is not a vanilla registry type, we cannot guarantee that unfreezing the registry won't break stuff.
+                && (simple.getClass() == MappedRegistry.class || simple.getClass() == DefaultedRegistry.class)
+        ) {
             SimpleRegistryAccessor<DimensionType> accessor = ((SimpleRegistryAccessor<DimensionType>) simple);
             if (accessor.isFrozen()) {
                 accessor.setFrozen(false);  // safe as there should be no new intrusive holders of this registry as it was already frozen
                 appender.register(simple);
-                simple.freeze();                                        // freeze it again - everything is recalculated so there should be no leftover references
+                simple.freeze();            // freeze it again - everything is recalculated so there should be no leftover references
             } else {
-                appender.register(simple);
+                appender.register(simple); // in the off chance that the registry is not frozen (how?) just register everything
             }
         } else {
             throw new IllegalStateException("DynWorlds: Registry is not vanilla! " + registry.getClass().getName());
         }
-        builder.put(Registry.DIMENSION_KEY, registry);
     }
 }

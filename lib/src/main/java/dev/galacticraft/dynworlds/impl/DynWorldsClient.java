@@ -27,11 +27,11 @@ import dev.galacticraft.dynworlds.impl.accessor.DynamicRegistryManagerImmutableI
 import dev.galacticraft.dynworlds.impl.mixin.SimpleRegistryAccessor;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.dimension.DimensionType;
 
 import java.util.OptionalInt;
 
@@ -39,35 +39,35 @@ public final class DynWorldsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientPlayNetworking.registerGlobalReceiver(Constant.id("create_world"), (client, handler, buf, responseSender) -> {
-            Identifier id = buf.readIdentifier();
+            ResourceLocation id = buf.readResourceLocation();
             int rawId = buf.readInt();
-            DimensionType type = DimensionType.CODEC.decode(NbtOps.INSTANCE, buf.readNbt()).get().orThrow().getFirst();
-            ((DynamicRegistryManagerImmutableImplAccessor) handler.getRegistryManager()).unfreezeTypes(reg -> reg.replace(OptionalInt.of(rawId), RegistryKey.of(Registry.DIMENSION_TYPE_KEY, id), type, Lifecycle.stable()));
-            handler.getWorldKeys().add(RegistryKey.of(Registry.WORLD_KEY, id));
+            DimensionType type = DimensionType.DIRECT_CODEC.decode(NbtOps.INSTANCE, buf.readNbt()).get().orThrow().getFirst();
+            ((DynamicRegistryManagerImmutableImplAccessor) handler.registryAccess()).unfreezeTypes(reg -> reg.registerOrOverride(OptionalInt.of(rawId), ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), type, Lifecycle.stable()));
+            handler.levels().add(ResourceKey.create(Registry.DIMENSION_REGISTRY, id));
         });
 
         ClientPlayNetworking.registerGlobalReceiver(Constant.id("destroy_world"), (client, handler, buf, responseSender) -> {
-            Identifier id = buf.readIdentifier();
-            ((DynamicRegistryManagerImmutableImplAccessor) handler.getRegistryManager()).unfreezeTypes(reg -> {
+            ResourceLocation id = buf.readResourceLocation();
+            ((DynamicRegistryManagerImmutableImplAccessor) handler.registryAccess()).unfreezeTypes(reg -> {
                 DimensionType dimensionType = reg.get(id);
+                int rawId = reg.getId(dimensionType);
                 if (dimensionType != null) {
                     SimpleRegistryAccessor<DimensionType> accessor = (SimpleRegistryAccessor<DimensionType>) reg;
-                    accessor.getEntryToLifecycle().remove(dimensionType);
-                    accessor.getRawIdToEntry().remove(reg.getRawId(dimensionType));
-                    accessor.getRawIdToEntry().size(accessor.getRawIdToEntry().size() - 1);
-                    accessor.getEntryToRawId().removeInt(dimensionType);
-                    accessor.getValueToEntry().remove(dimensionType);
-                    accessor.setCachedEntries(null);
-                    accessor.getKeyToEntry().remove(RegistryKey.of(Registry.DIMENSION_TYPE_KEY, id));
-                    accessor.getIdToEntry().remove(id);
+                    accessor.getLifecycles().remove(dimensionType);
+                    accessor.getById().remove(rawId);
+                    accessor.getToId().removeInt(dimensionType);
+                    accessor.getByValue().remove(dimensionType);
+                    accessor.setHoldersInOrder(null);
+                    accessor.getByKey().remove(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id));
+                    accessor.getByLocation().remove(id);
                     Lifecycle base = Lifecycle.stable();
-                    for (Lifecycle value : accessor.getEntryToLifecycle().values()) {
+                    for (Lifecycle value : accessor.getLifecycles().values()) {
                         base.add(value);
                     }
-                    accessor.setLifecycle(base);
+                    accessor.setElementsLifecycle(base);
                 }
             });
-            handler.getWorldKeys().remove(RegistryKey.of(Registry.WORLD_KEY, id));
+            handler.levels().remove(ResourceKey.create(Registry.DIMENSION_REGISTRY, id));
         });
     }
 }

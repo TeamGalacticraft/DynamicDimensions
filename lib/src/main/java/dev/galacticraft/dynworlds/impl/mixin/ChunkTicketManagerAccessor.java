@@ -22,11 +22,11 @@
 
 package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.minecraft.server.world.ChunkTicketManager;
+import net.minecraft.server.level.DistanceManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(ChunkTicketManager.class)
+@Mixin(DistanceManager.class)
 public interface ChunkTicketManagerAccessor {
     @Accessor("simulationDistance")
     int getSimulationDistance();

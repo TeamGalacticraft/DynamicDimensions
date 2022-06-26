@@ -63,14 +63,19 @@ public final class DynWorldsConfigImpl implements DynWorldsConfig {
         this.deleteWorldsWithPlayers = deleteWorldsWithPlayers;
     }
 
-    public static DynWorldsConfigImpl create() {
+    public static @NotNull DynWorldsConfigImpl create() {
         Path resolve = FabricLoader.getInstance().getConfigDir().resolve("dynworlds.json");
         File file = resolve.toFile();
         if (file.exists()) {
             try (FileReader json = new FileReader(file, StandardCharsets.UTF_8)) {
-                return GSON.fromJson(json, DynWorldsConfigImpl.class);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                DynWorldsConfigImpl config = GSON.fromJson(json, DynWorldsConfigImpl.class);
+                if (config != null) {
+                    return config;
+                } else {
+                    throw new RuntimeException("DynWorlds: Failed to read configuration file!");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("DynWorlds: Failed to read configuration file!", e);
             }
         } else {
             DynWorldsConfigImpl dynWorldsConfig = new DynWorldsConfigImpl();
