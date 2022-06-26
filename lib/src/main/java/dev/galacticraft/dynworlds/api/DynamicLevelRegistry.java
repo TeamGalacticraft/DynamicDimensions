@@ -26,6 +26,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The registry for dynamic levels.
@@ -45,7 +46,7 @@ public interface DynamicLevelRegistry {
      * @param type    The dimension type of the level.
      * @since 0.1.0
      */
-    void addDynamicLevel(ResourceLocation id, LevelStem stem, DimensionType type);
+    boolean addDynamicLevel(@NotNull ResourceLocation id, @NotNull LevelStem stem, @NotNull DimensionType type);
 
     /**
      * Tests if a level with the given ID exists.
@@ -55,7 +56,7 @@ public interface DynamicLevelRegistry {
      * If the level exists, you should not call {@link #addDynamicLevel(ResourceLocation, LevelStem, DimensionType)} with the same ID.
      * @since 0.1.0
      */
-    boolean levelExists(ResourceLocation id);
+    boolean levelExists(@NotNull ResourceLocation id);
 
     /**
      * Returns whether a level with the given ID can be created.
@@ -64,7 +65,7 @@ public interface DynamicLevelRegistry {
      * @return {@code true} if the level can be created, {@code false} otherwise.
      * @since 0.1.0
      */
-    boolean canCreateLevel(ResourceLocation id);
+    boolean canCreateLevel(@NotNull ResourceLocation id);
 
     /**
      * Returns whether a level with the given ID can be deleted.
@@ -73,7 +74,7 @@ public interface DynamicLevelRegistry {
      * @return {@code true} if the level can be deleted, {@code false} otherwise.
      * @since 0.1.0
      */
-    boolean canDestroyLevel(ResourceLocation id);
+    boolean canDestroyLevel(@NotNull ResourceLocation id);
 
     /**
      * Erases a dynamic level from existence.
@@ -83,5 +84,5 @@ public interface DynamicLevelRegistry {
      * @param remover The method to remove players from the level.
      * @since 0.1.0
      */
-    void removeDynamicLevel(ResourceLocation id, PlayerRemover remover);
+    boolean removeDynamicLevel(@NotNull ResourceLocation id, @NotNull PlayerRemover remover);
 }
