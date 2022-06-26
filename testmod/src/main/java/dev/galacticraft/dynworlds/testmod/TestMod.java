@@ -23,7 +23,7 @@
 package dev.galacticraft.dynworlds.testmod;
 
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import dev.galacticraft.dynworlds.api.DynamicWorldRegistry;
+import dev.galacticraft.dynworlds.api.DynamicLevelRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.minecraft.Util;
@@ -49,22 +49,22 @@ public class TestMod implements ModInitializer {
     @Override
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
-            dispatcher.register(Commands.literal("dynworlds:create").requires(s -> s.hasPermission(2)).then(Commands.argument("id", ResourceLocationArgument.id()).then(Commands.argument("options", CompoundTagArgument.compoundTag()).executes(ctx -> {
+            dispatcher.register(Commands.literal("dynworlds:create").requires(s -> s.hasPermission(2)).then(Commands.argument("id", ResourceLocationArgument.id()).then(Commands.argument("dimension", CompoundTagArgument.compoundTag()).executes(ctx -> {
                 ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
-                LevelStem options = LevelStem.CODEC.decode(RegistryOps.create(NbtOps.INSTANCE, ctx.getSource().registryAccess()), CompoundTagArgument.getCompoundTag(ctx, "options")).get().orThrow().getFirst();
-                if (!((DynamicWorldRegistry) ctx.getSource().getServer()).canCreateWorld(id)) {
+                LevelStem stem = LevelStem.CODEC.decode(RegistryOps.create(NbtOps.INSTANCE, ctx.getSource().registryAccess()), CompoundTagArgument.getCompoundTag(ctx, "dimension")).get().orThrow().getFirst();
+                if (!((DynamicLevelRegistry) ctx.getSource().getServer()).canCreateLevel(id)) {
                     throw ID_EXISTS.create();
                 }
-                ((DynamicWorldRegistry) ctx.getSource().getServer()).addDynamicWorld(id, options, options.typeHolder().unwrap().right().get());
+                ((DynamicLevelRegistry) ctx.getSource().getServer()).addDynamicLevel(id, stem, stem.typeHolder().unwrap().right().get());
                 return 1;
             }))));
 
             dispatcher.register(Commands.literal("dynworlds:remove").requires(s -> s.hasPermission(2)).then(Commands.argument("id", ResourceLocationArgument.id()).executes(ctx -> {
                 ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
-                if (!((DynamicWorldRegistry) ctx.getSource().getServer()).canDestroyWorld(id)) {
+                if (!((DynamicLevelRegistry) ctx.getSource().getServer()).canDestroyLevel(id)) {
                     throw ID_EXISTS.create();
                 }
-                ((DynamicWorldRegistry) ctx.getSource().getServer()).removeDynamicWorld(id, (server, player) -> {
+                ((DynamicLevelRegistry) ctx.getSource().getServer()).removeDynamicLevel(id, (server, player) -> {
                     player.sendMessage(new TextComponent("World " + id.toString() + " was removed."), ChatType.SYSTEM, Util.NIL_UUID);
                     player.addItem(new ItemStack(Items.DIRT));
                     ServerLevel overworld = server.overworld();

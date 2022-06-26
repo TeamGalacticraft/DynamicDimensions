@@ -24,11 +24,11 @@ package dev.galacticraft.dynworlds.impl.mixin;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Lifecycle;
-import dev.galacticraft.dynworlds.api.DynamicWorldRegistry;
+import dev.galacticraft.dynworlds.api.DynamicLevelRegistry;
 import dev.galacticraft.dynworlds.api.PlayerRemover;
 import dev.galacticraft.dynworlds.impl.Constant;
-import dev.galacticraft.dynworlds.impl.accessor.DynamicRegistryManagerImmutableImplAccessor;
-import dev.galacticraft.dynworlds.impl.accessor.SavePropertiesAccessor;
+import dev.galacticraft.dynworlds.impl.accessor.ImmutableRegistryAccessAccessor;
+import dev.galacticraft.dynworlds.impl.accessor.PrimaryLevelDataAccessor;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.core.*;
 import net.minecraft.nbt.CompoundTag;
@@ -79,7 +79,7 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 @Mixin(MinecraftServer.class)
-public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
+public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
     private final Map<ResourceKey<Level>, ServerLevel> enqueuedCreatedWorlds = new HashMap<>();
     private final List<ResourceKey<Level>> enqueuedDestroyedWorlds = new ArrayList<>();
     @Shadow
@@ -110,11 +110,11 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
     public abstract WorldData getWorldData();
 
     @Inject(method = "createLevels", at = @At("HEAD"))
-    private void createDynamicWorlds(ChunkProgressListener worldGenerationProgressListener, CallbackInfo ci) {
+    private void createDynamicWorlds(ChunkProgressListener listener, CallbackInfo ci) {
         Registry<LevelStem> dimensions = this.getWorldData().worldGenSettings().dimensions();
         assert dimensions instanceof WritableRegistry<LevelStem>;
-        ((DynamicRegistryManagerImmutableImplAccessor) this.registryAccess()).unfreezeTypes(reg -> ((SavePropertiesAccessor) this.getWorldData()).getDynamicWorlds().forEach((id, pair) -> {
-            ((WritableRegistry<LevelStem>) dimensions).register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), pair, Lifecycle.stable()); // dimension options is a mutable registry
+        ((ImmutableRegistryAccessAccessor) this.registryAccess()).unfreezeTypes(reg -> ((PrimaryLevelDataAccessor) this.getWorldData()).getDynamicWorlds().forEach((id, pair) -> {
+            ((WritableRegistry<LevelStem>) dimensions).register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), pair, Lifecycle.stable()); // level stem is a mutable registry
             reg.register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), pair.typeHolder().value(), Lifecycle.stable()); // dimension type must be unfrozen
         }));
         reloadTags();
@@ -177,12 +177,12 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
                 }
 
                 MappedRegistry<LevelStem> reg = ((MappedRegistry<LevelStem>) this.getWorldData().worldGenSettings().dimensions());
-                LevelStem dimensionOptions = reg.get(key.location());
-                int rawId = reg.getId(dimensionOptions);
-                SimpleRegistryAccessor<LevelStem> accessor = (SimpleRegistryAccessor<LevelStem>) reg;
-                accessor.getLifecycles().remove(dimensionOptions);
-                accessor.getToId().removeInt(dimensionOptions);
-                accessor.getByValue().remove(dimensionOptions);
+                LevelStem stem = reg.get(key.location());
+                int rawId = reg.getId(stem);
+                MappedRegistryAccessor<LevelStem> accessor = (MappedRegistryAccessor<LevelStem>) reg;
+                accessor.getLifecycles().remove(stem);
+                accessor.getToId().removeInt(stem);
+                accessor.getByValue().remove(stem);
                 accessor.setHoldersInOrder(null);
                 accessor.getByKey().remove(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, key.location()));
                 accessor.getByLocation().remove(key.location());
@@ -193,10 +193,10 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
                 }
                 accessor.setElementsLifecycle(base);
 
-                ((DynamicRegistryManagerImmutableImplAccessor) this.registryAccess()).unfreezeTypes(reg1 -> {
+                ((ImmutableRegistryAccessAccessor) this.registryAccess()).unfreezeTypes(reg1 -> {
                     DimensionType dimensionType = reg1.get(key.location());
                     int rawId1 = reg1.getId(dimensionType);
-                    SimpleRegistryAccessor<DimensionType> accessor1 = (SimpleRegistryAccessor<DimensionType>) reg1;
+                    MappedRegistryAccessor<DimensionType> accessor1 = (MappedRegistryAccessor<DimensionType>) reg1;
                     accessor1.getLifecycles().remove(dimensionType);
                     accessor1.getToId().removeInt(dimensionType);
                     accessor1.getByValue().remove(dimensionType);
@@ -221,12 +221,12 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
     }
 
     @Override
-    public void addDynamicWorld(ResourceLocation id, @NotNull LevelStem stem, DimensionType type) {
-        if (!this.canCreateWorld(id)) {
+    public void addDynamicLevel(ResourceLocation id, @NotNull LevelStem stem, DimensionType type) {
+        if (!this.canCreateLevel(id)) {
             throw new IllegalArgumentException("World already exists!?");
         }
         ((WritableRegistry<LevelStem>) this.getWorldData().worldGenSettings().dimensions()).register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), stem, Lifecycle.stable());
-        ((DynamicRegistryManagerImmutableImplAccessor) this.registryAccess()).unfreezeTypes(reg -> reg.register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), type, Lifecycle.stable()));
+        ((ImmutableRegistryAccessAccessor) this.registryAccess()).unfreezeTypes(reg -> reg.register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), type, Lifecycle.stable()));
 
         ResourceKey<Level> worldKey = ResourceKey.create(Registry.DIMENSION_REGISTRY, id);
         DerivedLevelData properties = new DerivedLevelData(this.getWorldData(), this.getWorldData().overworldData());
@@ -247,14 +247,14 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
         ServerLevel overworld = this.overworld();
         assert overworld != null;
         overworld.getWorldBorder().addListener(new BorderChangeListener.DelegateBorderChangeListener(world.getWorldBorder()));
-        world.getChunkSource().setSimulationDistance(((ChunkTicketManagerAccessor) ((ServerChunkManagerAccessor) overworld.getChunkSource()).getDistanceManager()).getSimulationDistance());
-        world.getChunkSource().setViewDistance(((ThreadedAnvilChunkStorageAccessor) overworld.getChunkSource().chunkMap).getViewDistance());
+        world.getChunkSource().setSimulationDistance(((DistanceManagerAccessor) ((ServerChunkCacheAccessor) overworld.getChunkSource()).getDistanceManager()).getSimulationDistance());
+        world.getChunkSource().setViewDistance(((ChunkMapAccessor) overworld.getChunkSource().chunkMap).getViewDistance());
         if (stem.typeHolder() instanceof Holder.Reference<DimensionType>
                 && (stem.typeHolder().unwrap().right().isEmpty()
                 || stem.typeHolder().value() != type)) {
-            ((RegistryEntryReferenceInvoker<DimensionType>) stem.typeHolder()).callBind(stem.typeHolder().unwrapKey().get(), type);
+            ((HolderReferenceInvoker<DimensionType>) stem.typeHolder()).callBind(stem.typeHolder().unwrapKey().get(), type);
         }
-        ((SavePropertiesAccessor) this.getWorldData()).addDynamicWorld(id, stem);
+        ((PrimaryLevelDataAccessor) this.getWorldData()).addDynamicLevel(id, stem);
         this.enqueuedCreatedWorlds.put(worldKey, world); //prevent comodification
 
         FriendlyByteBuf packetByteBuf = PacketByteBufs.create();
@@ -266,30 +266,30 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
     }
 
     @Override
-    public boolean worldExists(ResourceLocation id) {
+    public boolean levelExists(ResourceLocation id) {
         return this.levels.containsKey(ResourceKey.create(Registry.DIMENSION_REGISTRY, id))
                 && this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).containsKey(id)
                 || this.getWorldData().worldGenSettings().dimensions().containsKey(id)
-                || ((SavePropertiesAccessor) this.getWorldData()).getDynamicWorlds().containsKey(id);
+                || ((PrimaryLevelDataAccessor) this.getWorldData()).getDynamicWorlds().containsKey(id);
     }
 
     @Override
-    public boolean canCreateWorld(ResourceLocation id) {
-        return Constant.CONFIG.allowWorldCreation() && !this.worldExists(id);
+    public boolean canCreateLevel(ResourceLocation id) {
+        return Constant.CONFIG.allowWorldCreation() && !this.levelExists(id);
     }
 
     @Override
-    public boolean canDestroyWorld(ResourceLocation id) {
-        return this.worldExists(id) && (Constant.CONFIG.deleteWorldsWithPlayers() || this.levels.get(ResourceKey.create(Registry.DIMENSION_REGISTRY, id)).players().size() == 0);
+    public boolean canDestroyLevel(ResourceLocation id) {
+        return this.levelExists(id) && (Constant.CONFIG.deleteWorldsWithPlayers() || this.levels.get(ResourceKey.create(Registry.DIMENSION_REGISTRY, id)).players().size() == 0);
     }
 
     @Override
-    public void removeDynamicWorld(ResourceLocation id, @Nullable PlayerRemover remover) {
-        if (!this.canDestroyWorld(id)) {
+    public void removeDynamicLevel(ResourceLocation id, @Nullable PlayerRemover remover) {
+        if (!this.canDestroyLevel(id)) {
             throw new IllegalArgumentException("Cannot destroy world!");
         }
 
-        ((SavePropertiesAccessor) this.getWorldData()).removeDynamicWorld(id); //worst case, it'll just be gone on reload
+        ((PrimaryLevelDataAccessor) this.getWorldData()).removeDynamicLevel(id); //worst case, it'll just be gone on reload
         ResourceKey<Level> of = ResourceKey.create(Registry.DIMENSION_REGISTRY, id);
         for (ServerPlayer serverPlayerEntity : this.getPlayerList().getPlayers()) {
             if (serverPlayerEntity.level.dimension().equals(of)) {
@@ -305,7 +305,7 @@ public abstract class MinecraftServerMixin implements DynamicWorldRegistry {
     }
 
     private void reloadTags() {
-        for (TagManager.LoadResult<?> registryTag : ((DataPackContentsAccessor) this.resources.managers()).getTagManager().getResult()) {
+        for (TagManager.LoadResult<?> registryTag : ((ReloadableServerResourcesAccessor) this.resources.managers()).getTagManager().getResult()) {
             if (registryTag.key() == Registry.DIMENSION_TYPE_REGISTRY) {
                 Registry<DimensionType> dimensionTypes = this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY);
                 dimensionTypes.resetTags();

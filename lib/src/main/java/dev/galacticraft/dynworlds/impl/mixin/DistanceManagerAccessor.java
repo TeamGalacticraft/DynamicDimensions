@@ -22,13 +22,12 @@
 
 package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.minecraft.server.ReloadableServerResources;
-import net.minecraft.tags.TagManager;
+import net.minecraft.server.level.DistanceManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(ReloadableServerResources.class)
-public interface DataPackContentsAccessor {
-    @Accessor("tagManager")
-    TagManager getTagManager();
+@Mixin(DistanceManager.class)
+public interface DistanceManagerAccessor {
+    @Accessor("simulationDistance")
+    int getSimulationDistance();
 }

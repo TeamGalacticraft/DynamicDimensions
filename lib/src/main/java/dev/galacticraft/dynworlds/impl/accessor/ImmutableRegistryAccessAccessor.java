@@ -20,14 +20,16 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl.mixin;
+package dev.galacticraft.dynworlds.impl.accessor;
 
-import net.minecraft.server.level.ChunkMap;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import dev.galacticraft.dynworlds.impl.util.RegistryAppender;
+import net.minecraft.world.level.dimension.DimensionType;
 
-@Mixin(ChunkMap.class)
-public interface ThreadedAnvilChunkStorageAccessor {
-    @Accessor("viewDistance")
-    int getViewDistance();
+public interface ImmutableRegistryAccessAccessor {
+    /**
+     * Unfreezes the {@link DimensionType} registry for the addition and removal of worlds.
+     *
+     * @param appender Callback to execute while the registry is unfrozen.
+     */
+    void unfreezeTypes(RegistryAppender<DimensionType> appender);
 }

@@ -22,7 +22,7 @@
 
 package dev.galacticraft.dynworlds.impl.mixin;
 
-import dev.galacticraft.dynworlds.impl.accessor.DynamicRegistryManagerImmutableImplAccessor;
+import dev.galacticraft.dynworlds.impl.accessor.ImmutableRegistryAccessAccessor;
 import dev.galacticraft.dynworlds.impl.util.RegistryAppender;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.MappedRegistry;
@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import java.util.Map;
 
 @Mixin(RegistryAccess.ImmutableRegistryAccess.class)
-public abstract class DynamicRegistryManagerImmutableImplMixin implements DynamicRegistryManagerImmutableImplAccessor {
+public abstract class ImmutableRegistryAccessMixin implements ImmutableRegistryAccessAccessor {
     @Shadow
     @Final
     private Map<? extends ResourceKey<? extends Registry<?>>, ? extends Registry<?>> registries;
@@ -50,7 +50,7 @@ public abstract class DynamicRegistryManagerImmutableImplMixin implements Dynami
                 // if the registry is not a vanilla registry type, we cannot guarantee that unfreezing the registry won't break stuff.
                 && (simple.getClass() == MappedRegistry.class || simple.getClass() == DefaultedRegistry.class)
         ) {
-            SimpleRegistryAccessor<DimensionType> accessor = ((SimpleRegistryAccessor<DimensionType>) simple);
+            MappedRegistryAccessor<DimensionType> accessor = ((MappedRegistryAccessor<DimensionType>) simple);
             if (accessor.isFrozen()) {
                 accessor.setFrozen(false);  // safe as there should be no new intrusive holders of this registry as it was already frozen
                 appender.register(simple);

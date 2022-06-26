@@ -20,16 +20,15 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl.accessor;
+package dev.galacticraft.dynworlds.impl.mixin;
 
-import dev.galacticraft.dynworlds.impl.util.RegistryAppender;
-import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.server.ReloadableServerResources;
+import net.minecraft.tags.TagManager;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-public interface DynamicRegistryManagerImmutableImplAccessor {
-    /**
-     * Unfreezes the DimensionType registry for the addition and removal of worlds.
-     *
-     * @param appender Callback to execute while the registry is unfrozen.
-     */
-    void unfreezeTypes(RegistryAppender<DimensionType> appender);
+@Mixin(ReloadableServerResources.class)
+public interface ReloadableServerResourcesAccessor {
+    @Accessor("tagManager")
+    TagManager getTagManager();
 }

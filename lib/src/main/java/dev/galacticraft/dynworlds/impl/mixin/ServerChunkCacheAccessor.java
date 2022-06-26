@@ -20,17 +20,15 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynworlds.impl.accessor;
+package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.server.level.DistanceManager;
+import net.minecraft.server.level.ServerChunkCache;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-import java.util.Map;
-
-public interface SavePropertiesAccessor {
-    void addDynamicWorld(ResourceLocation id, LevelStem options);
-
-    void removeDynamicWorld(ResourceLocation id);
-
-    Map<ResourceLocation, LevelStem> getDynamicWorlds();
+@Mixin(ServerChunkCache.class)
+public interface ServerChunkCacheAccessor {
+    @Accessor("distanceManager")
+    DistanceManager getDistanceManager();
 }

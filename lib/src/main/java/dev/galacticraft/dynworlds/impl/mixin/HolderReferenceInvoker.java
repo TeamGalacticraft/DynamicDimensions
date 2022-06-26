@@ -22,12 +22,13 @@
 
 package dev.galacticraft.dynworlds.impl.mixin;
 
-import net.minecraft.server.level.DistanceManager;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(DistanceManager.class)
-public interface ChunkTicketManagerAccessor {
-    @Accessor("simulationDistance")
-    int getSimulationDistance();
+@Mixin(Holder.Reference.class)
+public interface HolderReferenceInvoker<T> {
+    @Invoker("bind")
+    void callBind(ResourceKey<T> key, T value);
 }

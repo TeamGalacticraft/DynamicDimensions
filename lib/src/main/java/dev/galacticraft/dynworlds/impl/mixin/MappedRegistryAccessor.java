@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 @Mixin(MappedRegistry.class)
-public interface SimpleRegistryAccessor<T> {
+public interface MappedRegistryAccessor<T> {
     @Accessor("byId")
     ObjectList<Holder.Reference<T>> getById();
 

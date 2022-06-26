@@ -22,14 +22,13 @@
 
 plugins {
     id("fabric-loom") version "0.12-SNAPSHOT" apply false
-    id("io.github.juuxel.loom-quiltflower") version("1.7.2") apply false
+    id("io.github.juuxel.loom-quiltflower") version("1.7.3") apply false
     id("org.cadixdev.licenser") version "0.6.1" apply false
 }
 
 val modGroup = rootProject.property("mod.group").toString()
 
 val minecraft = rootProject.property("minecraft.version").toString()
-val yarn = rootProject.property("yarn.build").toString()
 val loader = rootProject.property("loader.version").toString()
 val fabric = rootProject.property("fabric.version").toString()
 
@@ -74,7 +73,7 @@ subprojects {
         "mappings"(project.extensions.getByType(net.fabricmc.loom.api.LoomGradleExtensionAPI::class).officialMojangMappings())
         "modImplementation"("net.fabricmc:fabric-loader:$loader")
 
-        val fabricApi = net.fabricmc.loom.configuration.FabricApiExtension(this@subprojects);
+        val fabricApi = net.fabricmc.loom.configuration.FabricApiExtension(this@subprojects)
         fabricModules.forEach {
             "modCompileOnly"(fabricApi.module(it, fabric))
         }

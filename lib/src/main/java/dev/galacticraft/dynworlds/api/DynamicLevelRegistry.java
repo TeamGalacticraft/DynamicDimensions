@@ -28,60 +28,60 @@ import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 
 /**
- * The registry for dynamic worlds.
+ * The registry for dynamic levels.
  * Cast {@link net.minecraft.server.MinecraftServer} to this class to access the registry.
  * It is not possible to access the registry from the client.
  *
  * @since 0.1.0
  */
-public interface DynamicWorldRegistry {
+public interface DynamicLevelRegistry {
     /**
-     * Registers a new world and updates all clients with the new world.
-     * NOTE: The world will not be loaded until the next tick.
+     * Registers a new level and updates all clients with the new level.
+     * NOTE: The level will not be loaded until the next tick.
      *
-     * @param id      The ID of the world.
+     * @param id      The ID of the level.
      *                This ID must be unique and unused in the {@link net.minecraft.core.Registry#DIMENSION_TYPE_REGISTRY} registry and the {@link WorldGenSettings#dimensions()} registry.
-     * @param stem The dimension stem for the world.
-     * @param type    The dimension type of the world.
+     * @param stem The dimension stem for the level.
+     * @param type    The dimension type of the level.
      * @since 0.1.0
      */
-    void addDynamicWorld(ResourceLocation id, LevelStem stem, DimensionType type);
+    void addDynamicLevel(ResourceLocation id, LevelStem stem, DimensionType type);
 
     /**
-     * Tests if a world with the given ID exists.
+     * Tests if a level with the given ID exists.
      *
-     * @param id The ID of the world.
-     * @return True if the world exists, false otherwise.
-     * If the world exists, you should not call {@link #addDynamicWorld(ResourceLocation, LevelStem, DimensionType)} with the same ID.
+     * @param id The ID of the level.
+     * @return True if the level exists, false otherwise.
+     * If the level exists, you should not call {@link #addDynamicLevel(ResourceLocation, LevelStem, DimensionType)} with the same ID.
      * @since 0.1.0
      */
-    boolean worldExists(ResourceLocation id);
+    boolean levelExists(ResourceLocation id);
 
     /**
-     * Returns whether a world with the given ID can be created.
+     * Returns whether a level with the given ID can be created.
      *
-     * @param id The ID of the world.
-     * @return {@code true} if the world can be created, {@code false} otherwise.
+     * @param id The ID of the level.
+     * @return {@code true} if the level can be created, {@code false} otherwise.
      * @since 0.1.0
      */
-    boolean canCreateWorld(ResourceLocation id);
+    boolean canCreateLevel(ResourceLocation id);
 
     /**
-     * Returns whether a world with the given ID can be deleted.
+     * Returns whether a level with the given ID can be deleted.
      *
-     * @param id The ID of the world.
-     * @return {@code true} if the world can be deleted, {@code false} otherwise.
+     * @param id The ID of the level.
+     * @return {@code true} if the level can be deleted, {@code false} otherwise.
      * @since 0.1.0
      */
-    boolean canDestroyWorld(ResourceLocation id);
+    boolean canDestroyLevel(ResourceLocation id);
 
     /**
-     * Erases a dynamic world from existence.
-     * Players will be removed from the world using the provided player remover.
+     * Erases a dynamic level from existence.
+     * Players will be removed from the level using the provided player remover.
      *
-     * @param id      The ID of the world.
-     * @param remover The method to remove players from the world.
+     * @param id      The ID of the level.
+     * @param remover The method to remove players from the level.
      * @since 0.1.0
      */
-    void removeDynamicWorld(ResourceLocation id, PlayerRemover remover);
+    void removeDynamicLevel(ResourceLocation id, PlayerRemover remover);
 }
