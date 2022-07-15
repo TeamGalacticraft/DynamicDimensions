@@ -26,14 +26,13 @@ plugins {
     id("org.cadixdev.licenser") version "0.6.1" apply false
 }
 
-val modGroup = rootProject.property("mod.group").toString()
-
 val minecraft = rootProject.property("minecraft.version").toString()
 val loader = rootProject.property("loader.version").toString()
 val fabric = rootProject.property("fabric.version").toString()
 
 allprojects {
     apply(plugin = "org.cadixdev.licenser")
+
     extensions.getByType(org.cadixdev.gradle.licenser.LicenseExtension::class).apply {
         setHeader(rootProject.file("LICENSE_HEADER.txt"))
         include("**/dev/galacticraft/**/*.java")
@@ -51,8 +50,8 @@ subprojects {
     val modName = project.property("mod.name").toString()
     val fabricModules = project.property("fabric.modules").toString().split(',')
 
-    group = modGroup
-    version = "$modVersion+$minecraft"
+    group = "dev.galacticraft"
+    version = modVersion
 
     extensions.getByType(BasePluginExtension::class).archivesName.set(modName)
 

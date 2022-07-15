@@ -19,5 +19,5 @@ pluginManagement {
     }
 }
 
-include("lib", "testmod")
-rootProject.name = "DynWorlds"
+include("lib", "gametest")
+rootProject.name = "Dynamic Dimensions"

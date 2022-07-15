@@ -7,11 +7,17 @@ java {
     withJavadocJar()
 }
 
-tasks.javadoc {
-    options.apply {
-        title = "${rootProject.name} ${project.version} API"
+loom {
+    runs {
+        getByName("client") {
+            name("Minecraft Client")
+            ideConfigGenerated(true)
+        }
+        getByName("server") {
+            name("Minecraft Server")
+            ideConfigGenerated(true)
+        }
     }
-    exclude("**/impl/**")
 }
 
 publishing {
@@ -33,20 +39,20 @@ publishing {
                 }
 
                 scm {
-                    url.set("https://github.com/TeamGalacticraft/DynWorlds")
-                    connection.set("scm:git:git://github.com/TeamGalacticraft/DynWorlds.git")
-                    developerConnection.set("scm:git:git@github.com:TeamGalacticraft/DynWorlds.git")
+                    url.set("https://github.com/TeamGalacticraft/DynamicDimensions")
+                    connection.set("scm:git:git://github.com/TeamGalacticraft/DynamicDimensions.git")
+                    developerConnection.set("scm:git:git@github.com:TeamGalacticraft/DynamicDimensions.git")
                 }
 
                 issueManagement {
                     system.set("github")
-                    url.set("https://github.com/TeamGalacticraft/DynWorlds/issues")
+                    url.set("https://github.com/TeamGalacticraft/DynamicDimensions/issues")
                 }
 
                 licenses {
                     license {
                         name.set("MIT")
-                        url.set("https://github.com/TeamGalacticraft/DynWorlds/blob/main/LICENSE")
+                        url.set("https://github.com/TeamGalacticraft/DynamicDimensions/blob/main/LICENSE")
                     }
                 }
             }

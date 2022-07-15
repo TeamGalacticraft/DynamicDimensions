@@ -1,2 +1,2 @@
-# DynWorlds
-Library to dynamically register/load minecraft worlds (dimensions).
+# DynamicDimensions
+Library to dynamically register/load minecraft dimensions.
