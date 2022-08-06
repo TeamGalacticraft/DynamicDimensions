@@ -24,4 +24,4 @@ jobs:
       - name: Build
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: checkLicenses build :gametest:runGametestServer
+          arguments: checkLicenses build :gametest:runServer
