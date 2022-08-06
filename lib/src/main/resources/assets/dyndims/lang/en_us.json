@@ -1,6 +1,6 @@
 {
   "command.dyndims.create.error": "Cannot create a dimension with this id!",
   "command.dyndims.delete.error": "Cannot destroy this dimension!",
-  "command.dyndims.delete.removed": "World %s was removed.",
-  "dyndims.dimension_disconnect": "The world you were in was deleted."
+  "command.dyndims.delete.removed": "Dimension %s was removed.",
+  "dyndims.dimension_disconnect": "The dimension you were in was deleted."
 }

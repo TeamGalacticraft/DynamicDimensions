@@ -35,6 +35,6 @@
     ]
   },
   "depends": {
-    "dynworlds": ">=0.1.0"
+    "dyndims": ">=0.1.0"
   }
 }
