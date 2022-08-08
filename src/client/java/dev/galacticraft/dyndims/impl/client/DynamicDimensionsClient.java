@@ -20,9 +20,10 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dyndims.impl;
+package dev.galacticraft.dyndims.impl.client;
 
 import com.mojang.serialization.Lifecycle;
+import dev.galacticraft.dyndims.impl.DynamicDimensions;
 import dev.galacticraft.dyndims.impl.mixin.MappedRegistryAccessor;
 import dev.galacticraft.dyndims.impl.util.UnfrozenRegistry;
 import net.fabricmc.api.ClientModInitializer;

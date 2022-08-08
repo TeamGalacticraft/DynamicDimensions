@@ -19,5 +19,4 @@ pluginManagement {
     }
 }
 
-include("lib", "gametest")
 rootProject.name = "Dynamic Dimensions"

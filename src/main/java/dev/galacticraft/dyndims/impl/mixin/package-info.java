@@ -20,7 +20,10 @@
  * SOFTWARE.
  */
 
+/**
+ * Dynamic dimensions mixin files
+ */
 @ApiStatus.Internal
-package dev.galacticraft.dyndims.impl.accessor;
+package dev.galacticraft.dyndims.impl.mixin;
 
 import org.jetbrains.annotations.ApiStatus;

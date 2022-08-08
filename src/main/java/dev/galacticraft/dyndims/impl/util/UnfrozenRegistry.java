@@ -26,21 +26,39 @@ import dev.galacticraft.dyndims.impl.mixin.MappedRegistryAccessor;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
+/**
+ * Wrapper for a registry that has been made mutable temporarily
+ * @param <T> The registry's type
+ */
+@ApiStatus.Internal
 public class UnfrozenRegistry<T> implements AutoCloseable {
     private final @NotNull MappedRegistry<T> registry;
     private final boolean refreeze;
     private boolean open = true;
 
+    /**
+     * Creates an unfrozen registry
+     * @param registry the mutable registry
+     * @param refreeze whether to freeze the registry when this object is closed
+     */
     private UnfrozenRegistry(@NotNull MappedRegistry<T> registry, boolean refreeze) {
         this.registry = registry;
         this.refreeze = refreeze;
     }
 
+    /**
+     * Creates an unfrozen registry.
+     * @param registry The registry to unfreeze. Must be an exact vanilla type (MappedRegistry or DefaultedRegistry)
+     *                otherwise the registry will not be unfrozen
+     * @return A new {@link UnfrozenRegistry} with a mutable registry wrapped inside
+     * @param <T> The registry's type
+     */
     public static <T> @NotNull UnfrozenRegistry<T> create(@NotNull Registry<T> registry) {
         if (registry instanceof MappedRegistry<T> simple
                 // if the registry is not a vanilla registry type,
@@ -61,11 +79,19 @@ public class UnfrozenRegistry<T> implements AutoCloseable {
         if (this.refreeze) this.registry.freeze();
     }
 
+    /**
+     * Returns the stored registry. Will fail if the registry has already been re-frozen.
+     * @return the stored registry
+     */
     public @NotNull MappedRegistry<T> registry() {
         if (!this.open) throw new IllegalStateException("Registry has been re-frozen!");
         return this.registry;
     }
 
+    /**
+     * Returns whether the registry is still mutable
+     * @return whether the registry is still mutable
+     */
     public boolean open() {
         return this.open;
     }

@@ -2,12 +2,16 @@
 *.bat           text eol=crlf
 
 # Text
+*.accesswidener text
 *.properties    text
+*.json          text
+*.snbt          text
+*.yml           text
 
 # Java
 *.java          text diff=java
 *.gradle        text diff=java
-*.gradle.kts    text diff=java
+*.kts           text diff=kotlin
 
 # Binary
 *.class         binary
@@ -16,3 +20,4 @@
 *.jar           binary
 *.so            binary
 *.war           binary
+*.png           binary

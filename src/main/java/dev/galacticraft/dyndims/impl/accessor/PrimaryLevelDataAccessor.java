@@ -26,16 +26,34 @@ import com.mojang.datafixers.util.Pair;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.dimension.LevelStem;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
+/**
+ * Saves and loads dynamic dimension registrations from the world file
+ */
 @ApiStatus.Internal
 public interface PrimaryLevelDataAccessor {
-    void addDynamicDimension(ResourceLocation id, LevelStem stem);
+    /**
+     * Adds a dynamic dimension to the level data
+     * @param id the id of the dimension
+     * @param chunkGenerator the chunk generator of the dimension
+     * @param type the dimension type
+     */
+    void addDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
 
-    void removeDynamicDimension(ResourceLocation id);
+    /**
+     * Removes a dynamic dimension from the level data
+     * @param id the id of the dimension to be removed
+     * @return whether the dynamic dimension was removed
+     */
+    boolean removeDynamicDimension(ResourceLocation id);
 
+    /**
+     * Returns a map of all registered dynamic dimensions
+     * @return a map of all registered dynamic dimensions
+     */
     Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>> getDynamicDimensions();
 }

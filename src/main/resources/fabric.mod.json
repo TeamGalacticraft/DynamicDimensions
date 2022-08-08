@@ -34,7 +34,7 @@
       "dev.galacticraft.dyndims.impl.DynamicDimensions"
     ],
     "client": [
-      "dev.galacticraft.dyndims.impl.DynamicDimensionsClient"
+      "dev.galacticraft.dyndims.impl.client.DynamicDimensionsClient"
     ]
   },
   "mixins": [

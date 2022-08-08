@@ -262,8 +262,8 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
         level.getChunkSource().setSimulationDistance(((DistanceManagerAccessor) ((ServerChunkCacheAccessor) overworld.getChunkSource()).getDistanceManager()).getSimulationDistance());
         level.getChunkSource().setViewDistance(((ChunkMapAccessor) overworld.getChunkSource().chunkMap).getViewDistance());
         assert stem.typeHolder().isBound();
-        ((PrimaryLevelDataAccessor) this.getWorldData()).addDynamicDimension(id, stem);
-        this.levelsAwaitingCreation.put(key, level); //prevent comodification
+        ((PrimaryLevelDataAccessor) this.getWorldData()).addDynamicDimension(id, chunkGenerator, typeHolder.value());
+        this.levelsAwaitingCreation.put(key, level); //prevent co-modification
 
         FriendlyByteBuf packetByteBuf = PacketByteBufs.create();
         packetByteBuf.writeResourceLocation(id);
@@ -297,7 +297,7 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
         if (!this.canDeleteDimension(id)) return false;
 
         ResourceKey<Level> key = ResourceKey.create(Registry.DIMENSION_REGISTRY, id);
-        List<ServerPlayer> players = new ArrayList<>(this.levels.get(key).players()); // prevent comod
+        List<ServerPlayer> players = new ArrayList<>(this.levels.get(key).players()); // prevent co-modification
         if (!players.isEmpty()) {
             if (DynamicDimensions.CONFIG.deleteDimensionsWithPlayers()) {
                 for (ServerPlayer player : players) {

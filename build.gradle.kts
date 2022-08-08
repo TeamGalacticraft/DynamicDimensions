@@ -19,109 +19,128 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import java.time.format.DateTimeFormatter // gradle treats java.time as the java extension, not an import
 
 plugins {
-    id("fabric-loom") version "0.12-SNAPSHOT" apply false
-    id("io.github.juuxel.loom-quiltflower") version("1.7.3") apply false
-    id("org.cadixdev.licenser") version "0.6.1" apply false
+    id("fabric-loom") version("0.12-SNAPSHOT")
+    id("io.github.juuxel.loom-quiltflower") version("1.7.3")
+    id("org.cadixdev.licenser") version("0.6.1")
 }
 
-val minecraft = rootProject.property("minecraft.version").toString()
-val loader = rootProject.property("loader.version").toString()
-val fabric = rootProject.property("fabric.version").toString()
+val minecraft = project.property("minecraft.version").toString()
+val loader = project.property("loader.version").toString()
+val fabric = project.property("fabric.version").toString()
+val modId = project.property("mod.id").toString()
+val modVersion = project.property("mod.version").toString()
+val modName = project.property("mod.name").toString()
+val fabricModules = project.property("fabric.modules").toString().split(',')
 
-allprojects {
-    apply(plugin = "org.cadixdev.licenser")
+group = "dev.galacticraft"
+version = modVersion
 
-    extensions.getByType(org.cadixdev.gradle.licenser.LicenseExtension::class).apply {
-        setHeader(rootProject.file("LICENSE_HEADER.txt"))
-        include("**/dev/galacticraft/**/*.java")
-        include("build.gradle.kts")
+license {
+    setHeader(rootProject.file("LICENSE_HEADER.txt"))
+    include("**/dev/galacticraft/**/*.java")
+    include("build.gradle.kts")
+}
+
+base.archivesName.set(modName)
+
+java {
+    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_17
+
+    withJavadocJar()
+    withSourcesJar()
+}
+
+sourceSets {
+    create("gametest") {
+        compileClasspath += main.get().compileClasspath + main.get().output;
+        runtimeClasspath += main.get().runtimeClasspath + main.get().output;
     }
 }
 
-subprojects {
-    apply(plugin = "java")
-    apply(plugin = "fabric-loom")
-    apply(plugin = "io.github.juuxel.loom-quiltflower")
+loom {
+    splitEnvironmentSourceSets()
 
-    val modId = project.property("mod.id").toString()
-    val modVersion = project.property("mod.version").toString()
-    val modName = project.property("mod.name").toString()
-    val fabricModules = project.property("fabric.modules").toString().split(',')
+    runtimeOnlyLog4j.set(true)
+    accessWidenerPath.set(project.file("src/main/resources/${modId}.accesswidener"))
 
-    group = "dev.galacticraft"
-    version = modVersion
-
-    extensions.getByType(BasePluginExtension::class).archivesName.set(modName)
-
-    extensions.getByType(JavaPluginExtension::class).apply {
-        targetCompatibility = JavaVersion.VERSION_17
-        sourceCompatibility = JavaVersion.VERSION_17
-    }
-
-    extensions.getByType(net.fabricmc.loom.api.LoomGradleExtensionAPI::class).apply {
-        shareCaches()
-        if (project.file("src/main/resources/${modId}.accesswidener").exists()) {
-            accessWidenerPath.set(project.file("src/main/resources/${modId}.accesswidener"))
+    mods {
+        create("dyndims") {
+            sourceSet(sourceSets.main.get())
+            sourceSet(sourceSets.getByName("client"))
+        }
+        create("dyndims-gametest") {
+            sourceSet(sourceSets.getByName("gametest"))
         }
     }
 
-    dependencies {
-        "minecraft"("com.mojang:minecraft:$minecraft")
-        "mappings"(project.extensions.getByType(net.fabricmc.loom.api.LoomGradleExtensionAPI::class).officialMojangMappings())
-        "modImplementation"("net.fabricmc:fabric-loader:$loader")
-
-        val fabricApi = net.fabricmc.loom.configuration.FabricApiExtension(this@subprojects)
-        fabricModules.forEach {
-            "modCompileOnly"(fabricApi.module(it, fabric))
+    runs {
+        create("gametest") {
+            name("Gametest")
+            server()
+            source(sourceSets.getByName("gametest"))
+            vmArgs("-ea", "-Dfabric-api.gametest", "-Dfabric-api.gametest.report-file=${project.buildDir}/junit.xml")
         }
-        
-        "modRuntimeOnly"("net.fabricmc.fabric-api:fabric-api:$fabric")
+    }
+}
+
+dependencies {
+    minecraft("com.mojang:minecraft:$minecraft")
+    mappings(loom.officialMojangMappings())
+    modImplementation("net.fabricmc:fabric-loader:$loader")
+
+    fabricModules.forEach {
+        "modCompileOnly"(fabricApi.module(it, fabric))
     }
 
-    tasks.withType<ProcessResources>() {
-        inputs.property("version", project.version)
+    modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:$fabric")
+//    gametestCompileOnly(fabricApi.module("fabric-gametest-api-v1", fabric)) //FIXME: loom 0.13
+}
 
-        filesMatching("fabric.mod.json") {
-            expand(
-                "version" to project.version,
-                "mod_id" to modId,
-                "mod_name" to modName
+tasks.withType<ProcessResources> {
+    inputs.property("version", project.version)
+
+    filesMatching("fabric.mod.json") {
+        expand(
+            "version" to project.version,
+            "mod_id" to modId,
+            "mod_name" to modName
+        )
+    }
+
+    // Minify json resources
+    // https://stackoverflow.com/questions/41028030/gradle-minimize-json-resources-in-processresources#41029113
+    doLast {
+        fileTree(
+            mapOf(
+                "dir" to outputs.files.asPath,
+                "includes" to listOf("**/*.json", "**/*.mcmeta")
             )
-        }
-
-        // Minify json resources
-        // https://stackoverflow.com/questions/41028030/gradle-minimize-json-resources-in-processresources#41029113
-        doLast {
-            fileTree(
-                mapOf(
-                    "dir" to outputs.files.asPath,
-                    "includes" to listOf("**/*.json", "**/*.mcmeta")
-                )
-            ).forEach { file: File ->
-                file.writeText(groovy.json.JsonOutput.toJson(groovy.json.JsonSlurper().parse(file)))
-            }
+        ).forEach { file: File ->
+            file.writeText(groovy.json.JsonOutput.toJson(groovy.json.JsonSlurper().parse(file)))
         }
     }
+}
 
-    tasks.withType<JavaCompile> {
-        dependsOn(tasks.getByName("checkLicenses"))
-        options.encoding = "UTF-8"
-        options.release.set(17)
-    }
+tasks.withType<JavaCompile> {
+    dependsOn(tasks.getByName("checkLicenses"))
+    options.encoding = "UTF-8"
+    options.release.set(17)
+}
 
-    tasks.withType<Jar>() {
-        from("LICENSE")
-        manifest {
-            attributes(
-                "Implementation-Title" to modName,
-                "Implementation-Version" to "${project.version}",
-                "Implementation-Vendor" to "Team Galacticraft",
-                "Implementation-Timestamp" to java.time.format.DateTimeFormatter.ISO_DATE_TIME,
-                "Maven-Artifact" to "${project.group}:${modName}:${project.version}",
-                "ModSide" to "BOTH"
-            )
-        }
+tasks.withType<Jar>() {
+    from("LICENSE")
+    manifest {
+        attributes(
+            "Implementation-Title" to modName,
+            "Implementation-Version" to modVersion,
+            "Implementation-Vendor" to "Team Galacticraft",
+            "Implementation-Timestamp" to DateTimeFormatter.ISO_DATE_TIME,
+            "Maven-Artifact" to "${project.group}:${modName}:${modVersion}",
+            "ModSide" to "BOTH"
+        )
     }
 }

@@ -39,11 +39,11 @@ import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.storage.LevelVersion;
 import net.minecraft.world.level.storage.PrimaryLevelData;
 import net.minecraft.world.level.timers.TimerQueue;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -97,16 +97,14 @@ public abstract class PrimaryLevelDataMixin implements PrimaryLevelDataAccessor 
     }
 
     @Override
-    public void addDynamicDimension(ResourceLocation id, @NotNull LevelStem stem) {
-        if (!stem.typeHolder().isBound()) { // if the dimension type does not directly reference a value, we can't guarantee it will exist later
-            throw new IllegalArgumentException("Cannot add a dynamic world with reference dimension type");
-        }
-        this.dynamicDimensions.put(id, new Pair<>(stem.generator(), stem.typeHolder().value()));
+    public void addDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type) {
+        this.dynamicDimensions.put(id, new Pair<>(chunkGenerator, type));
     }
 
+    @Contract("null -> false")
     @Override
-    public void removeDynamicDimension(ResourceLocation key) {
-        this.dynamicDimensions.remove(key);
+    public boolean removeDynamicDimension(ResourceLocation key) {
+        return this.dynamicDimensions.remove(key) != null;
     }
 
     @Override
