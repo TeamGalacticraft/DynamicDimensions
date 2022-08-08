@@ -22,8 +22,20 @@ jobs:
           java-version: 17
           distribution: temurin
 
+      - name: License headers
+        id: license_headers
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: checkLicenses
+
       - name: Build
         id: build
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: checkLicenses build runGametest
+          arguments: build
+
+      - name: Gametest
+        id: gametest
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: runGametest
