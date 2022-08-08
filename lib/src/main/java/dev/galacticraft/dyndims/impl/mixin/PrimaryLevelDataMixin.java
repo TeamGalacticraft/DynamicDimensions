@@ -23,6 +23,7 @@
 package dev.galacticraft.dyndims.impl.mixin;
 
 import com.mojang.datafixers.DataFixer;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.Lifecycle;
 import com.mojang.serialization.OptionalDynamic;
@@ -36,6 +37,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.border.WorldBorder;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.storage.LevelVersion;
@@ -57,17 +60,17 @@ import java.util.UUID;
 @Mixin(PrimaryLevelData.class)
 public abstract class PrimaryLevelDataMixin implements PrimaryLevelDataAccessor {
     // Since we can't pass values to the constructor when reading the properties, we need to store them externally
-    private static final ThreadLocal<Map<ResourceLocation, LevelStem>> MAP = new ThreadLocal<>();
+    private static final ThreadLocal<Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>>> MAP = new ThreadLocal<>();
     /**
      * Map of all the worlds that have been registered.
      */
-    private @Unique Map<ResourceLocation, LevelStem> dynamicDimensions;
+    private @Unique Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>> dynamicDimensions;
 
     @Inject(method = "parse", at = @At(value = "HEAD"))
     private static void parseDynamicDimensions(Dynamic<Tag> dynamic, DataFixer dataFixer, int i, CompoundTag compoundTag, LevelSettings levelSettings, LevelVersion levelVersion, WorldGenSettings worldGenSettings, Lifecycle lifecycle, CallbackInfoReturnable<PrimaryLevelData> cir) {
         OptionalDynamic<Tag> dyn = dynamic.get("DynamicDimensions");
         if (dyn.result().isPresent()) {
-            MAP.set(new HashMap<>(dyn.asMap(e -> new ResourceLocation(e.asString().get().orThrow()), e -> e.decode(LevelStem.CODEC).get().orThrow().getFirst())));
+            MAP.set(new HashMap<>(dyn.asMap(e -> new ResourceLocation(e.asString().get().orThrow()), e -> new Pair<>(e.get("chunk_generator").decode(ChunkGenerator.CODEC).get().orThrow().getFirst(), e.get("dimension_type").decode(DimensionType.DIRECT_CODEC).get().orThrow().getFirst()))));
         }
     }
 
@@ -84,16 +87,21 @@ public abstract class PrimaryLevelDataMixin implements PrimaryLevelDataAccessor 
     private void writeDynamicDimensions(RegistryAccess registryAccess, @NotNull CompoundTag levelNbt, CompoundTag playerNbt, CallbackInfo ci) {
         RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, registryAccess);
         CompoundTag compound = new CompoundTag();
-        this.dynamicDimensions.forEach((id, options) -> compound.put(id.toString(), LevelStem.CODEC.encode(options, ops, new CompoundTag()).get().orThrow()));
+        this.dynamicDimensions.forEach((id, options) -> {
+            CompoundTag pair = new CompoundTag();
+            pair.put("chunk_generator", ChunkGenerator.CODEC.encode(options.getFirst(), ops, new CompoundTag()).get().orThrow());
+            pair.put("dimension_type", DimensionType.DIRECT_CODEC.encode(options.getSecond(), ops, new CompoundTag()).get().orThrow());
+            compound.put(id.toString(), pair);
+        });
         levelNbt.put("DynamicDimensions", compound);
     }
 
     @Override
     public void addDynamicDimension(ResourceLocation id, @NotNull LevelStem stem) {
-        if (stem.typeHolder().unwrap().right().isEmpty()) { // if the dimension type is a reference, we can't guarantee it will exist later
+        if (!stem.typeHolder().isBound()) { // if the dimension type does not directly reference a value, we can't guarantee it will exist later
             throw new IllegalArgumentException("Cannot add a dynamic world with reference dimension type");
         }
-        this.dynamicDimensions.put(id, stem);
+        this.dynamicDimensions.put(id, new Pair<>(stem.generator(), stem.typeHolder().value()));
     }
 
     @Override
@@ -102,7 +110,7 @@ public abstract class PrimaryLevelDataMixin implements PrimaryLevelDataAccessor 
     }
 
     @Override
-    public Map<ResourceLocation, LevelStem> getDynamicDimensions() {
+    public Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>> getDynamicDimensions() {
         return this.dynamicDimensions;
     }
 }

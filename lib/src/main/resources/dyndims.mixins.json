@@ -6,7 +6,6 @@
     "ChunkMapAccessor",
     "DistanceManagerAccessor",
     "HolderReferenceInvoker",
-    "ImmutableRegistryAccessMixin",
     "MappedRegistryAccessor",
     "MinecraftServerMixin",
     "PrimaryLevelDataMixin",

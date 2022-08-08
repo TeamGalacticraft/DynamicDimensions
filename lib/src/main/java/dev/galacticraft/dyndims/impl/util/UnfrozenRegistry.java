@@ -22,20 +22,37 @@
 
 package dev.galacticraft.dyndims.impl.util;
 
+import dev.galacticraft.dyndims.impl.mixin.MappedRegistryAccessor;
+import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.MappedRegistry;
+import net.minecraft.core.Registry;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-public final class UnfrozenRegistry<T> implements AutoCloseable {
+public class UnfrozenRegistry<T> implements AutoCloseable {
     private final @NotNull MappedRegistry<T> registry;
     private final boolean refreeze;
     private boolean open = true;
 
-    public UnfrozenRegistry(@NotNull MappedRegistry<T> registry, boolean refreeze) {
+    private UnfrozenRegistry(@NotNull MappedRegistry<T> registry, boolean refreeze) {
         this.registry = registry;
         this.refreeze = refreeze;
+    }
+
+    public static <T> @NotNull UnfrozenRegistry<T> create(@NotNull Registry<T> registry) {
+        if (registry instanceof MappedRegistry<T> simple
+                // if the registry is not a vanilla registry type,
+                // we cannot guarantee that unfreezing the registry won't break stuff.
+                && (simple.getClass() == MappedRegistry.class || simple.getClass() == DefaultedRegistry.class)) {
+            MappedRegistryAccessor<T> accessor = (MappedRegistryAccessor<T>) registry;
+            boolean frozen = accessor.isFrozen();
+            accessor.setFrozen(false);
+            return new UnfrozenRegistry<>(simple, frozen);
+        } else {
+            throw new IllegalStateException("Dynamic Dimensions: Non-vanilla '" + registry.key().location() + "' registry! " + registry.getClass().getName());
+        }
     }
 
     @Override
@@ -47,6 +64,10 @@ public final class UnfrozenRegistry<T> implements AutoCloseable {
     public @NotNull MappedRegistry<T> registry() {
         if (!this.open) throw new IllegalStateException("Registry has been re-frozen!");
         return this.registry;
+    }
+
+    public boolean open() {
+        return this.open;
     }
 
     @Override

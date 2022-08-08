@@ -22,15 +22,20 @@
 
 package dev.galacticraft.dyndims.impl.accessor;
 
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Map;
 
+@ApiStatus.Internal
 public interface PrimaryLevelDataAccessor {
     void addDynamicDimension(ResourceLocation id, LevelStem stem);
 
     void removeDynamicDimension(ResourceLocation id);
 
-    Map<ResourceLocation, LevelStem> getDynamicDimensions();
+    Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>> getDynamicDimensions();
 }

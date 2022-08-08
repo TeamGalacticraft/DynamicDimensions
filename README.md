@@ -1,2 +1,2 @@
 # DynamicDimensions
-Library to dynamically register/load minecraft dimensions.
+Library to facilitate the runtime addition and removal of minecraft dimensions.

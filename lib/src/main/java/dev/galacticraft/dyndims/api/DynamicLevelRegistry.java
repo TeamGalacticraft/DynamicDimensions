@@ -23,8 +23,8 @@
 package dev.galacticraft.dyndims.api;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,18 +42,18 @@ public interface DynamicLevelRegistry {
      *
      * @param id      The ID of the dimension.
      *                This ID must be unique and unused in the {@link net.minecraft.core.Registry#DIMENSION_TYPE_REGISTRY} registry and the {@link WorldGenSettings#dimensions()} registry.
-     * @param stem The dimension stem.
+     * @param chunkGenerator The chunk generator.
      * @param type    The dimension type.
      * @since 0.1.0
      */
-    boolean addDynamicDimension(@NotNull ResourceLocation id, @NotNull LevelStem stem, @NotNull DimensionType type);
+    boolean addDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
 
     /**
      * Tests if a level or dimension with the given ID exists.
      *
      * @param id The ID of the dimension.
      * @return {@code true} if the dimension exists, false otherwise.
-     * If the dimension exists, you should not call {@link #addDynamicDimension(ResourceLocation, LevelStem, DimensionType)} with the same ID.
+     * If the dimension exists, you should not call {@link #addDynamicDimension(ResourceLocation, ChunkGenerator, DimensionType)} with the same ID.
      * @since 0.1.0
      */
     boolean dimensionExists(@NotNull ResourceLocation id);

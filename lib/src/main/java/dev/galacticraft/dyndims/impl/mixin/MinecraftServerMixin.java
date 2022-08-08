@@ -27,11 +27,13 @@ import com.mojang.serialization.Lifecycle;
 import dev.galacticraft.dyndims.api.DynamicLevelRegistry;
 import dev.galacticraft.dyndims.api.PlayerRemover;
 import dev.galacticraft.dyndims.impl.DynamicDimensions;
-import dev.galacticraft.dyndims.impl.accessor.DimensionTypeRegistryAccessor;
 import dev.galacticraft.dyndims.impl.accessor.PrimaryLevelDataAccessor;
 import dev.galacticraft.dyndims.impl.util.UnfrozenRegistry;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.minecraft.core.*;
+import net.minecraft.core.Holder;
+import net.minecraft.core.MappedRegistry;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
@@ -52,6 +54,7 @@ import net.minecraft.tags.TagNetworkSerialization;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.border.BorderChangeListener;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.storage.DerivedLevelData;
@@ -111,13 +114,13 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
 
     @Inject(method = "createLevels", at = @At("HEAD"))
     private void createDynamicLevels(ChunkProgressListener listener, CallbackInfo ci) {
-        Registry<LevelStem> dimensions = this.getWorldData().worldGenSettings().dimensions();
-        assert dimensions instanceof WritableRegistry<LevelStem>;
-        try (UnfrozenRegistry<DimensionType> unfrozen = ((DimensionTypeRegistryAccessor) this.registryAccess()).unfreeze()) {
-            ((PrimaryLevelDataAccessor) this.getWorldData()).getDynamicDimensions().forEach((id, pair) -> {
-                ((WritableRegistry<LevelStem>) dimensions).register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), pair, Lifecycle.stable()); // level stem is a mutable registry
-                unfrozen.registry().register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), pair.typeHolder().value(), Lifecycle.stable()); // dimension type must be unfrozen
-            });
+        try (UnfrozenRegistry<DimensionType> unfrozen = UnfrozenRegistry.create(this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY))) {
+            try (UnfrozenRegistry<LevelStem> unfrozenLevelStem = UnfrozenRegistry.create(this.getWorldData().worldGenSettings().dimensions())) {
+                ((PrimaryLevelDataAccessor) this.getWorldData()).getDynamicDimensions().forEach((id, pair) -> {
+                    Holder<DimensionType> dimHolder = unfrozen.registry().register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), pair.getSecond(), Lifecycle.stable()); // dimension type must be unfrozen
+                    unfrozenLevelStem.registry().register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), new LevelStem(dimHolder, pair.getFirst()), Lifecycle.stable());
+                });
+            }
         }
         this.reloadTags();
     }
@@ -178,39 +181,41 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
                     }
                 }
 
-                MappedRegistry<LevelStem> reg = ((MappedRegistry<LevelStem>) this.getWorldData().worldGenSettings().dimensions());
-                LevelStem stem = reg.get(key.location());
-                int rawId = reg.getId(stem);
-                MappedRegistryAccessor<LevelStem> accessor = (MappedRegistryAccessor<LevelStem>) reg;
-                accessor.getLifecycles().remove(stem);
-                accessor.getToId().removeInt(stem);
-                accessor.getByValue().remove(stem);
-                accessor.setHoldersInOrder(null);
-                accessor.getByKey().remove(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, key.location()));
-                accessor.getByLocation().remove(key.location());
-                accessor.getById().remove(rawId);
-                Lifecycle base = Lifecycle.stable();
-                for (Lifecycle value : accessor.getLifecycles().values()) {
-                    base.add(value);
+                try (UnfrozenRegistry<LevelStem> unfrozen = UnfrozenRegistry.create(this.getWorldData().worldGenSettings().dimensions())) {
+                    MappedRegistry<LevelStem> reg = unfrozen.registry();
+                    LevelStem stem = reg.get(key.location());
+                    int rawId = reg.getId(stem);
+                    MappedRegistryAccessor<LevelStem> accessor = (MappedRegistryAccessor<LevelStem>) unfrozen.registry();
+                    accessor.getLifecycles().remove(stem);
+                    accessor.getToId().removeInt(stem);
+                    accessor.getByValue().remove(stem);
+                    accessor.setHoldersInOrder(null);
+                    accessor.getByKey().remove(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, key.location()));
+                    accessor.getByLocation().remove(key.location());
+                    accessor.getById().remove(rawId);
+                    Lifecycle base = Lifecycle.stable();
+                    for (Lifecycle value : accessor.getLifecycles().values()) {
+                        base.add(value);
+                    }
+                    accessor.setElementsLifecycle(base);
                 }
-                accessor.setElementsLifecycle(base);
 
-                try (UnfrozenRegistry<DimensionType> unfrozen = ((DimensionTypeRegistryAccessor) this.registryAccess()).unfreeze()) {
+                try (UnfrozenRegistry<DimensionType> unfrozen = UnfrozenRegistry.create(this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY))) {
                     DimensionType dimensionType = unfrozen.registry().get(key.location());
-                    int rawId1 = unfrozen.registry().getId(dimensionType);
-                    MappedRegistryAccessor<DimensionType> accessor1 = (MappedRegistryAccessor<DimensionType>) unfrozen.registry();
-                    accessor1.getLifecycles().remove(dimensionType);
-                    accessor1.getToId().removeInt(dimensionType);
-                    accessor1.getByValue().remove(dimensionType);
-                    accessor1.setHoldersInOrder(null);
-                    accessor1.getByKey().remove(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, key.location()));
-                    accessor1.getByLocation().remove(key.location());
-                    accessor1.getById().remove(rawId1);
+                    int rawId = unfrozen.registry().getId(dimensionType);
+                    MappedRegistryAccessor<DimensionType> accessor = (MappedRegistryAccessor<DimensionType>) unfrozen.registry();
+                    accessor.getLifecycles().remove(dimensionType);
+                    accessor.getToId().removeInt(dimensionType);
+                    accessor.getByValue().remove(dimensionType);
+                    accessor.setHoldersInOrder(null);
+                    accessor.getByKey().remove(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, key.location()));
+                    accessor.getByLocation().remove(key.location());
+                    accessor.getById().remove(rawId);
                     Lifecycle base1 = Lifecycle.stable();
-                    for (Lifecycle value : accessor1.getLifecycles().values()) {
+                    for (Lifecycle value : accessor.getLifecycles().values()) {
                         base1.add(value);
                     }
-                    accessor1.setElementsLifecycle(base1);
+                    accessor.setElementsLifecycle(base1);
                     FriendlyByteBuf packetByteBuf = PacketByteBufs.create();
                     packetByteBuf.writeResourceLocation(key.location());
                     this.getPlayerList().broadcastAll(new ClientboundCustomPayloadPacket(DynamicDimensions.DELETE_WORLD_PACKET, packetByteBuf));
@@ -223,11 +228,17 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
     }
 
     @Override
-    public boolean addDynamicDimension(@NotNull ResourceLocation id, @NotNull LevelStem stem, @NotNull DimensionType type) {
+    public boolean addDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type) {
         if (!this.canCreateDimension(id)) return false;
-        ((WritableRegistry<LevelStem>) this.getWorldData().worldGenSettings().dimensions()).register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), stem, Lifecycle.stable());
-        try (UnfrozenRegistry<DimensionType> unfrozen = ((DimensionTypeRegistryAccessor) this.registryAccess()).unfreeze()) {
-            unfrozen.registry().register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), type, Lifecycle.stable());
+        Holder<DimensionType> typeHolder;
+        try (UnfrozenRegistry<DimensionType> unfrozen = UnfrozenRegistry.create(this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY))) {
+            typeHolder = unfrozen.registry().register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), type, Lifecycle.stable());
+        }
+
+        LevelStem stem = new LevelStem(typeHolder, chunkGenerator);
+
+        try (UnfrozenRegistry<LevelStem> unfrozen = UnfrozenRegistry.create(this.getWorldData().worldGenSettings().dimensions())) {
+            unfrozen.registry().register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), stem, Lifecycle.stable());
         }
 
         ResourceKey<Level> key = ResourceKey.create(Registry.DIMENSION_REGISTRY, id);
@@ -250,11 +261,7 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
         overworld.getWorldBorder().addListener(new BorderChangeListener.DelegateBorderChangeListener(level.getWorldBorder()));
         level.getChunkSource().setSimulationDistance(((DistanceManagerAccessor) ((ServerChunkCacheAccessor) overworld.getChunkSource()).getDistanceManager()).getSimulationDistance());
         level.getChunkSource().setViewDistance(((ChunkMapAccessor) overworld.getChunkSource().chunkMap).getViewDistance());
-        if (stem.typeHolder() instanceof Holder.Reference<DimensionType>
-                && (stem.typeHolder().unwrap().right().isEmpty()
-                || stem.typeHolder().value() != type)) {
-            ((HolderReferenceInvoker<DimensionType>) stem.typeHolder()).callBind(stem.typeHolder().unwrapKey().get(), type);
-        }
+        assert stem.typeHolder().isBound();
         ((PrimaryLevelDataAccessor) this.getWorldData()).addDynamicDimension(id, stem);
         this.levelsAwaitingCreation.put(key, level); //prevent comodification
 
