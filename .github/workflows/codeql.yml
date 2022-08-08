@@ -36,7 +36,7 @@ jobs:
       - name: Build
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: checkLicenses build
+          arguments: build
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2

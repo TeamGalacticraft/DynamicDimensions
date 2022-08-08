@@ -24,7 +24,7 @@ jobs:
       - name: Publish
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :lib:publish
+          arguments: publish
         env:
           SNAPSHOT: ${{ env.release.prerelease }}
           NEXUS_REPOSITORY_URL: ${{ env.release.prerelease == 'true' && secrets.NEXUS_SNAPSHOT_URL || secrets.NEXUS_RELEASE_URL }}
