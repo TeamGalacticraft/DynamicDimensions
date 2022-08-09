@@ -161,10 +161,11 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
                 } else {
                     try {
                         Path resolved;
+                        String id = key.location().toString().replace(":", ",");
                         if (worldDir.getParent().getFileName().toString().equals(key.location().getNamespace())) {
-                            resolved = worldDir.getParent().resolveSibling("deleted").resolve(key.location().toString());
+                            resolved = worldDir.getParent().resolveSibling("deleted").resolve(id);
                         } else {
-                            resolved = worldDir.resolveSibling(key.location().toString() + "_deleted");
+                            resolved = worldDir.resolveSibling(id + "_deleted");
                         }
                         if (resolved.toFile().exists()) {
                             FileUtils.deleteDirectory(resolved.toFile());

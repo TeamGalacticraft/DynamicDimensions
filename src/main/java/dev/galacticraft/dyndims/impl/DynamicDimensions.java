@@ -88,7 +88,12 @@ public final class DynamicDimensions implements ModInitializer {
                                                 ServerLevel level = server.getLevel(player.getRespawnDimension());
                                                 if (level != null) {
                                                     BlockPos pos = player.getRespawnPosition();
-                                                    player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), player.getXRot());
+                                                    if (pos != null) {
+                                                        player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), player.getXRot());
+                                                    } else {
+                                                        LevelData levelData = level.getLevelData();
+                                                        player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
+                                                    }
                                                 } else {
                                                     level = server.overworld();
                                                     LevelData levelData = level.getLevelData();
