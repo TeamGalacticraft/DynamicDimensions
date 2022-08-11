@@ -29,16 +29,29 @@ plugins {
     id("org.cadixdev.licenser") version("0.6.1")
 }
 
+val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
+val snapshot = (System.getenv("SNAPSHOT") ?: "false") == "true"
+val prerelease = (System.getenv("PRE_RELEASE") ?: "false") == "true"
+
 val minecraft = project.property("minecraft.version").toString()
 val loader = project.property("loader.version").toString()
 val fabric = project.property("fabric.version").toString()
 val modId = project.property("mod.id").toString()
-val modVersion = project.property("mod.version").toString()
+var modVersion = project.property("mod.version").toString()
 val modName = project.property("mod.name").toString()
 val fabricModules = project.property("fabric.modules").toString().split(',')
 
 group = "dev.galacticraft"
-version = modVersion
+version = buildString {
+    append(modVersion)
+    if (prerelease || snapshot) {
+        append("-pre")
+    }
+    if (buildNumber.isNotBlank()) {
+        append("+")
+        append(buildNumber)
+    }
+}
 
 license {
     setHeader(rootProject.file("LICENSE_HEADER.txt"))
@@ -152,9 +165,16 @@ publishing {
         register("mavenJava", MavenPublication::class) {
             groupId = group.toString()
             artifactId = modId
-            version = version
-            if (System.getenv("SNAPSHOT") == "true") {
-                version += "-SNAPSHOT"
+            version = buildString {
+                append(modVersion)
+                if (snapshot) {
+                    append("-SNAPSHOT")
+                } else {
+                    if (buildNumber.isNotBlank()) {
+                        append("+")
+                        append(buildNumber)
+                    }
+                }
             }
 
             from(components["java"])

@@ -1,9 +1,8 @@
 name: Maven Publish
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [ published ]
 
 jobs:
   Publish:
@@ -21,14 +20,14 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
+
       - name: Publish
         uses: gradle/gradle-build-action@v2
         with:
           arguments: publish
         env:
-          SNAPSHOT: true
-          PRE_RELEASE: false
-          NEXUS_REPOSITORY_URL: ${{ secrets.NEXUS_SNAPSHOT_URL }}
+          PRE_RELEASE: ${{ env.release.prerelease }}
+          NEXUS_REPOSITORY_URL: ${{ secrets.NEXUS_RELEASE_URL }}
           BUILD_NUMBER: ${{ github.run_id }}
           NEXUS_USER: ${{ secrets.NEXUS_USER }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
