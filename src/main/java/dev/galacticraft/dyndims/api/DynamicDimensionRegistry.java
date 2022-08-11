@@ -29,13 +29,13 @@ import net.minecraft.world.level.levelgen.WorldGenSettings;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The registry for dynamic levels.
+ * The registry for dynamic dimensions.
  * Cast {@link net.minecraft.server.MinecraftServer} to this class to access the registry.
  * It is not possible to access the registry from the client.
  *
  * @since 0.1.0
  */
-public interface DynamicLevelRegistry {
+public interface DynamicDimensionRegistry {
     /**
      * Registers a new dimension and updates all clients with the new dimension.
      * NOTE: The dimension will not be loaded until the next tick.

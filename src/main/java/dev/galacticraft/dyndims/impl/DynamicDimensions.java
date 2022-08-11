@@ -23,7 +23,7 @@
 package dev.galacticraft.dyndims.impl;
 
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import dev.galacticraft.dyndims.api.DynamicLevelRegistry;
+import dev.galacticraft.dyndims.api.DynamicDimensionRegistry;
 import dev.galacticraft.dyndims.api.config.DynamicDimensionsConfig;
 import dev.galacticraft.dyndims.impl.config.DynamicDimensionsConfigImpl;
 import net.fabricmc.api.ModInitializer;
@@ -70,20 +70,20 @@ public final class DynamicDimensions implements ModInitializer {
                                                             RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, ctx.getSource().registryAccess());
                                                             ChunkGenerator generator = ChunkGenerator.CODEC.decode(ops, CompoundTagArgument.getCompoundTag(ctx, "chunk_generator")).get().orThrow().getFirst();
                                                             DimensionType type = DimensionType.DIRECT_CODEC.decode(ops, CompoundTagArgument.getCompoundTag(ctx, "dimension_type")).get().orThrow().getFirst();
-                                                            if (!((DynamicLevelRegistry) ctx.getSource().getServer()).canCreateDimension(id)) {
+                                                            if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canCreateDimension(id)) {
                                                                 throw CANNOT_CREATE.create();
                                                             }
-                                                            ((DynamicLevelRegistry) ctx.getSource().getServer()).addDynamicDimension(id, generator, type);
+                                                            ((DynamicDimensionRegistry) ctx.getSource().getServer()).addDynamicDimension(id, generator, type);
                                                             return 1;
                                                         })))))
                         .then(Commands.literal("remove")
                                 .then(Commands.argument("id", ResourceLocationArgument.id())
                                         .executes(ctx -> {
                                             ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
-                                            if (!((DynamicLevelRegistry) ctx.getSource().getServer()).canDeleteDimension(id)) {
+                                            if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(id)) {
                                                 throw CANNOT_DELETE.create();
                                             }
-                                            ((DynamicLevelRegistry) ctx.getSource().getServer()).removeDynamicDimension(id, (server, player) -> {
+                                            ((DynamicDimensionRegistry) ctx.getSource().getServer()).removeDynamicDimension(id, (server, player) -> {
                                                 player.sendSystemMessage(Component.translatable("command.dyndims.delete.removed", id), true);
                                                 ServerLevel level = server.getLevel(player.getRespawnDimension());
                                                 if (level != null) {

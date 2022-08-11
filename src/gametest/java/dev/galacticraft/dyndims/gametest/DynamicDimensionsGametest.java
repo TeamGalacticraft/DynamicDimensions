@@ -22,7 +22,7 @@
 
 package dev.galacticraft.dyndims.gametest;
 
-import dev.galacticraft.dyndims.api.DynamicLevelRegistry;
+import dev.galacticraft.dyndims.api.DynamicDimensionRegistry;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
 import net.minecraft.core.Registry;
 import net.minecraft.gametest.framework.GameTest;
@@ -54,7 +54,7 @@ public class DynamicDimensionsGametest implements FabricGameTest {
     void createDynamicDimension(@NotNull GameTestHelper context) {
         MinecraftServer server = context.getLevel().getServer();
         DimensionType dimensionType = new DimensionType(OptionalLong.empty(), true, false, false, true, 1.0, false, false, -64, 384, 384, BlockTags.INFINIBURN_OVERWORLD, BuiltinDimensionTypes.OVERWORLD_EFFECTS, 0.0F, new DimensionType.MonsterSettings(false, true, UniformInt.of(0, 7), 0));
-        Assertions.assertTrue(((DynamicLevelRegistry) server).addDynamicDimension(TEST_LEVEL, server.overworld().getChunkSource().getGenerator(), dimensionType));
+        Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL, server.overworld().getChunkSource().getGenerator(), dimensionType));
         context.runAfterDelay(1, () -> {
             ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL));
             Assertions.assertNotNull(level);

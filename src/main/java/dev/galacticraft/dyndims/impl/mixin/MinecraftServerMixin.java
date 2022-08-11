@@ -23,19 +23,20 @@
 package dev.galacticraft.dyndims.impl.mixin;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Lifecycle;
-import dev.galacticraft.dyndims.api.DynamicLevelRegistry;
+import dev.galacticraft.dyndims.api.DynamicDimensionRegistry;
 import dev.galacticraft.dyndims.api.PlayerRemover;
 import dev.galacticraft.dyndims.impl.DynamicDimensions;
 import dev.galacticraft.dyndims.impl.accessor.PrimaryLevelDataAccessor;
 import dev.galacticraft.dyndims.impl.util.UnfrozenRegistry;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.core.Holder;
-import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
@@ -82,7 +83,7 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 @Mixin(MinecraftServer.class)
-public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
+public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
     private final Map<ResourceKey<Level>, ServerLevel> levelsAwaitingCreation = new HashMap<>();
     private final List<ResourceKey<Level>> levelsAwaitingDeletion = new ArrayList<>();
     @Shadow
@@ -137,21 +138,17 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
     private void removeLevels(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
         if (!this.levelsAwaitingDeletion.isEmpty()) {
             for (ResourceKey<Level> key : this.levelsAwaitingDeletion) {
-                ServerLevel serverWorld = this.levels.remove(key);
+                try (ServerLevel serverWorld = this.levels.remove(key)) {
+                    for (ServerPlayer player : serverWorld.players()) {
+                        player.connection.disconnect(Component.translatable("dyndims.dimension_disconnect")); //TODO: what happens to these players?
+                    }
 
-                for (ServerPlayer player : serverWorld.players()) {
-                    player.connection.disconnect(Component.translatable("dyndims.dimension_disconnect"));
-                }
-
-                try {
                     serverWorld.save(null, true, false);
-                    serverWorld.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
-                    throw new RuntimeException(e); // oh no.
+                    DynamicDimensions.LOGGER.error("Failed to close level upon removal! Memory may have been leaked.", e);
                 }
 
-                Path worldDir = storageSource.getDimensionPath(key);
+                Path worldDir = this.storageSource.getDimensionPath(key);
                 if (DynamicDimensions.CONFIG.deleteRemovedDimensions()) {
                     try {
                         FileUtils.deleteDirectory(worldDir.toFile());
@@ -172,78 +169,60 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
                         }
                         Files.move(worldDir, resolved, StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
-                        DynamicDimensions.LOGGER.error("Failed to move deleted world directory.", e);
+                        DynamicDimensions.LOGGER.error("Failed to move removed dimension's directory.", e);
                         try {
                             FileUtils.deleteDirectory(worldDir.toFile());
                         } catch (IOException ex) {
                             ex.addSuppressed(e);
-                            throw new RuntimeException("Failed to delete deleted world directory!", ex);
+                            throw new RuntimeException("Failed to delete removed dimension's directory!", ex); // TODO: is a throw necessary here? what happens if a world is re-created with the same id? is it exploitable?
                         }
                     }
                 }
 
-                try (UnfrozenRegistry<LevelStem> unfrozen = UnfrozenRegistry.create(this.getWorldData().worldGenSettings().dimensions())) {
-                    MappedRegistry<LevelStem> reg = unfrozen.registry();
-                    LevelStem stem = reg.get(key.location());
-                    int rawId = reg.getId(stem);
-                    MappedRegistryAccessor<LevelStem> accessor = (MappedRegistryAccessor<LevelStem>) unfrozen.registry();
-                    accessor.getLifecycles().remove(stem);
-                    accessor.getToId().removeInt(stem);
-                    accessor.getByValue().remove(stem);
-                    accessor.setHoldersInOrder(null);
-                    accessor.getByKey().remove(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, key.location()));
-                    accessor.getByLocation().remove(key.location());
-                    accessor.getById().remove(rawId);
-                    Lifecycle base = Lifecycle.stable();
-                    for (Lifecycle value : accessor.getLifecycles().values()) {
-                        base.add(value);
-                    }
-                    accessor.setElementsLifecycle(base);
-                }
-
-                try (UnfrozenRegistry<DimensionType> unfrozen = UnfrozenRegistry.create(this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY))) {
-                    DimensionType dimensionType = unfrozen.registry().get(key.location());
-                    int rawId = unfrozen.registry().getId(dimensionType);
-                    MappedRegistryAccessor<DimensionType> accessor = (MappedRegistryAccessor<DimensionType>) unfrozen.registry();
-                    accessor.getLifecycles().remove(dimensionType);
-                    accessor.getToId().removeInt(dimensionType);
-                    accessor.getByValue().remove(dimensionType);
-                    accessor.setHoldersInOrder(null);
-                    accessor.getByKey().remove(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, key.location()));
-                    accessor.getByLocation().remove(key.location());
-                    accessor.getById().remove(rawId);
-                    Lifecycle base1 = Lifecycle.stable();
-                    for (Lifecycle value : accessor.getLifecycles().values()) {
-                        base1.add(value);
-                    }
-                    accessor.setElementsLifecycle(base1);
-                    FriendlyByteBuf packetByteBuf = PacketByteBufs.create();
-                    packetByteBuf.writeResourceLocation(key.location());
-                    this.getPlayerList().broadcastAll(new ClientboundCustomPayloadPacket(DynamicDimensions.DELETE_WORLD_PACKET, packetByteBuf));
-                }
+                this.removeEntryFromRegistry(this.getWorldData().worldGenSettings().dimensions(), Registry.LEVEL_STEM_REGISTRY, key.location());
+                this.removeEntryFromRegistry(this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY), Registry.DIMENSION_TYPE_REGISTRY, key.location());
+                FriendlyByteBuf packetByteBuf = PacketByteBufs.create();
+                packetByteBuf.writeResourceLocation(key.location());
+                this.getPlayerList().broadcastAll(new ClientboundCustomPayloadPacket(DynamicDimensions.DELETE_WORLD_PACKET, packetByteBuf));
             }
-            reloadTags();
+            this.reloadTags();
             this.levelsAwaitingDeletion.clear();
-            System.gc(); // destroy everything
         }
     }
 
     @Override
     public boolean addDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type) {
         if (!this.canCreateDimension(id)) return false;
+
+        final ResourceKey<Level> key = ResourceKey.create(Registry.DIMENSION_REGISTRY, id);
+        final WorldData worldData = this.getWorldData();
+        final DataResult<Tag> encode = DimensionType.DIRECT_CODEC.encode(type, NbtOps.INSTANCE, new CompoundTag());
+        final Registry<DimensionType> typeRegistry = this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY);
+        final ServerLevel overworld = this.overworld();
         Holder<DimensionType> typeHolder;
-        try (UnfrozenRegistry<DimensionType> unfrozen = UnfrozenRegistry.create(this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY))) {
+        CompoundTag encodedDimensionType;
+
+        assert overworld != null;
+
+        if (encode.error().isPresent()) {
+            DynamicDimensions.LOGGER.error("Failed to encode dimension type! {}", encode.error().get().message());
+            return false;
+        } else {
+            encodedDimensionType = (CompoundTag) encode.get().orThrow();
+        }
+
+        try (UnfrozenRegistry<DimensionType> unfrozen = UnfrozenRegistry.create(typeRegistry)) {
             typeHolder = unfrozen.registry().register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), type, Lifecycle.stable());
         }
 
+        assert typeHolder.isBound() : "Registered dimension type not bound?!";
         LevelStem stem = new LevelStem(typeHolder, chunkGenerator);
 
-        try (UnfrozenRegistry<LevelStem> unfrozen = UnfrozenRegistry.create(this.getWorldData().worldGenSettings().dimensions())) {
+        try (UnfrozenRegistry<LevelStem> unfrozen = UnfrozenRegistry.create(worldData.worldGenSettings().dimensions())) {
             unfrozen.registry().register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), stem, Lifecycle.stable());
         }
 
-        ResourceKey<Level> key = ResourceKey.create(Registry.DIMENSION_REGISTRY, id);
-        DerivedLevelData data = new DerivedLevelData(this.getWorldData(), this.getWorldData().overworldData());
+        DerivedLevelData data = new DerivedLevelData(worldData, worldData.overworldData());
         ServerLevel level = new ServerLevel(
                 (MinecraftServer) (Object) this,
                 this.executor,
@@ -251,25 +230,22 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
                 data,
                 key,
                 stem,
-                progressListenerFactory.create(10),
-                this.getWorldData().worldGenSettings().isDebug(),
-                BiomeManager.obfuscateSeed(this.getWorldData().worldGenSettings().seed()),
+                this.progressListenerFactory.create(10),
+                worldData.worldGenSettings().isDebug(),
+                BiomeManager.obfuscateSeed(worldData.worldGenSettings().seed()),
                 ImmutableList.of(),
                 false
         );
-        ServerLevel overworld = this.overworld();
-        assert overworld != null;
         overworld.getWorldBorder().addListener(new BorderChangeListener.DelegateBorderChangeListener(level.getWorldBorder()));
         level.getChunkSource().setSimulationDistance(((DistanceManagerAccessor) ((ServerChunkCacheAccessor) overworld.getChunkSource()).getDistanceManager()).getSimulationDistance());
         level.getChunkSource().setViewDistance(((ChunkMapAccessor) overworld.getChunkSource().chunkMap).getViewDistance());
-        assert stem.typeHolder().isBound();
-        ((PrimaryLevelDataAccessor) this.getWorldData()).addDynamicDimension(id, chunkGenerator, typeHolder.value());
+        ((PrimaryLevelDataAccessor) worldData).addDynamicDimension(id, chunkGenerator, typeHolder.value());
         this.levelsAwaitingCreation.put(key, level); //prevent co-modification
 
         FriendlyByteBuf packetByteBuf = PacketByteBufs.create();
         packetByteBuf.writeResourceLocation(id);
-        packetByteBuf.writeInt(this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).getId(type));
-        packetByteBuf.writeNbt((CompoundTag) DimensionType.DIRECT_CODEC.encode(type, NbtOps.INSTANCE, new CompoundTag()).get().orThrow());
+        packetByteBuf.writeInt(typeRegistry.getId(type));
+        packetByteBuf.writeNbt(encodedDimensionType);
         this.getPlayerList().broadcastAll(new ClientboundCustomPayloadPacket(DynamicDimensions.CREATE_WORLD_PACKET, packetByteBuf));
         this.reloadTags();
         return true;
@@ -329,5 +305,25 @@ public abstract class MinecraftServerMixin implements DynamicLevelRegistry {
             }
         }
         this.getPlayerList().broadcastAll(new ClientboundUpdateTagsPacket(TagNetworkSerialization.serializeTagsToNetwork(this.registryAccess())));
+    }
+
+    private <T> void removeEntryFromRegistry(Registry<T> registry, ResourceKey<Registry<T>> key, ResourceLocation id) {
+        try (UnfrozenRegistry<T> unfrozen = UnfrozenRegistry.create(registry)) {
+            final T value = unfrozen.registry().get(id);
+            final int rawId = unfrozen.registry().getId(value);
+            final var accessor = (MappedRegistryAccessor<T>) unfrozen.registry();
+            accessor.getLifecycles().remove(value);
+            accessor.getToId().removeInt(value);
+            accessor.getByValue().remove(value);
+            accessor.setHoldersInOrder(null);
+            accessor.getByKey().remove(ResourceKey.create(key, id));
+            accessor.getByLocation().remove(id);
+            accessor.getById().remove(rawId);
+            Lifecycle base = Lifecycle.stable();
+            for (Lifecycle lifecycle : accessor.getLifecycles().values()) {
+                base.add(lifecycle);
+            }
+            accessor.setElementsLifecycle(base);
+        }
     }
 }
