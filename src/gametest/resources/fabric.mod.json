@@ -28,6 +28,9 @@
       }
     }
   ],
+  "mixins": [
+    "dyndims-gametest.mixins.json"
+  ],
   "environment": "*",
   "entrypoints": {
     "fabric-gametest": [

@@ -167,6 +167,7 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
                         if (resolved.toFile().exists()) {
                             FileUtils.deleteDirectory(resolved.toFile());
                         }
+                        resolved.toFile().mkdirs();
                         Files.move(worldDir, resolved, StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
                         DynamicDimensions.LOGGER.error("Failed to move removed dimension's directory.", e);
