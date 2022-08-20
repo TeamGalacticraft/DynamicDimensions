@@ -24,7 +24,7 @@ import java.time.format.DateTimeFormatter // gradle treats java.time as the java
 plugins {
     java
     `maven-publish`
-    id("fabric-loom") version("0.12-SNAPSHOT")
+    id("fabric-loom") version("0.13-SNAPSHOT")
     id("io.github.juuxel.loom-quiltflower") version("1.7.3")
     id("org.cadixdev.licenser") version("0.6.1")
 }
@@ -82,6 +82,8 @@ loom {
     runtimeOnlyLog4j.set(true)
     accessWidenerPath.set(project.file("src/main/resources/${modId}.accesswidener"))
 
+    createRemapConfigurations(sourceSets.getByName("gametest"))
+
     mods {
         create("dyndims") {
             sourceSet(sourceSets.main.get())
@@ -108,11 +110,9 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:$loader")
 
     fabricModules.forEach {
-        "modCompileOnly"(fabricApi.module(it, fabric))
+        "modImplementation"(fabricApi.module(it, fabric))
     }
-
-    modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:$fabric")
-//    gametestCompileOnly(fabricApi.module("fabric-gametest-api-v1", fabric)) //FIXME: loom 0.13
+    "modGametestImplementation"(fabricApi.module("fabric-gametest-api-v1", fabric))
 }
 
 tasks.withType<ProcessResources> {
@@ -180,6 +180,9 @@ publishing {
             from(components["java"])
 
             pom {
+                name.set(modName)
+                inceptionYear.set("2021")
+
                 organization {
                     name.set("Team Galacticraft")
                     url.set("https://github.com/TeamGalacticraft")

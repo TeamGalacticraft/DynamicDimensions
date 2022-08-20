@@ -22,88 +22,30 @@
 
 package dev.galacticraft.dyndims.impl;
 
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import dev.galacticraft.dyndims.api.DynamicDimensionRegistry;
-import dev.galacticraft.dyndims.api.config.DynamicDimensionsConfig;
-import dev.galacticraft.dyndims.impl.config.DynamicDimensionsConfigImpl;
+import dev.galacticraft.dyndims.impl.command.DynamicDimensionsCommands;
+import dev.galacticraft.dyndims.impl.config.DynamicDimensionsConfig;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.CompoundTagArgument;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.RegistryOps;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.storage.LevelData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class DynamicDimensions implements ModInitializer {
     public static final String MOD_ID = "dyndims";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    public static final DynamicDimensionsConfig CONFIG = DynamicDimensionsConfigImpl.create();
+    public static final DynamicDimensionsConfig CONFIG = DynamicDimensionsConfig.create();
 
     public static final ResourceLocation CREATE_WORLD_PACKET = new ResourceLocation(MOD_ID, "create_world");
     public static final ResourceLocation DELETE_WORLD_PACKET = new ResourceLocation(MOD_ID, "delete_world");
 
-    private static final SimpleCommandExceptionType CANNOT_CREATE = new SimpleCommandExceptionType(Component.translatable("command.dyndims.create.error"));
-    private static final SimpleCommandExceptionType CANNOT_DELETE = new SimpleCommandExceptionType(Component.translatable("command.dyndims.delete.error"));
-
     @Override
     public void onInitialize() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> {
+        if (FabricLoader.getInstance().isModLoaded("fabric-command-api-v2")) {
+            DynamicDimensionsCommands.register();
+        } else {
             if (CONFIG.enableCommands()) {
-                dispatcher.register(Commands.literal("dimension")
-                        .requires(s -> s.hasPermission(CONFIG.commandPermissionLevel()))
-                        .then(Commands.literal("create")
-                                .then(Commands.argument("id", ResourceLocationArgument.id())
-                                        .then(Commands.argument("chunk_generator", CompoundTagArgument.compoundTag())
-                                                .then(Commands.argument("dimension_type", CompoundTagArgument.compoundTag())
-                                                        .executes(ctx -> {
-                                                            ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
-                                                            RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, ctx.getSource().registryAccess());
-                                                            ChunkGenerator generator = ChunkGenerator.CODEC.decode(ops, CompoundTagArgument.getCompoundTag(ctx, "chunk_generator")).get().orThrow().getFirst();
-                                                            DimensionType type = DimensionType.DIRECT_CODEC.decode(ops, CompoundTagArgument.getCompoundTag(ctx, "dimension_type")).get().orThrow().getFirst();
-                                                            if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canCreateDimension(id)) {
-                                                                throw CANNOT_CREATE.create();
-                                                            }
-                                                            ((DynamicDimensionRegistry) ctx.getSource().getServer()).addDynamicDimension(id, generator, type);
-                                                            return 1;
-                                                        })))))
-                        .then(Commands.literal("remove")
-                                .then(Commands.argument("id", ResourceLocationArgument.id())
-                                        .executes(ctx -> {
-                                            ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
-                                            if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(id)) {
-                                                throw CANNOT_DELETE.create();
-                                            }
-                                            ((DynamicDimensionRegistry) ctx.getSource().getServer()).removeDynamicDimension(id, (server, player) -> {
-                                                player.sendSystemMessage(Component.translatable("command.dyndims.delete.removed", id), true);
-                                                ServerLevel level = server.getLevel(player.getRespawnDimension());
-                                                if (level != null) {
-                                                    BlockPos pos = player.getRespawnPosition();
-                                                    if (pos != null) {
-                                                        player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), player.getXRot());
-                                                    } else {
-                                                        LevelData levelData = level.getLevelData();
-                                                        player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
-                                                    }
-                                                } else {
-                                                    level = server.overworld();
-                                                    LevelData levelData = level.getLevelData();
-                                                    player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
-                                                }
-                                                player.setDeltaMovement(0.0, 0.0, 0.0);
-                                            });
-                                            return 1;
-                                        }))));
+                LOGGER.warn("Unable to register commands as fabric api (fabric-command-api-v2) is not installed.");
             }
-        });
+        }
     }
 }

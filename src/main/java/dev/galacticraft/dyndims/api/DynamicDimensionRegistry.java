@@ -53,7 +53,6 @@ public interface DynamicDimensionRegistry {
      *
      * @param id The ID of the dimension.
      * @return {@code true} if the dimension exists, false otherwise.
-     * If the dimension exists, you should not call {@link #addDynamicDimension(ResourceLocation, ChunkGenerator, DimensionType)} with the same ID.
      * @since 0.1.0
      */
     boolean dimensionExists(@NotNull ResourceLocation id);

@@ -26,7 +26,6 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
-import dev.galacticraft.dyndims.api.config.DynamicDimensionsConfig;
 import dev.galacticraft.dyndims.impl.DynamicDimensions;
 import net.fabricmc.loader.api.FabricLoader;
 import org.jetbrains.annotations.Contract;
@@ -39,7 +38,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
-public final class DynamicDimensionsConfigImpl implements DynamicDimensionsConfig {
+public final class DynamicDimensionsConfig {
     private static final Gson GSON = new GsonBuilder()
             .disableHtmlEscaping()
             .setPrettyPrinting()
@@ -56,11 +55,11 @@ public final class DynamicDimensionsConfigImpl implements DynamicDimensionsConfi
     @Expose
     private int commandPermissionLevel;
 
-    private DynamicDimensionsConfigImpl() {
+    private DynamicDimensionsConfig() {
         this(true, false, true, false, 2);
     }
 
-    private DynamicDimensionsConfigImpl(boolean allowDimensionCreation, boolean deleteRemovedDimensions, boolean deleteDimensionsWithPlayers, boolean enableCommands, int commandPermissionLevel) {
+    private DynamicDimensionsConfig(boolean allowDimensionCreation, boolean deleteRemovedDimensions, boolean deleteDimensionsWithPlayers, boolean enableCommands, int commandPermissionLevel) {
         this.allowDimensionCreation = allowDimensionCreation;
         this.deleteRemovedDimensions = deleteRemovedDimensions;
         this.deleteDimensionsWithPlayers = deleteDimensionsWithPlayers;
@@ -68,11 +67,11 @@ public final class DynamicDimensionsConfigImpl implements DynamicDimensionsConfi
         this.commandPermissionLevel = commandPermissionLevel;
     }
 
-    public static @NotNull DynamicDimensionsConfigImpl create() {
+    public static @NotNull DynamicDimensionsConfig create() {
         File file = FabricLoader.getInstance().getConfigDir().resolve("dynamic_dimensions.json").toFile();
         if (file.exists()) {
             try (FileReader json = new FileReader(file, StandardCharsets.UTF_8)) {
-                DynamicDimensionsConfigImpl config = GSON.fromJson(json, DynamicDimensionsConfigImpl.class);
+                DynamicDimensionsConfig config = GSON.fromJson(json, DynamicDimensionsConfig.class);
                 if (config != null) {
                     return config;
                 } else {
@@ -83,7 +82,7 @@ public final class DynamicDimensionsConfigImpl implements DynamicDimensionsConfi
             }
         } else {
             file.getParentFile().mkdirs();
-            DynamicDimensionsConfigImpl config = new DynamicDimensionsConfigImpl();
+            DynamicDimensionsConfig config = new DynamicDimensionsConfig();
             try {
                 Files.createDirectories(FabricLoader.getInstance().getConfigDir());
                 try (FileWriter writer = new FileWriter(file, StandardCharsets.UTF_8)) {
@@ -96,58 +95,47 @@ public final class DynamicDimensionsConfigImpl implements DynamicDimensionsConfi
         }
     }
 
-    @Override
     public boolean allowDimensionCreation() {
         return this.allowDimensionCreation;
     }
 
-    @Override
     public boolean deleteRemovedDimensions() {
         return this.deleteRemovedDimensions;
     }
 
-    @Override
     public boolean deleteDimensionsWithPlayers() {
         return this.deleteDimensionsWithPlayers;
     }
 
-    @Override
     public boolean enableCommands() {
         return this.enableCommands;
     }
 
-    @Override
     public int commandPermissionLevel() {
         return this.commandPermissionLevel;
     }
 
-    @Override
     public void allowDimensionCreation(boolean value) {
         this.allowDimensionCreation = value;
     }
 
-    @Override
     public void deleteRemovedDimensions(boolean value) {
         this.deleteRemovedDimensions = value;
     }
 
-    @Override
     public void deleteDimensionsWithPlayers(boolean value) {
         this.deleteDimensionsWithPlayers = value;
     }
 
-    @Override
     public void enableCommands(boolean value) {
         this.enableCommands = value;
     }
 
-    @Override
     public void commandPermissionLevel(int value) {
         this.commandPermissionLevel = value;
     }
 
     @Contract(pure = true)
-    @Override
     public @NotNull String toString() {
         return "DynamicDimensionsConfigImpl{" +
                 "allowDimensionCreation=" + allowDimensionCreation +

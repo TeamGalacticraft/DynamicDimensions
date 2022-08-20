@@ -37,7 +37,7 @@ import java.util.Objects;
  * @param <T> The registry's type
  */
 @ApiStatus.Internal
-public class UnfrozenRegistry<T> implements AutoCloseable {
+public final class UnfrozenRegistry<T> implements AutoCloseable {
     private final @NotNull MappedRegistry<T> registry;
     private final boolean refreeze;
     private boolean open = true;
