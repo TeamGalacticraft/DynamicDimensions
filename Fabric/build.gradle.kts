@@ -61,7 +61,6 @@ loom {
     }
 
     mixin {
-        add(project(":Common").sourceSets.main.get(), "${modId}-common.refmap.json")
         add(sourceSets.main.get(), "${modId}-fabric.refmap.json")
     }
 

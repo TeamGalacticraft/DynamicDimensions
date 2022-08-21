@@ -23,6 +23,7 @@ loom {
     runtimeOnlyLog4j.set(true)
 
     mixin {
+        add(sourceSets.main.get(), "${modId}.refmap.json")
         useLegacyMixinAp.set(false)
     }
 }

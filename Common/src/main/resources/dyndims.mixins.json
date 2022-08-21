@@ -10,5 +10,5 @@
   "injectors": {
     "defaultRequire": 1
   },
-  "refmap": "${mod_id}-common.refmap.json"
+  "refmap": "${mod_id}.refmap.json"
 }

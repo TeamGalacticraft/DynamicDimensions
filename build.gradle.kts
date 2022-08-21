@@ -11,8 +11,6 @@ val modId = project.property("mod.id").toString()
 var modVersion = project.property("mod.version").toString()
 
 plugins {
-    java
-    idea
     id("org.cadixdev.licenser") version("0.6.1")
 }
 
@@ -62,25 +60,24 @@ subprojects {
         withSourcesJar()
     }
 
-    tasks {
-        jar {
-            manifest {
-                attributes(
-                        "Specification-Title" to modName,
-                        "Specification-Vendor" to "Team Galacticraft",
-                        "Specification-Version" to archiveVersion,
-                        "Implementation-Title" to project.name,
-                        "Implementation-Version" to archiveVersion,
-                        "Implementation-Vendor" to "Team Galacticraft",
-                        "Implementation-Timestamp" to SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(Date()),
-                        "Timestamp" to System.currentTimeMillis(),
-                        "Built-On-Java" to "${System.getProperty("java.vm.version")} (${System.getProperty("java.vm.vendor")})",
-                        "Build-On-Minecraft" to minecraft,
-                        "Automatic-Module-Name" to modId
-                )
-            }
+    tasks.withType<Jar> {
+        manifest {
+            attributes(
+                "Specification-Title" to modName,
+                "Specification-Vendor" to "Team Galacticraft",
+                "Specification-Version" to archiveVersion,
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to archiveVersion,
+                "Implementation-Vendor" to "Team Galacticraft",
+                "Implementation-Timestamp" to SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(Date()),
+                "Timestamp" to System.currentTimeMillis(),
+                "Built-On-Java" to "${System.getProperty("java.vm.version")} (${System.getProperty("java.vm.vendor")})",
+                "Build-On-Minecraft" to minecraft,
+                "Automatic-Module-Name" to modId
+            )
         }
     }
+
 
     tasks.withType<ProcessResources> {
         // Minify json resources
