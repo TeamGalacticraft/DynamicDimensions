@@ -33,8 +33,8 @@ jobs:
         with:
           arguments: build
 
-      - name: Gametest
-        id: gametest
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: runGametest
+#      - name: Gametest
+#        id: gametest
+#        uses: gradle/gradle-build-action@v2
+#        with:
+#          arguments: runGametest

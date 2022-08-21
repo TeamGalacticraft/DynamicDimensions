@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "icon": "${mod_id}.png",
+  "description": "${mod_description}",
+  "license": "MIT",
+  "contact": {
+    "homepage": "https://galacticraft.dev/",
+    "sources": "https://github.com/TeamGalacticraft/DynamicDimensions/",
+    "issues": "https://github.com/TeamGalacticraft/DynamicDimensions/issues/"
+  },
+  "authors": [
+    {
+      "name": "Team Galacticraft",
+      "contact": {
+        "homepage": "https://github.com/TeamGalacticraft/",
+        "discord": "https://discord.gg/n3QqhMYyFK"
+      }
+    }
+  ],
+  "contributors": [
+    {
+      "name": "marcus8448",
+      "contact": {
+        "homepage": "https://github.com/marcus8448"
+      }
+    }
+  ],
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.galacticraft.dyndims.impl.fabric.DynamicDimensions"
+    ],
+    "client": [
+      "dev.galacticraft.dyndims.impl.fabric.client.DynamicDimensionsClient"
+    ]
+  },
+  "mixins": [
+    "${mod_id}.mixins.json",
+    "${mod_id}.fabric.mixins.json"
+  ],
+  "accessWidener": "${mod_id}.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.14",
+    "minecraft": "1.19.x",
+    "fabric-api-base": "*",
+    "fabric-command-api-v2": "*",
+    "fabric-networking-api-v1": "*"
+  },
+  "custom": {
+    "modmenu": {
+      "badges": [
+        "library"
+      ],
+      "parent": "galacticraft-api"
+    }
+  }
+}

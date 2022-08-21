@@ -1,22 +1,27 @@
 pluginManagement {
     repositories {
+        gradlePluginPortal()
         maven("https://maven.fabricmc.net/") {
             name = "Fabric"
-            content {
-                includeGroup("net.fabricmc")
-                includeGroup("net.fabricmc.fabric-api")
-                includeGroup("fabric-loom")
+        }
+        maven("https://repo.spongepowered.org/repository/maven-public/") {
+            name = "Sponge Snapshots"
+        }
+        maven("https://maven.minecraftforge.net") {
+            name = "Forge"
+        }
+    }
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "net.minecraftforge.gradle") {
+                useModule("${requested.id}:ForgeGradle:${requested.version}")
+            }
+            if (requested.id.id == "org.spongepowered.mixin") {
+                useModule("org.spongepowered:mixingradle:${requested.version}")
             }
         }
-        maven("https://server.bbkr.space/artifactory/libs-release/") {
-            name = "Cotton"
-            content {
-                includeGroup("io.github.juuxel.loom-quiltflower")
-                includeGroup("io.github.juuxel")
-            }
-        }
-        gradlePluginPortal()
     }
 }
 
-rootProject.name = "Dynamic Dimensions"
+rootProject.name = "DynamicDimensions"
+include("Common", "Fabric", "Forge")
