@@ -44,6 +44,7 @@ public interface DynamicDimensionRegistry {
      *                This ID must be unique and unused in the {@link net.minecraft.core.Registry#DIMENSION_TYPE_REGISTRY} registry and the {@link WorldGenSettings#dimensions()} registry.
      * @param chunkGenerator The chunk generator.
      * @param type    The dimension type.
+     * @return whether a dimension with the given id was created
      * @since 0.1.0
      */
     boolean addDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
@@ -82,6 +83,7 @@ public interface DynamicDimensionRegistry {
      *
      * @param id      The ID of the dimension.
      * @param remover The method to remove players from the dimension.
+     * @return whether a dimension with the given id was removed
      * @since 0.1.0
      */
     boolean removeDynamicDimension(@NotNull ResourceLocation id, @NotNull PlayerRemover remover);

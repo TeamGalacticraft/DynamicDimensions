@@ -117,11 +117,13 @@ tasks.create("copyNamedJar", Copy::class).apply {
     from(layout.buildDirectory.file("devlibs/${base.archivesName.get()}-${project.version}-dev.jar"))
     into(layout.buildDirectory.dir("libs"))
     rename("-dev", "")
+    dependsOn("jar")
 }
 
 tasks.create("copyNamedSourcesJar", Copy::class).apply {
     from(layout.buildDirectory.file("devlibs/${base.archivesName.get()}-${project.version}-sources.jar"))
     into(layout.buildDirectory.dir("libs"))
+    dependsOn("sourcesJar")
 }
 
 tasks.prepareRemapJar {

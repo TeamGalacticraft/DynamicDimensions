@@ -18,16 +18,14 @@ val modName = project.property("mod.name").toString()
 val modDescription = project.property("mod.description").toString()
 val badpackets = project.property("badpackets.version").toString()
 
-val baseArchiveName = "${modName}-forge"
+val baseArchiveName = "${modId}-forge"
 
 base {
     archivesName.set(baseArchiveName)
 }
 
 mixin {
-    add(project(":Common").sourceSets.main.get(), "${modId}.refmap.json")
-
-    add(sourceSets.main.get(), "${modId}.forge.refmap.json")
+    add(sourceSets.main.get(), "${baseArchiveName}.refmap.json")
 
     config("${modId}.mixins.json")
     config("${modId}.forge.mixins.json")
@@ -74,6 +72,8 @@ dependencies {
 
     compileOnly(project(":Common", "namedElements"))
     testCompileOnly(project(":Common"))
+
+    annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
 }
 
 tasks.withType<JavaCompile> {
@@ -83,8 +83,8 @@ tasks.withType<JavaCompile> {
 tasks.withType<ProcessResources> {
     from(project(":Common").sourceSets.main.get().resources)
 
-    filesMatching("${modId}.mixins.json") {
-        expand("mod_id" to modId)
+    filesMatching("*.mixins.json") {
+        expand("mapping" to baseArchiveName)
     }
 
     filesMatching("META-INF/mods.toml") {

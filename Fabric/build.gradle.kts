@@ -61,7 +61,7 @@ loom {
 
     mixin {
         add(project(":Common").sourceSets.main.get(), "${modId}.refmap.json")
-        add(sourceSets.main.get(), "${modId}-fabric.refmap.json")
+        add(sourceSets.main.get(), "${baseArchiveName}.refmap.json")
     }
 
     mods {
@@ -110,8 +110,8 @@ tasks.processResources {
         )
     }
 
-    filesMatching("${modId}.mixins.json") {
-        expand("mod_id" to modId)
+    filesMatching("*.mixins.json") {
+        expand("mapping" to baseArchiveName)
     }
 }
 
