@@ -16,6 +16,7 @@ var modVersion = project.property("mod.version").toString()
 val modName = project.property("mod.name").toString()
 val modDescription = project.property("mod.description").toString()
 val fabricModules = project.property("fabric.modules").toString().split(',')
+val badpackets = project.property("badpackets.version").toString()
 
 val baseArchiveName = "${modId}-fabric"
 
@@ -31,29 +32,27 @@ sourceSets {
 }
 
 loom {
-    splitEnvironmentSourceSets()
-
     runtimeOnlyLog4j.set(true)
-    accessWidenerPath.set(project.file("src/main/resources/${modId}.accesswidener"))
+    accessWidenerPath.set(project(":Common").file("${modId}.accesswidener"))
 
     createRemapConfigurations(sourceSets.getByName("gametest"))
 
     runs {
         named("client") {
             client()
-            configName = "Fabric Client"
+            name("Fabric Client")
             ideConfigGenerated(true)
             runDir("run")
         }
         named("server") {
             server()
-            configName = "Fabric Server"
+            name("Fabric Server")
             ideConfigGenerated(true)
             runDir("run")
         }
         create("gametest") {
-            name("Gametest")
             server()
+            name("Fabric Gametest")
             source(sourceSets.getByName("gametest"))
             ideConfigGenerated(true)
             vmArgs("-ea", "-Dfabric-api.gametest", "-Dfabric-api.gametest.report-file=${project.buildDir}/junit.xml")
@@ -61,13 +60,13 @@ loom {
     }
 
     mixin {
+        add(project(":Common").sourceSets.main.get(), "${modId}.refmap.json")
         add(sourceSets.main.get(), "${modId}-fabric.refmap.json")
     }
 
     mods {
         create("dyndims") {
             sourceSet(sourceSets.main.get())
-            sourceSet(sourceSets.getByName("client"))
         }
         create("dyndims-gametest") {
             sourceSet(sourceSets.getByName("gametest"))
@@ -86,11 +85,20 @@ dependencies {
     }
     "modGametestImplementation"(fapi.module("fabric-gametest-api-v1", fabricApi))
 
+    modRuntimeOnly("lol.bai:badpackets:fabric-${badpackets}")
+
     implementation(project(":Common", "namedElements"))
 }
 
 tasks.processResources {
     from(project(":Common").sourceSets.main.get().resources)
+    from(loom.accessWidenerPath)
+
+//    copy {
+//        println(outputs.files.asPath)
+//        into(outputs.files.asPath)
+//    }
+
     inputs.property("version", project.version)
 
     filesMatching("fabric.mod.json") {

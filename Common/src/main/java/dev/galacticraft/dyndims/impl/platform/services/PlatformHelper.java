@@ -23,8 +23,13 @@
 package dev.galacticraft.dyndims.impl.platform.services;
 
 import dev.galacticraft.dyndims.impl.config.DynamicDimensionsConfig;
+import dev.galacticraft.dyndims.impl.registry.UnfrozenRegistry;
+import net.minecraft.core.MappedRegistry;
+import net.minecraft.core.Registry;
 import org.jetbrains.annotations.NotNull;
 
 public interface PlatformHelper {
     @NotNull DynamicDimensionsConfig getConfig();
+
+    @NotNull <T> UnfrozenRegistry<T> unfreezeRegistry(@NotNull Registry<T> registry);
 }

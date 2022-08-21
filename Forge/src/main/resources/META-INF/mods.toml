@@ -15,6 +15,13 @@ ${mod_description}
 '''
 
 [[dependencies.${mod_id}]]
+    modId="badpackets"
+    mandatory=true
+    versionRange="[0.2.0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
     modId="forge"
     mandatory=true
     versionRange="[43,)"

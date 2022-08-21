@@ -13,6 +13,8 @@ val modId = project.property("mod.id").toString()
 var modVersion = project.property("mod.version").toString()
 val modName = project.property("mod.name").toString()
 
+val badpackets = project.property("badpackets.version").toString()
+
 val baseArchiveName = "${modId}-common"
 
 base {
@@ -21,9 +23,9 @@ base {
 
 loom {
     runtimeOnlyLog4j.set(true)
+    accessWidenerPath.set(project.file("${modId}.accesswidener"))
 
     mixin {
-        add(sourceSets.main.get(), "${modId}.refmap.json")
         useLegacyMixinAp.set(false)
     }
 }
@@ -31,6 +33,9 @@ loom {
 dependencies {
     minecraft("com.mojang:minecraft:${minecraft}")
     mappings(loom.officialMojangMappings())
+
+    compileOnly("org.spongepowered:mixin:0.8.5")
+    api("lol.bai:badpackets:mojmap-${badpackets}")
 }
 
 tasks.processResources {

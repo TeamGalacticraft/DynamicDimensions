@@ -16,6 +16,7 @@ val modId = project.property("mod.id").toString()
 var modVersion = project.property("mod.version").toString()
 val modName = project.property("mod.name").toString()
 val modDescription = project.property("mod.description").toString()
+val badpackets = project.property("badpackets.version").toString()
 
 val baseArchiveName = "${modName}-forge"
 
@@ -68,7 +69,11 @@ minecraft {
 
 dependencies {
     minecraft("net.minecraftforge:forge:${minecraft}-${forge}")
-    compileOnly(project(":Common"))
+
+    runtimeOnly(fg.deobf("lol.bai:badpackets:forge-${badpackets}"))
+
+    compileOnly(project(":Common", "namedElements"))
+    testCompileOnly(project(":Common"))
 }
 
 tasks.withType<JavaCompile> {

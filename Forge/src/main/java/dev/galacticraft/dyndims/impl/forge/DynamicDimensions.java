@@ -23,15 +23,15 @@
 package dev.galacticraft.dyndims.impl.forge;
 
 import dev.galacticraft.dyndims.impl.Constants;
+import dev.galacticraft.dyndims.impl.client.network.DynamicDimensionsS2CPacketReceivers;
 import dev.galacticraft.dyndims.impl.command.DynamicDimensionsCommands;
 import dev.galacticraft.dyndims.impl.forge.config.DynamicDimensionsConfigImpl;
-import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import org.apache.commons.lang3.tuple.Pair;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,6 +41,10 @@ public final class DynamicDimensions {
     public DynamicDimensions() {
         MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DynamicDimensionsConfigImpl.SPEC);
+
+        if (FMLEnvironment.dist.isClient()) {
+            DynamicDimensionsS2CPacketReceivers.registerReceivers();
+        }
     }
 
     private void registerCommands(@NotNull RegisterCommandsEvent event) {

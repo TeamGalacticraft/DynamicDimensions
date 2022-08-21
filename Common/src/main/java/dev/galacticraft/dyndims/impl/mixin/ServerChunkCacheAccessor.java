@@ -20,26 +20,15 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dyndims.impl.forge.platform;
+package dev.galacticraft.dyndims.impl.mixin;
 
-import dev.galacticraft.dyndims.impl.config.DynamicDimensionsConfig;
-import dev.galacticraft.dyndims.impl.forge.config.DynamicDimensionsConfigImpl;
-import dev.galacticraft.dyndims.impl.forge.registry.UnfrozenRegistryImpl;
-import dev.galacticraft.dyndims.impl.platform.services.PlatformHelper;
-import dev.galacticraft.dyndims.impl.registry.UnfrozenRegistry;
-import net.minecraft.core.Registry;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.server.level.DistanceManager;
+import net.minecraft.server.level.ServerChunkCache;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-@ApiStatus.Internal
-public final class ForgePlatformHelper implements PlatformHelper {
-    @Override
-    public @NotNull DynamicDimensionsConfig getConfig() {
-        return DynamicDimensionsConfigImpl.INSTANCE;
-    }
-
-    @Override
-    public @NotNull <T> UnfrozenRegistry<T> unfreezeRegistry(@NotNull Registry<T> registry) {
-        return UnfrozenRegistryImpl.create(registry);
-    }
+@Mixin(ServerChunkCache.class)
+public interface ServerChunkCacheAccessor {
+    @Accessor("distanceManager")
+    DistanceManager getDistanceManager();
 }

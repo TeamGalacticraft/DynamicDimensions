@@ -20,14 +20,16 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dyndims.impl.fabric.mixin;
+package dev.galacticraft.dyndims.impl.fabric.client;
 
-import net.minecraft.server.level.ChunkMap;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import dev.galacticraft.dyndims.impl.client.network.DynamicDimensionsS2CPacketReceivers;
+import net.fabricmc.api.ClientModInitializer;
+import org.jetbrains.annotations.ApiStatus;
 
-@Mixin(ChunkMap.class)
-public interface ChunkMapAccessor {
-    @Accessor("viewDistance")
-    int getViewDistance();
+@ApiStatus.Internal
+public final class DynamicDimensionsClient implements ClientModInitializer {
+    @Override
+    public void onInitializeClient() {
+        DynamicDimensionsS2CPacketReceivers.registerReceivers();
+    }
 }

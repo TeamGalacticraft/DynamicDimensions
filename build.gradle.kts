@@ -60,6 +60,14 @@ subprojects {
         withSourcesJar()
     }
 
+    repositories {
+        maven ("https://maven.bai.lol") {
+            content {
+                includeGroup("lol.bai")
+            }
+        }
+    }
+
     tasks.withType<Jar> {
         manifest {
             attributes(
@@ -78,6 +86,9 @@ subprojects {
         }
     }
 
+    tasks.withType<Javadoc> {
+        exclude("**/impl/**")
+    }
 
     tasks.withType<ProcessResources> {
         // Minify json resources

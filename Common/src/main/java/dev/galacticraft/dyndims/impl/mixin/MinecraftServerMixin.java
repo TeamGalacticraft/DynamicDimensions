@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dyndims.impl.fabric.mixin;
+package dev.galacticraft.dyndims.impl.mixin;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.DataResult;
@@ -28,9 +28,11 @@ import com.mojang.serialization.Lifecycle;
 import dev.galacticraft.dyndims.api.DynamicDimensionRegistry;
 import dev.galacticraft.dyndims.api.PlayerRemover;
 import dev.galacticraft.dyndims.impl.Constants;
-import dev.galacticraft.dyndims.impl.fabric.util.UnfrozenRegistry;
-import dev.galacticraft.dyndims.impl.fabric.accessor.PrimaryLevelDataAccessor;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import dev.galacticraft.dyndims.impl.accessor.PrimaryLevelDataAccessor;
+import dev.galacticraft.dyndims.impl.platform.Services;
+import dev.galacticraft.dyndims.impl.registry.UnfrozenRegistry;
+import io.netty.buffer.Unpooled;
+import lol.bai.badpackets.api.PacketSender;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
@@ -115,13 +117,14 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
 
     @Inject(method = "createLevels", at = @At("HEAD"))
     private void createDynamicLevels(ChunkProgressListener listener, CallbackInfo ci) {
-        try (UnfrozenRegistry<DimensionType> unfrozen = UnfrozenRegistry.create(this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY))) {
-            try (UnfrozenRegistry<LevelStem> unfrozenLevelStem = UnfrozenRegistry.create(this.getWorldData().worldGenSettings().dimensions())) {
-                ((PrimaryLevelDataAccessor) this.getWorldData()).getDynamicDimensions().forEach((id, pair) -> {
-                    Holder<DimensionType> dimHolder = unfrozen.registry().register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), pair.getSecond(), Lifecycle.stable()); // dimension type must be unfrozen
+        Registry<DimensionType> types = this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY);
+        try (UnfrozenRegistry<LevelStem> unfrozenLevelStem = Services.PLATFORM.unfreezeRegistry(this.getWorldData().worldGenSettings().dimensions())) {
+            ((PrimaryLevelDataAccessor) this.getWorldData()).getDynamicDimensions().forEach((id, pair) -> {
+                if (!unfrozenLevelStem.registry().containsKey(id)) {
+                    Holder<DimensionType> dimHolder = types.getHolder(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id)).orElseThrow();
                     unfrozenLevelStem.registry().register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), new LevelStem(dimHolder, pair.getFirst()), Lifecycle.stable());
-                });
-            }
+                }
+            });
         }
         this.reloadTags();
     }
@@ -182,7 +185,7 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
 
                 this.removeEntryFromRegistry(this.getWorldData().worldGenSettings().dimensions(), Registry.LEVEL_STEM_REGISTRY, key.location());
                 this.removeEntryFromRegistry(this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY), Registry.DIMENSION_TYPE_REGISTRY, key.location());
-                FriendlyByteBuf packetByteBuf = PacketByteBufs.create();
+                FriendlyByteBuf packetByteBuf = new FriendlyByteBuf(Unpooled.buffer());
                 packetByteBuf.writeResourceLocation(key.location());
                 this.getPlayerList().broadcastAll(new ClientboundCustomPayloadPacket(Constants.DELETE_WORLD_PACKET, packetByteBuf));
             }
@@ -212,14 +215,14 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
             encodedDimensionType = (CompoundTag) encode.get().orThrow();
         }
 
-        try (UnfrozenRegistry<DimensionType> unfrozen = UnfrozenRegistry.create(typeRegistry)) {
+        try (UnfrozenRegistry<DimensionType> unfrozen = Services.PLATFORM.unfreezeRegistry(typeRegistry)) {
             typeHolder = unfrozen.registry().register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id), type, Lifecycle.stable());
         }
 
         assert typeHolder.isBound() : "Registered dimension type not bound?!";
         LevelStem stem = new LevelStem(typeHolder, chunkGenerator);
 
-        try (UnfrozenRegistry<LevelStem> unfrozen = UnfrozenRegistry.create(worldData.worldGenSettings().dimensions())) {
+        try (UnfrozenRegistry<LevelStem> unfrozen = Services.PLATFORM.unfreezeRegistry(worldData.worldGenSettings().dimensions())) {
             unfrozen.registry().register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), stem, Lifecycle.stable());
         }
 
@@ -243,11 +246,13 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
         ((PrimaryLevelDataAccessor) worldData).addDynamicDimension(id, chunkGenerator, typeHolder.value());
         this.levelsAwaitingCreation.put(key, level); //prevent co-modification
 
-        FriendlyByteBuf packetByteBuf = PacketByteBufs.create();
+        FriendlyByteBuf packetByteBuf = new FriendlyByteBuf(Unpooled.buffer());
         packetByteBuf.writeResourceLocation(id);
         packetByteBuf.writeInt(typeRegistry.getId(type));
         packetByteBuf.writeNbt(encodedDimensionType);
-        this.getPlayerList().broadcastAll(new ClientboundCustomPayloadPacket(Constants.CREATE_WORLD_PACKET, packetByteBuf));
+        for (ServerPlayer player : this.getPlayerList().getPlayers()) {
+            PacketSender.s2c(player).send(Constants.CREATE_WORLD_PACKET, new FriendlyByteBuf(packetByteBuf.copy()));
+        }
         this.reloadTags();
         return true;
     }
@@ -309,7 +314,7 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
     }
 
     private <T> void removeEntryFromRegistry(Registry<T> registry, ResourceKey<Registry<T>> key, ResourceLocation id) {
-        try (UnfrozenRegistry<T> unfrozen = UnfrozenRegistry.create(registry)) {
+        try (UnfrozenRegistry<T> unfrozen = Services.PLATFORM.unfreezeRegistry(registry)) {
             final T value = unfrozen.registry().get(id);
             final int rawId = unfrozen.registry().getId(value);
             final var accessor = (MappedRegistryAccessor<T>) unfrozen.registry();

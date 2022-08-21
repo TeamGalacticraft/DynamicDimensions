@@ -52,7 +52,7 @@ public class DynamicDimensionsConfigImpl implements DynamicDimensionsConfig {
         this.deleteRemovedDimensions = builder
                 .comment("Set this to true to permanently delete the files of removed dimensions")
                 .translation("dyndims.config.delete_removed_dimensions")
-                .define("delete_removed_dimensions", true);
+                .define("delete_removed_dimensions", false);
         this.deleteDimensionsWithPlayers = builder
                 .comment("Set this to true to permanently delete the files of removed dimensions")
                 .translation("dyndims.config.delete_dimensions_with_players")
@@ -60,7 +60,7 @@ public class DynamicDimensionsConfigImpl implements DynamicDimensionsConfig {
         this.enableCommands = builder
                 .comment("Set this to true to enable commands")
                 .translation("dyndims.config.enable_commands")
-                .define("enable_commands", true);
+                .define("enable_commands", false);
         this.commandPermissionLevel = builder
                 .comment("Set this to true to enable commands")
                 .translation("dyndims.config.command_permission_level")

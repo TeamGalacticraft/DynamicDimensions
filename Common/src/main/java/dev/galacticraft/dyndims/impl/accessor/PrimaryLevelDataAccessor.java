@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dyndims.impl.fabric.accessor;
+package dev.galacticraft.dyndims.impl.accessor;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.resources.ResourceLocation;

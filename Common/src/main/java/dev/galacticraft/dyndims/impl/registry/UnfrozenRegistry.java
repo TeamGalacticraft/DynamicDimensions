@@ -20,15 +20,30 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dyndims.impl.fabric.mixin;
+package dev.galacticraft.dyndims.impl.registry;
 
-import net.minecraft.server.ReloadableServerResources;
-import net.minecraft.tags.TagManager;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import net.minecraft.core.MappedRegistry;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
-@Mixin(ReloadableServerResources.class)
-public interface ReloadableServerResourcesAccessor {
-    @Accessor("tagManager")
-    TagManager getTagManager();
+/**
+ * Wrapper for a registry that has been made mutable temporarily
+ * @param <T> The registry's type
+ */
+@ApiStatus.Internal
+public interface UnfrozenRegistry<T> extends AutoCloseable {
+    @Override
+    void close();
+
+    /**
+     * Returns the stored registry. Will fail if the registry has already been re-frozen.
+     * @return the stored registry
+     */
+    @NotNull MappedRegistry<T> registry();
+
+    /**
+     * Returns whether the registry is still mutable
+     * @return whether the registry is still mutable
+     */
+    boolean open();
 }

@@ -20,14 +20,50 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dyndims.impl.fabric.mixin;
+package dev.galacticraft.dyndims.impl.mixin;
 
-import net.minecraft.server.level.DistanceManager;
+import com.mojang.serialization.Lifecycle;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.ObjectList;
+import net.minecraft.core.Holder;
+import net.minecraft.core.MappedRegistry;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(DistanceManager.class)
-public interface DistanceManagerAccessor {
-    @Accessor("simulationDistance")
-    int getSimulationDistance();
+import java.util.List;
+import java.util.Map;
+
+@Mixin(MappedRegistry.class)
+public interface MappedRegistryAccessor<T> {
+    @Accessor("byId")
+    ObjectList<Holder.Reference<T>> getById();
+
+    @Accessor("toId")
+    Object2IntMap<T> getToId();
+
+    @Accessor("byLocation")
+    Map<ResourceLocation, Holder.Reference<T>> getByLocation();
+
+    @Accessor("byKey")
+    Map<ResourceKey<T>, Holder.Reference<T>> getByKey();
+
+    @Accessor("byValue")
+    Map<T, Holder.Reference<T>> getByValue();
+
+    @Accessor("lifecycles")
+    Map<T, Lifecycle> getLifecycles();
+
+    @Accessor("frozen")
+    boolean isFrozen();
+
+    @Accessor("frozen")
+    void setFrozen(boolean frozen);
+
+    @Accessor("holdersInOrder")
+    void setHoldersInOrder(List<Holder.Reference<T>> o);
+
+    @Accessor("elementsLifecycle")
+    void setElementsLifecycle(Lifecycle base);
 }

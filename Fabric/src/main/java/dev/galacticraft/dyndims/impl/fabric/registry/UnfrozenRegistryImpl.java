@@ -20,9 +20,10 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dyndims.impl.fabric.util;
+package dev.galacticraft.dyndims.impl.fabric.registry;
 
-import dev.galacticraft.dyndims.impl.fabric.mixin.MappedRegistryAccessor;
+import dev.galacticraft.dyndims.impl.mixin.MappedRegistryAccessor;
+import dev.galacticraft.dyndims.impl.registry.UnfrozenRegistry;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
@@ -37,7 +38,7 @@ import java.util.Objects;
  * @param <T> The registry's type
  */
 @ApiStatus.Internal
-public final class UnfrozenRegistry<T> implements AutoCloseable {
+public final class UnfrozenRegistryImpl<T> implements AutoCloseable, UnfrozenRegistry<T> {
     private final @NotNull MappedRegistry<T> registry;
     private final boolean refreeze;
     private boolean open = true;
@@ -47,7 +48,7 @@ public final class UnfrozenRegistry<T> implements AutoCloseable {
      * @param registry the mutable registry
      * @param refreeze whether to freeze the registry when this object is closed
      */
-    private UnfrozenRegistry(@NotNull MappedRegistry<T> registry, boolean refreeze) {
+    private UnfrozenRegistryImpl(@NotNull MappedRegistry<T> registry, boolean refreeze) {
         this.registry = registry;
         this.refreeze = refreeze;
     }
@@ -56,10 +57,10 @@ public final class UnfrozenRegistry<T> implements AutoCloseable {
      * Creates an unfrozen registry.
      * @param registry The registry to unfreeze. Must be an exact vanilla type (MappedRegistry or DefaultedRegistry)
      *                otherwise the registry will not be unfrozen
-     * @return A new {@link UnfrozenRegistry} with a mutable registry wrapped inside
+     * @return A new {@link UnfrozenRegistryImpl} with a mutable registry wrapped inside
      * @param <T> The registry's type
      */
-    public static <T> @NotNull UnfrozenRegistry<T> create(@NotNull Registry<T> registry) {
+    public static <T> @NotNull UnfrozenRegistryImpl<T> create(@NotNull Registry<T> registry) {
         if (registry instanceof MappedRegistry<T> simple
                 // if the registry is not a vanilla registry type,
                 // we cannot guarantee that unfreezing the registry won't break stuff.
@@ -68,7 +69,7 @@ public final class UnfrozenRegistry<T> implements AutoCloseable {
             MappedRegistryAccessor<T> accessor = (MappedRegistryAccessor<T>) registry;
             boolean frozen = accessor.isFrozen();
             accessor.setFrozen(false);
-            return new UnfrozenRegistry<>(simple, frozen);
+            return new UnfrozenRegistryImpl<>(simple, frozen);
         } else {
             throw new IllegalStateException("Dynamic Dimensions: Non-vanilla '" + registry.key().location() + "' registry! " + registry.getClass().getName());
         }
@@ -76,14 +77,17 @@ public final class UnfrozenRegistry<T> implements AutoCloseable {
 
     @Override
     public void close() {
-        this.open = false;
-        if (this.refreeze) this.registry.freeze();
+        if (this.open) {
+            this.open = false;
+            if (this.refreeze) this.registry.freeze();
+        }
     }
 
     /**
      * Returns the stored registry. Will fail if the registry has already been re-frozen.
      * @return the stored registry
      */
+    @Override
     public @NotNull MappedRegistry<T> registry() {
         if (!this.open) throw new IllegalStateException("Registry has been re-frozen!");
         return this.registry;
@@ -93,6 +97,7 @@ public final class UnfrozenRegistry<T> implements AutoCloseable {
      * Returns whether the registry is still mutable
      * @return whether the registry is still mutable
      */
+    @Override
     public boolean open() {
         return this.open;
     }
@@ -101,7 +106,7 @@ public final class UnfrozenRegistry<T> implements AutoCloseable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        UnfrozenRegistry<?> that = (UnfrozenRegistry<?>) o;
+        UnfrozenRegistryImpl<?> that = (UnfrozenRegistryImpl<?>) o;
         return this.refreeze == that.refreeze && this.open == that.open && this.registry.equals(that.registry);
     }
 

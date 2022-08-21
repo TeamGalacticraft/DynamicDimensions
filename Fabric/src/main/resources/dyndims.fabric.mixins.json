@@ -3,13 +3,6 @@
   "package": "dev.galacticraft.dyndims.impl.fabric.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "ChunkMapAccessor",
-    "DistanceManagerAccessor",
-    "MappedRegistryAccessor",
-    "MinecraftServerMixin",
-    "PrimaryLevelDataMixin",
-    "ReloadableServerResourcesAccessor",
-    "ServerChunkCacheAccessor"
   ],
   "minVersion": "0.8.0",
   "injectors": {

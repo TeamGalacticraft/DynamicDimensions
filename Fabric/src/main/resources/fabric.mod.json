@@ -45,9 +45,7 @@
   "depends": {
     "fabricloader": ">=0.14",
     "minecraft": "1.19.x",
-    "fabric-api-base": "*",
-    "fabric-command-api-v2": "*",
-    "fabric-networking-api-v1": "*"
+    "badpackets": ">=0.2.0"
   },
   "custom": {
     "modmenu": {

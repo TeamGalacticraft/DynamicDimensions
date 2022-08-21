@@ -24,7 +24,10 @@ package dev.galacticraft.dyndims.impl.fabric.platform;
 
 import dev.galacticraft.dyndims.impl.config.DynamicDimensionsConfig;
 import dev.galacticraft.dyndims.impl.fabric.config.DynamicDimensionsConfigImpl;
+import dev.galacticraft.dyndims.impl.fabric.registry.UnfrozenRegistryImpl;
 import dev.galacticraft.dyndims.impl.platform.services.PlatformHelper;
+import dev.galacticraft.dyndims.impl.registry.UnfrozenRegistry;
+import net.minecraft.core.Registry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,5 +36,10 @@ public final class FabricPlatformHelper implements PlatformHelper {
     @Override
     public @NotNull DynamicDimensionsConfig getConfig() {
         return DynamicDimensionsConfigImpl.create();
+    }
+
+    @Override
+    public @NotNull <T> UnfrozenRegistry<T> unfreezeRegistry(@NotNull Registry<T> registry) {
+        return UnfrozenRegistryImpl.create(registry);
     }
 }

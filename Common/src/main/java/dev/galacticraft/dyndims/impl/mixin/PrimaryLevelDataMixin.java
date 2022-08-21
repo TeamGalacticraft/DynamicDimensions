@@ -20,14 +20,14 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dyndims.impl.fabric.mixin;
+package dev.galacticraft.dyndims.impl.mixin;
 
 import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.Lifecycle;
 import com.mojang.serialization.OptionalDynamic;
-import dev.galacticraft.dyndims.impl.fabric.accessor.PrimaryLevelDataAccessor;
+import dev.galacticraft.dyndims.impl.accessor.PrimaryLevelDataAccessor;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
