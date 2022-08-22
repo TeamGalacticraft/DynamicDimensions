@@ -1,0 +1,21 @@
+modLoader="javafml"
+loaderVersion="[43,)"
+license="MIT"
+issueTrackerURL="https://github.com/TeamGalacticraft/DynamicDimensions/issues/"
+[[mods]]
+modId="dyndims_test"
+version="0"
+displayName="DynamicDimensions Test"
+displayURL="https://galacticraft.dev/"
+credits="Team Galacticraft"
+authors="Team Galacticraft"
+description='''
+${mod_description}
+'''
+
+[[dependencies.dyndims_test]]
+modId="dyndims"
+mandatory=true
+versionRange="[0.4.0,)"
+ordering="NONE"
+side="BOTH"

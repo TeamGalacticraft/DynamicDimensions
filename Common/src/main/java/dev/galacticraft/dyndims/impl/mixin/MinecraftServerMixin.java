@@ -316,7 +316,6 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
     private <T> void removeEntryFromRegistry(Registry<T> registry, ResourceKey<Registry<T>> key, ResourceLocation id) {
         try (UnfrozenRegistry<T> unfrozen = Services.PLATFORM.unfreezeRegistry(registry)) {
             final T value = unfrozen.registry().get(id);
-            final int rawId = unfrozen.registry().getId(value);
             final var accessor = (MappedRegistryAccessor<T>) unfrozen.registry();
             accessor.getLifecycles().remove(value);
             accessor.getToId().removeInt(value);
@@ -324,7 +323,9 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
             accessor.setHoldersInOrder(null);
             accessor.getByKey().remove(ResourceKey.create(key, id));
             accessor.getByLocation().remove(id);
-            accessor.getById().remove(rawId);
+            if (!accessor.getById().removeIf(s -> s != null && ((s.isBound() && s.value() == value) || (s.key().location().equals(id))))) {
+                throw new AssertionError();
+            }
             Lifecycle base = Lifecycle.stable();
             for (Lifecycle lifecycle : accessor.getLifecycles().values()) {
                 base.add(lifecycle);

@@ -25,8 +25,6 @@ package dev.galacticraft.dyndims.gametest;
 import dev.galacticraft.dyndims.api.DynamicDimensionRegistry;
 import dev.galacticraft.dyndims.gametest.mixin.MinecraftServerAccessor;
 import dev.galacticraft.dyndims.impl.Constants;
-import dev.galacticraft.dyndims.impl.fabric.DynamicDimensions;
-import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
 import net.minecraft.core.Registry;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
@@ -44,31 +42,17 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.OptionalLong;
 
-public class DynamicDimensionsGametest implements FabricGameTest {
-    private static final String EMPTY_STRUCTURE = "dyndims-gametest:empty";
-    private static final ResourceLocation TEST_LEVEL_0 = new ResourceLocation("dyndims-gametest", "level_0"); // tests that run in parallel
-    private static final ResourceLocation TEST_LEVEL_1 = new ResourceLocation("dyndims-gametest", "level_1");
-    private static final ResourceLocation TEST_LEVEL_REUSABLE = new ResourceLocation("dyndims-gametest", "reusable"); // for guaranteed non-parallel tests
+public class DynamicDimensionsGametest {
+    private static final String EMPTY_STRUCTURE = "empty"; // in minecraft namespace because forge.
+    private static final ResourceLocation TEST_LEVEL_0 = new ResourceLocation("dyndims_test", "level_0"); // tests that run in parallel
+    private static final ResourceLocation TEST_LEVEL_1 = new ResourceLocation("dyndims_test", "level_1");
+    private static final ResourceLocation TEST_LEVEL_REUSABLE = new ResourceLocation("dyndims_test", "reusable"); // for guaranteed non-parallel tests
 
-    void beforeEach(@NotNull GameTestHelper context, @NotNull Method method) {
-        Constants.CONFIG.allowDimensionCreation(true);
-        Constants.CONFIG.deleteRemovedDimensions(true);
-        Constants.CONFIG.deleteDimensionsWithPlayers(true);
-        Constants.CONFIG.enableCommands(false);
-        Constants.CONFIG.commandPermissionLevel(2);
-        Constants.LOGGER.info("Begin test: {}", method.getName());
-    }
-
-    void afterEach(@NotNull GameTestHelper context, @NotNull Method method) {
-        Constants.LOGGER.info("End test: {}", method.getName());
-    }
-
-    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 1)
-    void createDynamicDimension(@NotNull GameTestHelper context) {
+    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/t0")
+    public void createDynamicDimension(@NotNull GameTestHelper context) {
         final MinecraftServer server = context.getLevel().getServer();
         final ServerLevel overworld = server.overworld();
         final DimensionType dimensionType = createDimensionType();
@@ -79,12 +63,13 @@ public class DynamicDimensionsGametest implements FabricGameTest {
         context.runAfterDelay(1, () -> {
             ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_0));
             Assertions.assertNotNull(level);
-            context.succeed();
+            ((DynamicDimensionRegistry) server).removeDynamicDimension(TEST_LEVEL_0, (server1, player) -> player.disconnect()); // Forge loads the dimension even though it shouldn't
+            context.runAfterDelay(1, context::succeed); // assert that the dimension is actually removed
         });
     }
 
     @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 1, batch = "dyndims/config_changing/0") // separate batch to avoid parallel execution
-    void disableDimensionCreation(@NotNull GameTestHelper context) {
+    public void disableDimensionCreation(@NotNull GameTestHelper context) {
         Constants.CONFIG.allowDimensionCreation(false);
         final MinecraftServer server = context.getLevel().getServer();
         final ServerLevel overworld = server.overworld();
@@ -98,10 +83,12 @@ public class DynamicDimensionsGametest implements FabricGameTest {
             Assertions.assertNull(level);
             context.succeed();
         });
+        Constants.CONFIG.allowDimensionCreation(true);
+        context.succeed();
     }
 
-    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2)
-    void removeDynamicDimension(@NotNull GameTestHelper context) {
+    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/t1")
+    public void removeDynamicDimension(@NotNull GameTestHelper context) {
         final MinecraftServer server = context.getLevel().getServer();
         final ServerLevel overworld = server.overworld();
         final DimensionType dimensionType = createDimensionType();
@@ -122,7 +109,7 @@ public class DynamicDimensionsGametest implements FabricGameTest {
     }
 
     @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/config_changing/1")
-    void removedDimensionsDelete(@NotNull GameTestHelper context) {
+    public void removedDimensionsDelete(@NotNull GameTestHelper context) {
         Constants.CONFIG.deleteRemovedDimensions(true);
         final MinecraftServer server = context.getLevel().getServer();
         final Path worldDir = ((MinecraftServerAccessor) server).getStorageSource().getDimensionPath(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
@@ -171,7 +158,7 @@ public class DynamicDimensionsGametest implements FabricGameTest {
     }
 
     @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/config_changing/2")
-    void removedDimensionsMove(@NotNull GameTestHelper context) {
+    public void removedDimensionsMove(@NotNull GameTestHelper context) {
         Constants.CONFIG.deleteRemovedDimensions(false);
         final MinecraftServer server = context.getLevel().getServer();
         final Path worldDir = ((MinecraftServerAccessor) server).getStorageSource().getDimensionPath(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
@@ -221,15 +208,5 @@ public class DynamicDimensionsGametest implements FabricGameTest {
 
     private static DimensionType createDimensionType() {
         return new DimensionType(OptionalLong.empty(), true, false, false, true, 1.0, false, false, -64, 384, 384, BlockTags.INFINIBURN_OVERWORLD, BuiltinDimensionTypes.OVERWORLD_EFFECTS, 0.0F, new DimensionType.MonsterSettings(false, true, UniformInt.of(0, 7), 0));
-    }
-
-    @Override
-    public void invokeTestMethod(@NotNull GameTestHelper context, @NotNull Method method) {
-        method.setAccessible(true);
-        GameTest annotation = method.getAnnotation(GameTest.class);
-        if (annotation == null) throw new AssertionError("Test method without gametest annotation?!");
-        beforeEach(context, method);
-        FabricGameTest.super.invokeTestMethod(context, method);
-        afterEach(context, method);
     }
 }

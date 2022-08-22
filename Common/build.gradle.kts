@@ -34,7 +34,7 @@ dependencies {
     minecraft("com.mojang:minecraft:${minecraft}")
     mappings(loom.officialMojangMappings())
 
-    compileOnly("org.spongepowered:mixin:0.8.5")
+    testCompileOnly(compileOnly("org.spongepowered:mixin:0.8.5")!!)
     api("lol.bai:badpackets:mojmap-${badpackets}")
 }
 

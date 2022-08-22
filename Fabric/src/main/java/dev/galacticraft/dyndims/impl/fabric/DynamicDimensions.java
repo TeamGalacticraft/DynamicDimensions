@@ -24,7 +24,6 @@ package dev.galacticraft.dyndims.impl.fabric;
 
 import dev.galacticraft.dyndims.impl.Constants;
 import dev.galacticraft.dyndims.impl.command.DynamicDimensionsCommands;
-import dev.galacticraft.dyndims.impl.fabric.config.DynamicDimensionsConfigImpl;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.loader.api.FabricLoader;

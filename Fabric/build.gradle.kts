@@ -24,18 +24,10 @@ base {
     archivesName.set(baseArchiveName)
 }
 
-sourceSets {
-    create("gametest") {
-        compileClasspath += main.get().compileClasspath + main.get().output
-        runtimeClasspath += main.get().runtimeClasspath + main.get().output
-    }
-}
-
 loom {
-    runtimeOnlyLog4j.set(true)
     accessWidenerPath.set(project(":Common").file("${modId}.accesswidener"))
 
-    createRemapConfigurations(sourceSets.getByName("gametest"))
+    createRemapConfigurations(sourceSets.test.get())
 
     runs {
         named("client") {
@@ -53,7 +45,7 @@ loom {
         create("gametest") {
             server()
             name("Fabric Gametest")
-            source(sourceSets.getByName("gametest"))
+            source(sourceSets.test.get())
             ideConfigGenerated(true)
             vmArgs("-ea", "-Dfabric-api.gametest", "-Dfabric-api.gametest.report-file=${project.buildDir}/junit.xml")
         }
@@ -68,8 +60,8 @@ loom {
         create("dyndims") {
             sourceSet(sourceSets.main.get())
         }
-        create("dyndims-gametest") {
-            sourceSet(sourceSets.getByName("gametest"))
+        create("dyndims_test") {
+            sourceSet(sourceSets.test.get())
         }
     }
 }
@@ -83,21 +75,26 @@ dependencies {
     fabricModules.forEach {
         modImplementation(fapi.module(it, fabricApi))
     }
-    "modGametestImplementation"(fapi.module("fabric-gametest-api-v1", fabricApi))
 
-    modRuntimeOnly("lol.bai:badpackets:fabric-${badpackets}")
+    "modTestImplementation"(fapi.module("fabric-gametest-api-v1", fabricApi))
 
-    implementation(project(":Common", "namedElements"))
+    testCompileOnly(project.project(":Common").sourceSets.test.get().output)
+    testRuntimeOnly(modRuntimeOnly("lol.bai:badpackets:fabric-${badpackets}")!!)
+
+    testImplementation(implementation(project(":Common", "namedElements"))!!)
 }
 
-tasks.processResources {
+tasks.compileTestJava {
+    source(project(":Common").sourceSets.test.get().allSource)
+}
+
+tasks.processTestResources {
+    from(project(":Common").sourceSets.test.get().resources)
+}
+
+tasks.withType<ProcessResources> {
     from(project(":Common").sourceSets.main.get().resources)
     from(loom.accessWidenerPath)
-
-//    copy {
-//        println(outputs.files.asPath)
-//        into(outputs.files.asPath)
-//    }
 
     inputs.property("version", project.version)
 

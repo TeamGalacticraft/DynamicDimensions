@@ -29,7 +29,7 @@
     }
   ],
   "mixins": [
-    "dyndims-gametest.mixins.json"
+    "dyndims_test.mixins.json"
   ],
   "environment": "*",
   "entrypoints": {

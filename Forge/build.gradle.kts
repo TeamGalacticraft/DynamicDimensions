@@ -35,13 +35,13 @@ minecraft {
     mappings("official", minecraft)
 
     // accessTransformer(file("src/main/resources/META-INF/accesstransformer.cfg"))
-    
+
     runs {
         create("client") {
             workingDirectory(project.file("run"))
             args("-mixin.config=${modId}.mixins.json", "-mixin.config=${modId}.forge.mixins.json")
             ideaModule("${rootProject.name}.${project.name}.main")
-            taskName("Client")
+            taskName("runClient")
             mods {
                 create(modId) {
                     source(sourceSets.main.get())
@@ -54,7 +54,7 @@ minecraft {
             workingDirectory(project.file("run"))
             args("-mixin.config=${modId}.mixins.json", "-mixin.config=${modId}.forge.mixins.json")
             ideaModule("${rootProject.name}.${project.name}.main")
-            taskName("Server")
+            taskName("runServer")
             mods {
                 create(modId) {
                     source(sourceSets.main.get())
@@ -62,22 +62,49 @@ minecraft {
                 }
             }
         }
+
+        create("gameTestServer") { // name must match exactly for options to be applied, apparently
+            workingDirectory(project.file("run"))
+            args("-mixin.config=${modId}.mixins.json", "-mixin.config=${modId}.forge.mixins.json", "-mixin.config=dyndims_test.mixins.json")
+            ideaModule("${rootProject.name}.${project.name}.test")
+            taskName("runGametest")
+            sources(sourceSets.main.get(), sourceSets.test.get())
+            property("forge.enabledGameTestNamespaces", "dyndims_test,minecraft") // minecraft because forge patches @GameTest for the filtering... and common cannot implement the patch
+            mods {
+                create(modId) {
+                    source(sourceSets.main.get())
+                    source(project(":Common").sourceSets.main.get())
+                }
+                create("dyndims_test") {
+                    source(sourceSets.test.get())
+                    source(project(":Common").sourceSets.test.get())
+                }
+            }
+            forceExit = false // :WHY: is this a thing?!?
+        }
     }
 }
 
 dependencies {
     minecraft("net.minecraftforge:forge:${minecraft}-${forge}")
 
-    runtimeOnly(fg.deobf("lol.bai:badpackets:forge-${badpackets}"))
+    testRuntimeOnly(runtimeOnly(fg.deobf("lol.bai:badpackets:forge-${badpackets}"))!!)
 
-    compileOnly(project(":Common", "namedElements"))
-    testCompileOnly(project(":Common"))
-
+    testImplementation(implementation(project(":Common", "namedElements"))!!)
+    testCompileOnly(project.project(":Common").sourceSets.test.get().output)
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
 }
 
-tasks.withType<JavaCompile> {
+tasks.compileJava {
     source(project(":Common").sourceSets.main.get().allSource)
+}
+
+tasks.compileTestJava {
+    source(project(":Common").sourceSets.test.get().allSource)
+}
+
+tasks.processTestResources {
+    from(project(":Common").sourceSets.test.get().resources)
 }
 
 tasks.withType<ProcessResources> {
