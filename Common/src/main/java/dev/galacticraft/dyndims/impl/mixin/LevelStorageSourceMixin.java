@@ -26,33 +26,55 @@ import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.Lifecycle;
+import net.minecraft.core.Holder;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Mixin(LevelStorageSource.class)
 public abstract class LevelStorageSourceMixin {
+    private static final @Unique ThreadLocal<Map<ResourceLocation, Pair<ChunkGenerator, Holder<DimensionType>>>> MAP = new ThreadLocal<>();
+
     @Inject(method = "readWorldGenSettings", at = @At("HEAD"))
     private static <T> void readDynamicDimensions(@NotNull Dynamic<T> dynamic, DataFixer dataFixer, int i, CallbackInfoReturnable<Pair<WorldGenSettings, Lifecycle>> cir) {
         if (dynamic.get("DynamicDimensions").result().isPresent()) {
             if (dynamic.getOps() instanceof RegistryOps<T> registryOps) {
-                Map<ResourceLocation, DimensionType> map = dynamic.get("DynamicDimensions").asMap(e -> new ResourceLocation(e.asString().get().orThrow()), e -> e.get("dimension_type").decode(DimensionType.DIRECT_CODEC).get().orThrow().getFirst());
-                for (Map.Entry<ResourceLocation, DimensionType> entry : map.entrySet()) {
-                    ((MappedRegistry<DimensionType>) registryOps.registry(Registry.DIMENSION_TYPE_REGISTRY).get()).register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, entry.getKey()), entry.getValue(), Lifecycle.stable());
+                var registry = (MappedRegistry<DimensionType>) registryOps.registry(Registry.DIMENSION_TYPE_REGISTRY).orElseThrow();
+                Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>> map = dynamic.get("DynamicDimensions").asMap(e -> new ResourceLocation(e.asString().get().orThrow()), e -> new Pair<>(e.get("chunk_generator").decode(ChunkGenerator.CODEC).get().orThrow().getFirst(), e.get("dimension_type").decode(DimensionType.DIRECT_CODEC).get().orThrow().getFirst()));
+                Map<ResourceLocation, Pair<ChunkGenerator, Holder<DimensionType>>> holderMap = new HashMap<>(map.size());
+                MAP.set(holderMap);
+                for (Map.Entry<ResourceLocation, Pair<ChunkGenerator, DimensionType>> entry : map.entrySet()) {
+                    holderMap.put(entry.getKey(), new Pair<>(entry.getValue().getFirst(), registry.register(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, entry.getKey()), entry.getValue().getSecond(), Lifecycle.stable())));
                 }
             }
+        }
+    }
+
+    @Inject(method = "readWorldGenSettings", at = @At("RETURN"))
+    private static <T> void addDynamicLevelStems(@NotNull Dynamic<T> dynamic, DataFixer dataFixer, int i, CallbackInfoReturnable<Pair<WorldGenSettings, Lifecycle>> cir) {
+        Map<ResourceLocation, Pair<ChunkGenerator, Holder<DimensionType>>> map = MAP.get();
+        if (map != null) {
+            var dimensions = (MappedRegistry<LevelStem>)cir.getReturnValue().getFirst().dimensions();
+            for (Map.Entry<ResourceLocation, Pair<ChunkGenerator, Holder<DimensionType>>> entry : map.entrySet()) {
+                dimensions.register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, entry.getKey()), new LevelStem(entry.getValue().getSecond(), entry.getValue().getFirst()), Lifecycle.stable());
+            }
+            MAP.set(null);
         }
     }
 }

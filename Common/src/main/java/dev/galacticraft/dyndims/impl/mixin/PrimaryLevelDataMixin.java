@@ -60,7 +60,7 @@ import java.util.UUID;
 @Mixin(PrimaryLevelData.class)
 public abstract class PrimaryLevelDataMixin implements PrimaryLevelDataAccessor {
     // Since we can't pass values to the constructor when reading the properties, we need to store them externally
-    private static final ThreadLocal<Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>>> MAP = new ThreadLocal<>();
+    private static final @Unique ThreadLocal<Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>>> MAP = new ThreadLocal<>();
     /**
      * Map of all the worlds that have been registered.
      */
@@ -108,7 +108,7 @@ public abstract class PrimaryLevelDataMixin implements PrimaryLevelDataAccessor 
     }
 
     @Override
-    public Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>> getDynamicDimensions() {
-        return this.dynamicDimensions;
+    public boolean dimensionExists(ResourceLocation id) {
+        return this.dynamicDimensions.containsKey(id);
     }
 }

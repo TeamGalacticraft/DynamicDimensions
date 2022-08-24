@@ -115,20 +115,6 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
     @Shadow
     public abstract WorldData getWorldData();
 
-    @Inject(method = "createLevels", at = @At("HEAD"))
-    private void createDynamicLevels(ChunkProgressListener listener, CallbackInfo ci) {
-        Registry<DimensionType> types = this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY);
-        try (UnfrozenRegistry<LevelStem> unfrozenLevelStem = Services.PLATFORM.unfreezeRegistry(this.getWorldData().worldGenSettings().dimensions())) {
-            ((PrimaryLevelDataAccessor) this.getWorldData()).getDynamicDimensions().forEach((id, pair) -> {
-                if (!unfrozenLevelStem.registry().containsKey(id)) {
-                    Holder<DimensionType> dimHolder = types.getHolder(ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, id)).orElseThrow();
-                    unfrozenLevelStem.registry().register(ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, id), new LevelStem(dimHolder, pair.getFirst()), Lifecycle.stable());
-                }
-            });
-        }
-        this.reloadTags();
-    }
-
     @Inject(method = "tickServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;tickChildren(Ljava/util/function/BooleanSupplier;)V", shift = At.Shift.AFTER))
     private void addLevels(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
         if (!this.levelsAwaitingCreation.isEmpty()) {
@@ -262,7 +248,7 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
         return this.levels.containsKey(ResourceKey.create(Registry.DIMENSION_REGISTRY, id))
                 && this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).containsKey(id)
                 || this.getWorldData().worldGenSettings().dimensions().containsKey(id)
-                || ((PrimaryLevelDataAccessor) this.getWorldData()).getDynamicDimensions().containsKey(id);
+                || ((PrimaryLevelDataAccessor) this.getWorldData()).dimensionExists(id);
     }
 
     @Override

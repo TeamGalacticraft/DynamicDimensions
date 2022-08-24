@@ -51,9 +51,5 @@ public interface PrimaryLevelDataAccessor {
      */
     boolean removeDynamicDimension(ResourceLocation id);
 
-    /**
-     * Returns a map of all registered dynamic dimensions
-     * @return a map of all registered dynamic dimensions
-     */
-    Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>> getDynamicDimensions();
+    boolean dimensionExists(ResourceLocation id);
 }
