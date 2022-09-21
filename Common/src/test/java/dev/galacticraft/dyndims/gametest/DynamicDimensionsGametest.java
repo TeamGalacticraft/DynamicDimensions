@@ -38,6 +38,7 @@ import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -53,6 +54,7 @@ public class DynamicDimensionsGametest {
 
     @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/t0")
     public void createDynamicDimension(@NotNull GameTestHelper context) {
+        Constants.CONFIG.applyDefaultValues();
         final MinecraftServer server = context.getLevel().getServer();
         final ServerLevel overworld = server.overworld();
         final DimensionType dimensionType = createDimensionType();
@@ -70,6 +72,7 @@ public class DynamicDimensionsGametest {
 
     @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 1, batch = "dyndims/config_changing/0") // separate batch to avoid parallel execution
     public void disableDimensionCreation(@NotNull GameTestHelper context) {
+        Constants.CONFIG.applyDefaultValues();
         Constants.CONFIG.allowDimensionCreation(false);
         final MinecraftServer server = context.getLevel().getServer();
         final ServerLevel overworld = server.overworld();
@@ -83,12 +86,12 @@ public class DynamicDimensionsGametest {
             Assertions.assertNull(level);
             context.succeed();
         });
-        Constants.CONFIG.allowDimensionCreation(true);
         context.succeed();
     }
 
     @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/t1")
     public void removeDynamicDimension(@NotNull GameTestHelper context) {
+        Constants.CONFIG.applyDefaultValues();
         final MinecraftServer server = context.getLevel().getServer();
         final ServerLevel overworld = server.overworld();
         final DimensionType dimensionType = createDimensionType();
@@ -110,6 +113,7 @@ public class DynamicDimensionsGametest {
 
     @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/config_changing/1")
     public void removedDimensionsDelete(@NotNull GameTestHelper context) {
+        Constants.CONFIG.applyDefaultValues();
         Constants.CONFIG.deleteRemovedDimensions(true);
         final MinecraftServer server = context.getLevel().getServer();
         final Path worldDir = ((MinecraftServerAccessor) server).getStorageSource().getDimensionPath(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
@@ -159,7 +163,7 @@ public class DynamicDimensionsGametest {
 
     @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/config_changing/2")
     public void removedDimensionsMove(@NotNull GameTestHelper context) {
-        Constants.CONFIG.deleteRemovedDimensions(false);
+        Constants.CONFIG.applyDefaultValues();
         final MinecraftServer server = context.getLevel().getServer();
         final Path worldDir = ((MinecraftServerAccessor) server).getStorageSource().getDimensionPath(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
         final File file = worldDir.toFile();
@@ -206,7 +210,8 @@ public class DynamicDimensionsGametest {
         });
     }
 
-    private static DimensionType createDimensionType() {
+    @Contract(" -> new")
+    private static @NotNull DimensionType createDimensionType() {
         return new DimensionType(OptionalLong.empty(), true, false, false, true, 1.0, false, false, -64, 384, 384, BlockTags.INFINIBURN_OVERWORLD, BuiltinDimensionTypes.OVERWORLD_EFFECTS, 0.0F, new DimensionType.MonsterSettings(false, true, UniformInt.of(0, 7), 0));
     }
 }

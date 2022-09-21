@@ -23,6 +23,14 @@
 package dev.galacticraft.dyndims.impl.config;
 
 public interface DynamicDimensionsConfig {
+    default void applyDefaultValues() {
+        allowDimensionCreation(true);
+        deleteRemovedDimensions(false);
+        deleteDimensionsWithPlayers(true);
+        enableCommands(false);
+        commandPermissionLevel(2);
+    }
+
     boolean allowDimensionCreation();
 
     boolean deleteRemovedDimensions();

@@ -1,7 +1,7 @@
 plugins {
     idea
     `maven-publish`
-    id("fabric-loom") version "0.13-SNAPSHOT"
+    id("fabric-loom") version "1.0-SNAPSHOT"
 }
 
 val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
@@ -26,7 +26,6 @@ base {
 
 loom {
     accessWidenerPath.set(project(":Common").file("${modId}.accesswidener"))
-
     createRemapConfigurations(sourceSets.test.get())
 
     runs {

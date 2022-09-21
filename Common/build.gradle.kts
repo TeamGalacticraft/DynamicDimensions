@@ -1,7 +1,7 @@
 plugins {
     java
     `maven-publish`
-    id("fabric-loom") version("0.13-SNAPSHOT")
+    id("fabric-loom") version("1.0-SNAPSHOT")
 }
 
 val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
