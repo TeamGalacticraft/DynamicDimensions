@@ -3,7 +3,7 @@ name: Maven Publish
 on:
   push:
     branches:
-      - main
+      - minecraft/*
 
 jobs:
   Publish:

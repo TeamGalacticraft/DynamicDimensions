@@ -3,10 +3,10 @@ name: CodeQL Analysis
 on:
   push:
     branches:
-      - main
+      - minecraft/*
   pull_request:
     branches:
-      - main
+      - minecraft/*
 
 jobs:
   Analysis:
