@@ -130,10 +130,6 @@ tasks.prepareRemapJar {
     enabled = false
 }
 
-tasks.remapJar {
-    enabled = false
-}
-
 tasks.remapSourcesJar {
     enabled = false
 }
