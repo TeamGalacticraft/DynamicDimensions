@@ -78,7 +78,9 @@ dependencies {
     "modTestImplementation"(fapi.module("fabric-gametest-api-v1", fabricApi))
 
     testCompileOnly(project.project(":Common").sourceSets.test.get().output)
-    testRuntimeOnly(modRuntimeOnly("lol.bai:badpackets:fabric-${badpackets}")!!)
+    testRuntimeOnly(modRuntimeOnly("lol.bai:badpackets:fabric-${badpackets}") {
+        isTransitive = false
+    })
 
     testImplementation(implementation(project(":Common", "namedElements"))!!)
 }

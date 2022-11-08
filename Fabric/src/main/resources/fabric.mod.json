@@ -53,6 +53,11 @@
         "library"
       ],
       "parent": "galacticraft-api"
+    },
+    "loom:inject_interfaces": {
+      "net/minecraft/server/MinecraftServer": [
+        "dev/galacticraft/dyndims/api/DynamicDimensionRegistry"
+      ]
     }
   }
 }
