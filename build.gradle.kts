@@ -29,10 +29,8 @@ allprojects {
     }
 
     repositories {
+        mavenLocal()
         mavenCentral()
-        maven("https://repo.spongepowered.org/repository/maven-public/") {
-            name = "Sponge / Mixin"
-        }
     }
 
     tasks.withType<GenerateModuleMetadata> {

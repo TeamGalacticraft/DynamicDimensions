@@ -15,7 +15,7 @@ val modId = project.property("mod.id").toString()
 var modVersion = project.property("mod.version").toString()
 val modName = project.property("mod.name").toString()
 val modDescription = project.property("mod.description").toString()
-val fabricModules = project.property("fabric.modules").toString().split(',')
+val fabricModules = project.property("fabric.api.modules").toString().split(',')
 val badpackets = project.property("badpackets.version").toString()
 
 val baseArchiveName = "${modId}-fabric"

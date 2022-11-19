@@ -45,167 +45,198 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.OptionalLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DynamicDimensionsGametest {
     private static final String EMPTY_STRUCTURE = "empty"; // in minecraft namespace because forge.
-    private static final ResourceLocation TEST_LEVEL_0 = new ResourceLocation("dyndims_test", "level_0"); // tests that run in parallel
+    private static final ResourceLocation TEST_LEVEL_0 = new ResourceLocation("dyndims_test", "level_0");
     private static final ResourceLocation TEST_LEVEL_1 = new ResourceLocation("dyndims_test", "level_1");
-    private static final ResourceLocation TEST_LEVEL_REUSABLE = new ResourceLocation("dyndims_test", "reusable"); // for guaranteed non-parallel tests
+    private static final ResourceLocation TEST_LEVEL_2 = new ResourceLocation("dyndims_test", "level_2");
+    private static final ResourceLocation TEST_LEVEL_3 = new ResourceLocation("dyndims_test", "level_3");
+    private static final ResourceLocation TEST_LEVEL_4 = new ResourceLocation("dyndims_test", "level_4");
+    private static final AtomicBoolean LOCK = new AtomicBoolean(false);
+    private static final int TIMEOUT_TICKS = 50;
 
-    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/t0")
+    private synchronized void awaitLock(GameTestHelper context, Runnable runnable) {
+        if (LOCK.compareAndExchange(false, true)) {
+            context.runAfterDelay(1, () -> awaitLock(context, runnable));
+        } else {
+            runnable.run();
+        }
+    }
+
+    public static void resetLock() {
+        LOCK.set(false);
+    }
+
+    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = TIMEOUT_TICKS, batch = "dyndims/default")
     public void createDynamicDimension(@NotNull GameTestHelper context) {
-        Constants.CONFIG.applyDefaultValues();
-        final MinecraftServer server = context.getLevel().getServer();
-        final ServerLevel overworld = server.overworld();
-        final DimensionType dimensionType = createDimensionType();
-        Assertions.assertNotNull(overworld);
-        Assertions.assertFalse(((DynamicDimensionRegistry) server).dimensionExists(TEST_LEVEL_0));
+        awaitLock(context, () -> {
+            Constants.CONFIG.applyDefaultValues();
+            final MinecraftServer server = context.getLevel().getServer();
+            final ServerLevel overworld = server.overworld();
+            final DimensionType dimensionType = createDimensionType();
+            Assertions.assertNotNull(overworld);
+            Assertions.assertFalse(((DynamicDimensionRegistry) server).dimensionExists(TEST_LEVEL_0));
 
-        Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_0, overworld.getChunkSource().getGenerator(), dimensionType));
-        context.runAfterDelay(1, () -> {
-            ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_0));
-            Assertions.assertNotNull(level);
-            ((DynamicDimensionRegistry) server).removeDynamicDimension(TEST_LEVEL_0, (server1, player) -> player.disconnect()); // Forge loads the dimension even though it shouldn't
-            context.runAfterDelay(1, context::succeed); // assert that the dimension is actually removed
+            Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_0, overworld.getChunkSource().getGenerator(), dimensionType));
+            context.runAfterDelay(1, () -> {
+                ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_0));
+                Assertions.assertNotNull(level);
+                ((DynamicDimensionRegistry) server).removeDynamicDimension(TEST_LEVEL_0, (server1, player) -> player.disconnect()); // Forge loads the dimension even though it shouldn't
+                resetLock();
+                context.runAfterDelay(1, context::succeed); // assert that the dimension is actually removed
+            });
         });
     }
 
-    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 1, batch = "dyndims/config_changing/0") // separate batch to avoid parallel execution
+    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = TIMEOUT_TICKS, batch = "dyndims/no_create_dim")
     public void disableDimensionCreation(@NotNull GameTestHelper context) {
-        Constants.CONFIG.applyDefaultValues();
-        Constants.CONFIG.allowDimensionCreation(false);
-        final MinecraftServer server = context.getLevel().getServer();
-        final ServerLevel overworld = server.overworld();
-        final DimensionType dimensionType = createDimensionType();
-        Assertions.assertNotNull(overworld);
-        Assertions.assertFalse(((DynamicDimensionRegistry) server).dimensionExists(TEST_LEVEL_REUSABLE));
+        awaitLock(context, () -> {
+            Constants.CONFIG.applyDefaultValues();
+            Constants.CONFIG.allowDimensionCreation(false);
+            Constants.CONFIG.deleteRemovedDimensions(true);
+            final MinecraftServer server = context.getLevel().getServer();
+            final ServerLevel overworld = server.overworld();
+            final DimensionType dimensionType = createDimensionType();
+            Assertions.assertNotNull(overworld);
+            Assertions.assertFalse(((DynamicDimensionRegistry) server).dimensionExists(TEST_LEVEL_2));
 
-        Assertions.assertFalse(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_REUSABLE, overworld.getChunkSource().getGenerator(), dimensionType));
-        context.runAfterDelay(1, () -> {
-            ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
-            Assertions.assertNull(level);
-            context.succeed();
+            Assertions.assertFalse(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_2, overworld.getChunkSource().getGenerator(), dimensionType));
+            context.runAfterDelay(1, () -> {
+                ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_2));
+                Assertions.assertNull(level);
+                context.succeed();
+                resetLock();
+            });
         });
-        context.succeed();
     }
 
-    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/t1")
+    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = TIMEOUT_TICKS, batch = "dyndims/default")
     public void removeDynamicDimension(@NotNull GameTestHelper context) {
-        Constants.CONFIG.applyDefaultValues();
-        final MinecraftServer server = context.getLevel().getServer();
-        final ServerLevel overworld = server.overworld();
-        final DimensionType dimensionType = createDimensionType();
-        Assertions.assertNotNull(overworld);
-        Assertions.assertFalse(((DynamicDimensionRegistry) server).dimensionExists(TEST_LEVEL_1));
+        awaitLock(context, () -> {
+            Constants.CONFIG.applyDefaultValues();
+            final MinecraftServer server = context.getLevel().getServer();
+            final ServerLevel overworld = server.overworld();
+            final DimensionType dimensionType = createDimensionType();
+            Assertions.assertNotNull(overworld);
+            Assertions.assertFalse(((DynamicDimensionRegistry) server).dimensionExists(TEST_LEVEL_1));
 
-        Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_1, overworld.getChunkSource().getGenerator(), dimensionType));
-        context.runAfterDelay(1, () -> {
-            ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_1));
-            Assertions.assertNotNull(level);
-            Assertions.assertTrue(((DynamicDimensionRegistry) server).removeDynamicDimension(TEST_LEVEL_1, (server1, player) -> player.changeDimension(overworld)));
+            Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_1, overworld.getChunkSource().getGenerator(), dimensionType));
             context.runAfterDelay(1, () -> {
-                ServerLevel level2 = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_1));
-                Assertions.assertNull(level2);
-                context.succeed();
+                ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_1));
+                Assertions.assertNotNull(level);
+                Assertions.assertTrue(((DynamicDimensionRegistry) server).removeDynamicDimension(TEST_LEVEL_1, (server1, player) -> player.changeDimension(overworld)));
+                context.runAfterDelay(1, () -> {
+                    ServerLevel level2 = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_1));
+                    Assertions.assertNull(level2);
+                    context.succeed();
+                    resetLock();
+                });
             });
         });
     }
 
-    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/config_changing/1")
+    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = TIMEOUT_TICKS, batch = "dyndims/dim_delete")
     public void removedDimensionsDelete(@NotNull GameTestHelper context) {
-        Constants.CONFIG.applyDefaultValues();
-        Constants.CONFIG.deleteRemovedDimensions(true);
-        final MinecraftServer server = context.getLevel().getServer();
-        final Path worldDir = ((MinecraftServerAccessor) server).getStorageSource().getDimensionPath(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
-        final File file = worldDir.toFile();
-        final ServerLevel overworld = server.overworld();
-        final DimensionType dimensionType = createDimensionType();
+        awaitLock(context, () -> {
+            Constants.CONFIG.applyDefaultValues();
+            Constants.CONFIG.deleteRemovedDimensions(true);
+            final MinecraftServer server = context.getLevel().getServer();
+            final Path worldDir = ((MinecraftServerAccessor) server).getStorageSource().getDimensionPath(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_3));
+            final File file = worldDir.toFile();
+            final ServerLevel overworld = server.overworld();
+            final DimensionType dimensionType = createDimensionType();
 
-        Path resolved;
-        String id = TEST_LEVEL_REUSABLE.toString().replace(":", ",");
-        if (worldDir.getParent().getFileName().toString().equals(TEST_LEVEL_REUSABLE.getNamespace())) {
-            resolved = worldDir.getParent().resolveSibling("deleted").resolve(id);
-        } else {
-            resolved = worldDir.resolveSibling(id + "_deleted");
-        }
+            Path resolved;
+            String id = TEST_LEVEL_3.toString().replace(':', ',');
+            if (worldDir.getParent().getFileName().toString().equals(TEST_LEVEL_3.getNamespace())) {
+                resolved = worldDir.getParent().resolveSibling("deleted").resolve(id);
+            } else {
+                resolved = worldDir.resolveSibling(id + "_deleted");
+            }
 
-        try {
-            FileUtils.deleteDirectory(file); // make sure there is no directory in the first place
-            FileUtils.deleteDirectory(resolved.toFile());
-        } catch (IOException e) {
-            GameTestAssertException ex = new GameTestAssertException("Failed to delete dimension folder!");
-            ex.addSuppressed(e);
-            throw ex;
-        }
+            try {
+                FileUtils.deleteDirectory(file); // make sure there is no directory in the first place
+                FileUtils.deleteDirectory(resolved.toFile());
+            } catch (IOException e) {
+                GameTestAssertException ex = new GameTestAssertException("Failed to delete dimension folder!");
+                ex.addSuppressed(e);
+                throw ex;
+            }
 
-        Assertions.assertNotNull(overworld);
-        Assertions.assertFalse(((DynamicDimensionRegistry) server).dimensionExists(TEST_LEVEL_REUSABLE));
+            Assertions.assertNotNull(overworld);
+            Assertions.assertFalse(((DynamicDimensionRegistry) server).dimensionExists(TEST_LEVEL_3));
 
-        Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_REUSABLE, overworld.getChunkSource().getGenerator(), dimensionType));
-        context.runAfterDelay(1, () -> {
-            ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
-            Assertions.assertNotNull(level);
-
-            level.save(null, true,  false);
-            Assertions.assertTrue(file.isDirectory());
-
-            Assertions.assertTrue(((DynamicDimensionRegistry) server).removeDynamicDimension(TEST_LEVEL_REUSABLE, (server1, player) -> player.changeDimension(overworld)));
+            Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_3, overworld.getChunkSource().getGenerator(), dimensionType));
             context.runAfterDelay(1, () -> {
-                ServerLevel level2 = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
-                Assertions.assertNull(level2);
-                Assertions.assertFalse(file.isDirectory());
-                Assertions.assertFalse(resolved.toFile().exists());
+                ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_3));
+                Assertions.assertNotNull(level);
 
-                context.succeed();
+                level.save(null, true, false);
+                Assertions.assertTrue(file.isDirectory());
+
+                Assertions.assertTrue(((DynamicDimensionRegistry) server).removeDynamicDimension(TEST_LEVEL_3, (server1, player) -> player.changeDimension(overworld)));
+                context.runAfterDelay(1, () -> {
+                    ServerLevel level2 = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_3));
+                    Assertions.assertNull(level2);
+                    Assertions.assertFalse(file.isDirectory());
+                    Assertions.assertFalse(resolved.toFile().exists());
+                    resetLock();
+                    context.succeed();
+                });
             });
         });
     }
 
-    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = 2, batch = "dyndims/config_changing/2")
+    @GameTest(template = EMPTY_STRUCTURE, timeoutTicks = TIMEOUT_TICKS, batch = "dyndims/default")
     public void removedDimensionsMove(@NotNull GameTestHelper context) {
-        Constants.CONFIG.applyDefaultValues();
-        final MinecraftServer server = context.getLevel().getServer();
-        final Path worldDir = ((MinecraftServerAccessor) server).getStorageSource().getDimensionPath(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
-        final File file = worldDir.toFile();
-        final ServerLevel overworld = server.overworld();
-        final DimensionType dimensionType = createDimensionType();
+        awaitLock(context, () -> {
+            Constants.CONFIG.applyDefaultValues();
+            final MinecraftServer server = context.getLevel().getServer();
+            final Path worldDir = ((MinecraftServerAccessor) server).getStorageSource().getDimensionPath(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_4));
+            final File file = worldDir.toFile();
+            final ServerLevel overworld = server.overworld();
+            final DimensionType dimensionType = createDimensionType();
 
-        Path resolved;
-        String id = TEST_LEVEL_REUSABLE.toString().replace(":", ",");
-        if (worldDir.getParent().getFileName().toString().equals(TEST_LEVEL_REUSABLE.getNamespace())) {
-            resolved = worldDir.getParent().resolveSibling("deleted").resolve(id);
-        } else {
-            resolved = worldDir.resolveSibling(id + "_deleted");
-        }
+            Path resolved;
+            String id = TEST_LEVEL_4.toString().replace(':', ',');
+            if (worldDir.getParent().getFileName().toString().equals(TEST_LEVEL_4.getNamespace())) {
+                resolved = worldDir.getParent().resolveSibling("deleted").resolve(id);
+            } else {
+                resolved = worldDir.resolveSibling(id + "_deleted");
+            }
 
-        try {
-            FileUtils.deleteDirectory(file); // make sure there is no directory in the first place
-            FileUtils.deleteDirectory(resolved.toFile());
-        } catch (IOException e) {
-            GameTestAssertException ex = new GameTestAssertException("Failed to delete dimension folder!");
-            ex.addSuppressed(e);
-            throw ex;
-        }
+            try {
+                FileUtils.deleteDirectory(file); // make sure there is no directory in the first place
+                FileUtils.deleteDirectory(resolved.toFile());
+            } catch (IOException e) {
+                GameTestAssertException ex = new GameTestAssertException("Failed to delete dimension folder!");
+                ex.addSuppressed(e);
+                throw ex;
+            }
 
-        Assertions.assertNotNull(overworld);
-        Assertions.assertFalse(((DynamicDimensionRegistry) server).dimensionExists(TEST_LEVEL_REUSABLE));
+            Assertions.assertNotNull(overworld);
+            Assertions.assertFalse(((DynamicDimensionRegistry) server).dimensionExists(TEST_LEVEL_4));
 
-        Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_REUSABLE, overworld.getChunkSource().getGenerator(), dimensionType));
-        context.runAfterDelay(1, () -> {
-            ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
-            Assertions.assertNotNull(level);
-
-            level.save(null, true,  false);
-            Assertions.assertTrue(file.isDirectory());
-
-            Assertions.assertTrue(((DynamicDimensionRegistry) server).removeDynamicDimension(TEST_LEVEL_REUSABLE, (server1, player) -> player.changeDimension(overworld)));
+            Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_4, overworld.getChunkSource().getGenerator(), dimensionType));
             context.runAfterDelay(1, () -> {
-                ServerLevel level2 = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_REUSABLE));
-                Assertions.assertNull(level2);
-                Assertions.assertFalse(file.isDirectory());
-                Assertions.assertTrue(resolved.toFile().exists());
+                ServerLevel level = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_4));
+                Assertions.assertNotNull(level);
 
-                context.succeed();
+                level.save(null, true, false);
+                Assertions.assertTrue(file.isDirectory());
+
+                Assertions.assertTrue(((DynamicDimensionRegistry) server).removeDynamicDimension(TEST_LEVEL_4, (server1, player) -> player.changeDimension(overworld)));
+                context.runAfterDelay(1, () -> {
+                    ServerLevel level2 = server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, TEST_LEVEL_4));
+                    Assertions.assertNull(level2);
+                    Assertions.assertFalse(file.isDirectory());
+                    Assertions.assertTrue(resolved.toFile().exists());
+
+                    context.succeed();
+                    resetLock();
+                });
             });
         });
     }

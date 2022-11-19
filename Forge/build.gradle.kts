@@ -80,7 +80,16 @@ minecraft {
                     source(project(":Common").sourceSets.test.get())
                 }
             }
-            forceExit = false // :WHY: is this a thing?!?
+            forceExit = false
+        }
+    }
+}
+
+repositories {
+    maven("https://repo.spongepowered.org/repository/maven-public/") {
+        name = "Sponge Snapshots"
+        content {
+            includeGroup("org.spongepowered")
         }
     }
 }

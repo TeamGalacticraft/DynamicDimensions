@@ -30,6 +30,15 @@ loom {
     }
 }
 
+repositories {
+    maven("https://repo.spongepowered.org/repository/maven-public/") {
+        name = "Sponge Snapshots"
+        content {
+            includeGroup("org.spongepowered")
+        }
+    }
+}
+
 dependencies {
     minecraft("com.mojang:minecraft:${minecraft}")
     mappings(loom.officialMojangMappings())
