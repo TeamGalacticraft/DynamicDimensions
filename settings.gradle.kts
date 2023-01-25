@@ -1,6 +1,9 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
+        maven("https://maven.galacticraft.net/repository/internal-plugins/") {
+            name = "InternalPlugins"
+        }
         maven("https://maven.fabricmc.net/") {
             name = "Fabric"
         }

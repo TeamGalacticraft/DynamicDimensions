@@ -24,10 +24,9 @@ jobs:
       - name: Publish
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publish
+          arguments: publishToGalacticMaven
         env:
           PRE_RELEASE: ${{ env.release.prerelease }}
-          NEXUS_REPOSITORY_URL: ${{ secrets.NEXUS_RELEASE_URL }}
           BUILD_NUMBER: ${{ github.run_id }}
           NEXUS_USER: ${{ secrets.NEXUS_USER }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}

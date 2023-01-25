@@ -1,7 +1,7 @@
 plugins {
     java
-    `maven-publish`
     id("fabric-loom") version("1.0-SNAPSHOT")
+    id("net.galacticraft.internal.maven") version("1.0.0")
 }
 
 val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
@@ -48,64 +48,19 @@ tasks.processResources {
     }
 }
 
-publishing {
-    publications {
-        register("mavenJava", MavenPublication::class) {
-            artifactId = baseArchiveName
-            version = buildString {
-                append(modVersion)
-                if (snapshot) {
-                    append("-SNAPSHOT")
-                } else {
-                    if (buildNumber.isNotBlank()) {
-                        append("+")
-                        append(buildNumber)
-                    }
-                }
-            }
-
-            from(components["java"])
-
-            pom {
-                name.set(modName)
-                inceptionYear.set("2021")
-
-                organization {
-                    name.set("Team Galacticraft")
-                    url.set("https://github.com/TeamGalacticraft")
-                }
-
-                scm {
-                    url.set("https://github.com/TeamGalacticraft/DynamicDimensions")
-                    connection.set("scm:git:git://github.com/TeamGalacticraft/DynamicDimensions.git")
-                    developerConnection.set("scm:git:git@github.com:TeamGalacticraft/DynamicDimensions.git")
-                }
-
-                issueManagement {
-                    system.set("github")
-                    url.set("https://github.com/TeamGalacticraft/DynamicDimensions/issues")
-                }
-
-                licenses {
-                    license {
-                        name.set("MIT")
-                        url.set("https://github.com/TeamGalacticraft/DynamicDimensions/blob/main/LICENSE")
-                    }
-                }
+maven {
+    artifactId.set(baseArchiveName)
+    version.set(buildString {
+        append(modVersion)
+        if (snapshot) {
+            append("-SNAPSHOT")
+        } else {
+            if (buildNumber.isNotBlank()) {
+                append("+")
+                append(buildNumber)
             }
         }
-    }
-
-    repositories {
-        if (System.getenv().containsKey("NEXUS_REPOSITORY_URL")) {
-            maven(System.getenv("NEXUS_REPOSITORY_URL")!!) {
-                credentials {
-                    username = System.getenv("NEXUS_USER")
-                    password = System.getenv("NEXUS_PASSWORD")
-                }
-            }
-        }
-    }
+    })
 }
 
 tasks.create("prepareWorkspace") {

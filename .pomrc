@@ -1,0 +1,24 @@
+{
+  "name": "Dynamic Dimensions",
+  "inceptionYear": "2021",
+  "organization": {
+    "name": "Team Galacticraft",
+    "url": "https://github.com/TeamGalacticraft"
+  },
+  "licenses": [
+    {
+      "name": "MIT",
+      "url": "https://github.com/TeamGalacticraft/DynamicDimensions/blob/main/LICENSE",
+      "distribution": "repo"
+    }
+  ],
+  "issueManagement": {
+    "system": "github",
+    "url": "https://github.com/TeamGalacticraft/DynamicDimensions/issues"
+  },
+  "scm": {
+    "url": "https://github.com/TeamGalacticraft/DynamicDimensions",
+    "connection": "scm:git:git://github.com/TeamGalacticraft/DynamicDimensions.git",
+    "developerConnection": "scm:git:git@github.com:TeamGalacticraft/DynamicDimensions.git"
+  }
+}
