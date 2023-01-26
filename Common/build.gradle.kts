@@ -2,6 +2,7 @@ plugins {
     java
     `maven-publish`
     id("fabric-loom") version("1.0-SNAPSHOT")
+    id("io.github.juuxel.loom-quiltflower") version "1.8.0"
 }
 
 val buildNumber = System.getenv("BUILD_NUMBER") ?: ""

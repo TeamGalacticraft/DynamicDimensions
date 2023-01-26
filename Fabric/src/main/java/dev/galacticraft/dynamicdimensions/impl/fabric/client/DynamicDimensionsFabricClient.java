@@ -20,20 +20,16 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.impl.fabric.client;
 
-import net.minecraftforge.event.RegisterGameTestsEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.jetbrains.annotations.NotNull;
+import dev.galacticraft.dynamicdimensions.impl.client.network.DynamicDimensionsS2CPacketReceivers;
+import net.fabricmc.api.ClientModInitializer;
+import org.jetbrains.annotations.ApiStatus;
 
-@Mod("dynamicdimensions_test")
-public final class DynamicDimensionsTest {
-    public DynamicDimensionsTest() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerGametests);
-    }
-
-    public void registerGametests(@NotNull RegisterGameTestsEvent event) {
-        event.register(DynamicDimensionsGametest.class);
+@ApiStatus.Internal
+public final class DynamicDimensionsFabricClient implements ClientModInitializer {
+    @Override
+    public void onInitializeClient() {
+        DynamicDimensionsS2CPacketReceivers.registerReceivers();
     }
 }

@@ -20,20 +20,15 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.impl.mixin;
 
-import net.minecraftforge.event.RegisterGameTestsEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.server.level.DistanceManager;
+import net.minecraft.server.level.ServerChunkCache;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mod("dynamicdimensions_test")
-public final class DynamicDimensionsTest {
-    public DynamicDimensionsTest() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerGametests);
-    }
-
-    public void registerGametests(@NotNull RegisterGameTestsEvent event) {
-        event.register(DynamicDimensionsGametest.class);
-    }
+@Mixin(ServerChunkCache.class)
+public interface ServerChunkCacheAccessor {
+    @Accessor("distanceManager")
+    DistanceManager getDistanceManager();
 }

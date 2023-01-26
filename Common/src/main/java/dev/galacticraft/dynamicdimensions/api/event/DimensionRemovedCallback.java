@@ -20,20 +20,29 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.api.event;
 
-import net.minecraftforge.event.RegisterGameTestsEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import dev.galacticraft.dynamicdimensions.impl.platform.Services;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-@Mod("dynamicdimensions_test")
-public final class DynamicDimensionsTest {
-    public DynamicDimensionsTest() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerGametests);
+/**
+ * Called when a dynamic dimension is removed.
+ * @since 0.5.0
+ */
+@FunctionalInterface
+public interface DimensionRemovedCallback {
+    static void register(DimensionRemovedCallback callback) {
+        Services.PLATFORM.registerRemovedEvent(callback);
     }
 
-    public void registerGametests(@NotNull RegisterGameTestsEvent event) {
-        event.register(DynamicDimensionsGametest.class);
+    @ApiStatus.Internal
+    static void invoke(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level) {
+        Services.PLATFORM.invokeRemovedEvent(key, level);
     }
+
+    void dimensionRemoved(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level);
 }

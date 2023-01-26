@@ -20,20 +20,21 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.impl.platform;
 
-import net.minecraftforge.event.RegisterGameTestsEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import dev.galacticraft.dynamicdimensions.impl.Constants;
+import dev.galacticraft.dynamicdimensions.impl.platform.services.PlatformHelper;
 import org.jetbrains.annotations.NotNull;
 
-@Mod("dynamicdimensions_test")
-public final class DynamicDimensionsTest {
-    public DynamicDimensionsTest() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerGametests);
-    }
+import java.util.ServiceLoader;
 
-    public void registerGametests(@NotNull RegisterGameTestsEvent event) {
-        event.register(DynamicDimensionsGametest.class);
+public final class Services {
+    public static final PlatformHelper PLATFORM = service(PlatformHelper.class);
+
+    private static <T> @NotNull T service(Class<T> clazz) {
+        final T service = ServiceLoader.load(clazz).findFirst()
+                .orElseThrow(() -> new NullPointerException("Failed to load service for " + clazz.getName()));
+        Constants.LOGGER.debug("Loaded {} for service {}", service.getClass().getName(), clazz);
+        return service;
     }
 }

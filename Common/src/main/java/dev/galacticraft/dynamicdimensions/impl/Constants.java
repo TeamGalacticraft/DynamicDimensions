@@ -20,20 +20,20 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.impl;
 
-import net.minecraftforge.event.RegisterGameTestsEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.jetbrains.annotations.NotNull;
+import dev.galacticraft.dynamicdimensions.impl.config.DynamicDimensionsConfig;
+import dev.galacticraft.dynamicdimensions.impl.platform.Services;
+import net.minecraft.resources.ResourceLocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Mod("dynamicdimensions_test")
-public final class DynamicDimensionsTest {
-    public DynamicDimensionsTest() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerGametests);
-    }
+public interface Constants {
+    String MOD_ID = "dynamicdimensions";
+    String DEFAULT_NAMESPACE = "dynamic";
+    Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    DynamicDimensionsConfig CONFIG = Services.PLATFORM.getConfig();
 
-    public void registerGametests(@NotNull RegisterGameTestsEvent event) {
-        event.register(DynamicDimensionsGametest.class);
-    }
+    ResourceLocation CREATE_WORLD_PACKET = new ResourceLocation(MOD_ID, "create_world");
+    ResourceLocation DELETE_WORLD_PACKET = new ResourceLocation(MOD_ID, "delete_world");
 }

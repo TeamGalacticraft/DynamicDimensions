@@ -2,6 +2,7 @@ plugins {
     idea
     `maven-publish`
     id("fabric-loom") version "1.0-SNAPSHOT"
+    id("io.github.juuxel.loom-quiltflower") version "1.8.0"
 }
 
 val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
@@ -56,10 +57,10 @@ loom {
     }
 
     mods {
-        create("dyndims") {
+        create("dynamicdimensions") {
             sourceSet(sourceSets.main.get())
         }
-        create("dyndims_test") {
+        create("dynamicdimensions_test") {
             sourceSet(sourceSets.test.get())
         }
     }
@@ -76,6 +77,7 @@ dependencies {
     }
 
     "modTestImplementation"(fapi.module("fabric-gametest-api-v1", fabricApi))
+    "modTestRuntimeOnly"("net.fabricmc.fabric-api:fabric-api:$fabricApi")
 
     testCompileOnly(project.project(":Common").sourceSets.test.get().output)
     testRuntimeOnly(modRuntimeOnly("lol.bai:badpackets:fabric-${badpackets}") {

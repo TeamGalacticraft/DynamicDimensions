@@ -20,20 +20,34 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.impl.config;
 
-import net.minecraftforge.event.RegisterGameTestsEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.jetbrains.annotations.NotNull;
-
-@Mod("dynamicdimensions_test")
-public final class DynamicDimensionsTest {
-    public DynamicDimensionsTest() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerGametests);
+public interface DynamicDimensionsConfig {
+    default void applyDefaultValues() {
+        allowDimensionCreation(true);
+        deleteRemovedDimensions(false);
+        deleteDimensionsWithPlayers(true);
+        enableCommands(false);
+        commandPermissionLevel(2);
     }
 
-    public void registerGametests(@NotNull RegisterGameTestsEvent event) {
-        event.register(DynamicDimensionsGametest.class);
-    }
+    boolean allowDimensionCreation();
+
+    boolean deleteRemovedDimensions();
+
+    boolean deleteDimensionsWithPlayers();
+
+    boolean enableCommands();
+
+    int commandPermissionLevel();
+
+    void allowDimensionCreation(boolean value);
+
+    void deleteRemovedDimensions(boolean value);
+
+    void deleteDimensionsWithPlayers(boolean value);
+
+    void enableCommands(boolean value);
+
+    void commandPermissionLevel(int value);
 }

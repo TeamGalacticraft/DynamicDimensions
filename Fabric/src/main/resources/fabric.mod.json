@@ -31,21 +31,20 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "dev.galacticraft.dyndims.impl.fabric.DynamicDimensions"
+      "dev.galacticraft.dynamicdimensions.impl.fabric.DynamicDimensionsFabric"
     ],
     "client": [
-      "dev.galacticraft.dyndims.impl.fabric.client.DynamicDimensionsClient"
+      "dev.galacticraft.dynamicdimensions.impl.fabric.client.DynamicDimensionsFabricClient"
     ]
   },
   "mixins": [
-    "${mod_id}.mixins.json",
-    "${mod_id}.fabric.mixins.json"
+    "${mod_id}.mixins.json"
   ],
   "accessWidener": "${mod_id}.accesswidener",
   "depends": {
     "fabricloader": ">=0.14",
-    "minecraft": "1.19.x",
-    "badpackets": ">=0.2.0"
+    "minecraft": ">=1.19.3",
+    "badpackets": ">=0.3.0"
   },
   "custom": {
     "modmenu": {
@@ -56,7 +55,7 @@
     },
     "loom:inject_interfaces": {
       "net/minecraft/server/MinecraftServer": [
-        "dev/galacticraft/dyndims/api/DynamicDimensionRegistry"
+        "dev/galacticraft/dynamicdimensions/api/DynamicDimensionRegistry"
       ]
     }
   }

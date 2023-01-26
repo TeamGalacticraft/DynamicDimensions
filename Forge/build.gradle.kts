@@ -28,18 +28,15 @@ mixin {
     add(sourceSets.main.get(), "${baseArchiveName}.refmap.json")
 
     config("${modId}.mixins.json")
-    config("${modId}.forge.mixins.json")
 }
 
 minecraft {
     mappings("official", minecraft)
 
-    // accessTransformer(file("src/main/resources/META-INF/accesstransformer.cfg"))
-
     runs {
         create("client") {
             workingDirectory(project.file("run"))
-            args("-mixin.config=${modId}.mixins.json", "-mixin.config=${modId}.forge.mixins.json")
+            args("-mixin.config=${modId}.mixins.json")
             ideaModule("${rootProject.name}.${project.name}.main")
             taskName("runClient")
             mods {
@@ -52,7 +49,7 @@ minecraft {
 
         create("server") {
             workingDirectory(project.file("run"))
-            args("-mixin.config=${modId}.mixins.json", "-mixin.config=${modId}.forge.mixins.json")
+            args("-mixin.config=${modId}.mixins.json")
             ideaModule("${rootProject.name}.${project.name}.main")
             taskName("runServer")
             mods {
@@ -65,17 +62,17 @@ minecraft {
 
         create("gameTestServer") { // name must match exactly for options to be applied, apparently
             workingDirectory(project.file("run"))
-            args("-mixin.config=${modId}.mixins.json", "-mixin.config=${modId}.forge.mixins.json", "-mixin.config=dyndims_test.mixins.json")
+            args("-mixin.config=${modId}.mixins.json", "-mixin.config=dynamicdimensions_test.mixins.json")
             ideaModule("${rootProject.name}.${project.name}.test")
             taskName("runGametest")
             sources(sourceSets.main.get(), sourceSets.test.get())
-            property("forge.enabledGameTestNamespaces", "dyndims_test,minecraft") // minecraft because forge patches @GameTest for the filtering... and common cannot implement the patch
+            property("forge.enabledGameTestNamespaces", "dynamicdimensions_test,minecraft") // minecraft because forge patches @GameTest for the filtering... and common cannot implement the patch
             mods {
                 create(modId) {
                     source(sourceSets.main.get())
                     source(project(":Common").sourceSets.main.get())
                 }
-                create("dyndims_test") {
+                create("dynamicdimensions_test") {
                     source(sourceSets.test.get())
                     source(project(":Common").sourceSets.test.get())
                 }

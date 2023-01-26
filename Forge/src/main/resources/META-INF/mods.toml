@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[43,)"
+loaderVersion="[44,)"
 license="MIT"
 issueTrackerURL="https://github.com/TeamGalacticraft/DynamicDimensions/issues/"
 [[mods]]
@@ -17,20 +17,20 @@ ${mod_description}
 [[dependencies.${mod_id}]]
     modId="badpackets"
     mandatory=true
-    versionRange="[0.2.0,)"
+    versionRange="[0.3.0,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
     modId="forge"
     mandatory=true
-    versionRange="[43,)"
+    versionRange="[44,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.19,1.20)"
+    versionRange="[1.19.3,1.20)"
     ordering="NONE"
     side="BOTH"

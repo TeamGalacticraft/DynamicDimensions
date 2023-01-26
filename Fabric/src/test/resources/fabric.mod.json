@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "dyndims-gametest",
+  "id": "dynamicdimensions-gametest",
   "version": "0.0.0",
 
   "name": "Dynamic Dimensions Worlds Gametest",
@@ -29,15 +29,15 @@
     }
   ],
   "mixins": [
-    "dyndims_test.mixins.json"
+    "dynamicdimensions_test.mixins.json"
   ],
   "environment": "*",
   "entrypoints": {
     "fabric-gametest": [
-      "dev.galacticraft.dyndims.gametest.DynamicDimensionsGametest"
+      "dev.galacticraft.dynamicdimensions.gametest.DynamicDimensionsGametest"
     ]
   },
   "depends": {
-    "dyndims": "^0.4"
+    "dynamicdimensions": "^0.4"
   }
 }

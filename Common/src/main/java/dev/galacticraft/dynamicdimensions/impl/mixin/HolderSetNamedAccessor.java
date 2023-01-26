@@ -20,20 +20,20 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.impl.mixin;
 
-import net.minecraftforge.event.RegisterGameTestsEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mod("dynamicdimensions_test")
-public final class DynamicDimensionsTest {
-    public DynamicDimensionsTest() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerGametests);
-    }
+import java.util.List;
 
-    public void registerGametests(@NotNull RegisterGameTestsEvent event) {
-        event.register(DynamicDimensionsGametest.class);
-    }
+@Mixin(HolderSet.Named.class)
+public interface HolderSetNamedAccessor<T> {
+    @Accessor("contents")
+    List<Holder<T>> getContents();
+
+    @Accessor("contents")
+    void setContents(List<Holder<T>> contents);
 }

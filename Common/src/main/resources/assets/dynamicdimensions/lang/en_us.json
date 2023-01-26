@@ -1,0 +1,6 @@
+{
+  "command.dynamicdimensions.create.error": "Cannot create a dimension with this id!",
+  "command.dynamicdimensions.delete.error": "Cannot destroy this dimension!",
+  "command.dynamicdimensions.delete.removed": "Dimension %s was removed.",
+  "dynamicdimensions.dimension_disconnect": "The dimension you were in was deleted."
+}

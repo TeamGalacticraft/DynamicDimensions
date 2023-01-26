@@ -20,20 +20,22 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.api;
 
-import net.minecraftforge.event.RegisterGameTestsEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 
-@Mod("dynamicdimensions_test")
-public final class DynamicDimensionsTest {
-    public DynamicDimensionsTest() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerGametests);
-    }
-
-    public void registerGametests(@NotNull RegisterGameTestsEvent event) {
-        event.register(DynamicDimensionsGametest.class);
-    }
+/**
+ * Removes players from a {@link net.minecraft.world.level.Level}.
+ */
+@FunctionalInterface
+public interface PlayerRemover {
+    /**
+     * Called when a player must be removed from the level.
+     * May cause unexpected behaviour if the player is not actually removed from the level.
+     *
+     * @param server The server instance
+     * @param player The player to be removed
+     */
+    void removePlayer(MinecraftServer server, ServerPlayer player);
 }
