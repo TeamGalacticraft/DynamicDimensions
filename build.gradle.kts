@@ -1,36 +1,43 @@
 import java.text.SimpleDateFormat
 import java.util.Date
 
+plugins {
+    id("org.ajoberstar.grgit") version("5.0.0")
+    id("org.cadixdev.licenser") version("0.6.1") apply(false)
+}
+
 val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
-val snapshot = (System.getenv("SNAPSHOT") ?: "false") == "true"
 val prerelease = (System.getenv("PRE_RELEASE") ?: "false") == "true"
+val commitHash = (System.getenv("GITHUB_SHA") ?: grgit.head().id.orEmpty())
 
 val minecraft = project.property("minecraft.version").toString()
 val modName = project.property("mod.name").toString()
 val modId = project.property("mod.id").toString()
 var modVersion = project.property("mod.version").toString()
 
-plugins {
-    id("org.cadixdev.licenser") version("0.6.1")
-}
-
 allprojects {
     apply(plugin = "org.cadixdev.licenser")
 
     version = buildString {
         append(modVersion)
-        if (prerelease || snapshot) {
+        if (prerelease) {
             append("-pre")
         }
+        append('+')
         if (buildNumber.isNotBlank()) {
-            append("+")
             append(buildNumber)
+        } else if (commitHash.isNotEmpty()) {
+            append(commitHash.substring(0, 8))
+            if (!rootProject.grgit.status().isClean) {
+                append("-dirty")
+            }
+        } else {
+            append("unknown")
         }
     }
 
     repositories {
         mavenLocal()
-        mavenCentral()
     }
 
     tasks.withType<GenerateModuleMetadata> {

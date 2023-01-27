@@ -3,6 +3,8 @@ name: Pull Request Check
 on:
   pull_request:
     types: [ synchronize, opened ]
+    branches:
+      - 'minecraft/*'
 
 jobs:
   Build:

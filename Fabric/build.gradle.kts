@@ -1,13 +1,9 @@
 plugins {
     idea
     `maven-publish`
-    id("fabric-loom") version "1.0-SNAPSHOT"
-    id("io.github.juuxel.loom-quiltflower") version "1.8.0"
+    id("fabric-loom") version("1.0-SNAPSHOT")
+    id("io.github.juuxel.loom-quiltflower") version("1.8.0")
 }
-
-val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
-val snapshot = (System.getenv("SNAPSHOT") ?: "false") == "true"
-val prerelease = (System.getenv("PRE_RELEASE") ?: "false") == "true"
 
 val minecraft = project.property("minecraft.version").toString()
 val fabricLoader = project.property("fabric.loader.version").toString()
@@ -71,24 +67,16 @@ dependencies {
     minecraft("com.mojang:minecraft:${minecraft}")
     mappings(loom.officialMojangMappings())
     modImplementation("net.fabricmc:fabric-loader:${fabricLoader}")
+    implementation(project(":Common", "namedElements"))
 
     fabricModules.forEach {
         modImplementation(fapi.module(it, fabricApi))
     }
+    modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:$fabricApi")
+    modRuntimeOnly("lol.bai:badpackets:fabric-${badpackets}")
 
     "modTestImplementation"(fapi.module("fabric-gametest-api-v1", fabricApi))
-    "modTestRuntimeOnly"("net.fabricmc.fabric-api:fabric-api:$fabricApi")
-
-    testCompileOnly(project.project(":Common").sourceSets.test.get().output)
-    testRuntimeOnly(modRuntimeOnly("lol.bai:badpackets:fabric-${badpackets}") {
-        isTransitive = false
-    })
-
-    testImplementation(implementation(project(":Common", "namedElements"))!!)
-}
-
-tasks.compileTestJava {
-    source(project(":Common").sourceSets.test.get().allSource)
+    testImplementation(project.project(":Common").sourceSets.test.get().output)
 }
 
 tasks.processTestResources {
@@ -115,10 +103,6 @@ tasks.withType<ProcessResources> {
     }
 }
 
-tasks.compileJava {
-    source(project(":Common").sourceSets.main.get().allSource)
-}
-
 tasks.jar {
     from("LICENSE") {
         rename { "${it}_${modName}" }
@@ -130,17 +114,7 @@ publishing {
         register("mavenJava", MavenPublication::class) {
             groupId = group.toString()
             artifactId = baseArchiveName
-            version = buildString {
-                append(modVersion)
-                if (snapshot) {
-                    append("-SNAPSHOT")
-                } else {
-                    if (buildNumber.isNotBlank()) {
-                        append("+")
-                        append(buildNumber)
-                    }
-                }
-            }
+            version = rootProject.version.toString()
 
             from(components["java"])
 

@@ -6,10 +6,6 @@ plugins {
     `maven-publish`
 }
 
-val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
-val snapshot = (System.getenv("SNAPSHOT") ?: "false") == "true"
-val prerelease = (System.getenv("PRE_RELEASE") ?: "false") == "true"
-
 val minecraft = project.property("minecraft.version").toString()
 val forge = project.property("forge.version").toString()
 val modId = project.property("mod.id").toString()
@@ -93,20 +89,12 @@ repositories {
 
 dependencies {
     minecraft("net.minecraftforge:forge:${minecraft}-${forge}")
-
-    testRuntimeOnly(runtimeOnly(fg.deobf("lol.bai:badpackets:forge-${badpackets}"))!!)
-
-    testImplementation(implementation(project(":Common", "namedElements"))!!)
-    testCompileOnly(project.project(":Common").sourceSets.test.get().output)
+    implementation(project(":Common", "namedElements"))
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
-}
 
-tasks.compileJava {
-    source(project(":Common").sourceSets.main.get().allSource)
-}
+    runtimeOnly(fg.deobf("lol.bai:badpackets:forge-${badpackets}"))
 
-tasks.compileTestJava {
-    source(project(":Common").sourceSets.test.get().allSource)
+    testImplementation(project.project(":Common").sourceSets.test.get().output)
 }
 
 tasks.processTestResources {
@@ -141,17 +129,7 @@ publishing {
         register("mavenJava", MavenPublication::class) {
             groupId = group.toString()
             artifactId = baseArchiveName
-            version = buildString {
-                append(modVersion)
-                if (snapshot) {
-                    append("-SNAPSHOT")
-                } else {
-                    if (buildNumber.isNotBlank()) {
-                        append("+")
-                        append(buildNumber)
-                    }
-                }
-            }
+            version = rootProject.version.toString()
 
             artifact(tasks.jar)
 

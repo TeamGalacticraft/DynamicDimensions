@@ -5,10 +5,6 @@ plugins {
     id("io.github.juuxel.loom-quiltflower") version "1.8.0"
 }
 
-val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
-val snapshot = (System.getenv("SNAPSHOT") ?: "false") == "true"
-val prerelease = (System.getenv("PRE_RELEASE") ?: "false") == "true"
-
 val minecraft = project.property("minecraft.version").toString()
 val modId = project.property("mod.id").toString()
 var modVersion = project.property("mod.version").toString()
@@ -45,7 +41,7 @@ dependencies {
     mappings(loom.officialMojangMappings())
 
     testCompileOnly(compileOnly("org.spongepowered:mixin:0.8.5")!!)
-    api("lol.bai:badpackets:mojmap-${badpackets}")
+    compileOnly("lol.bai:badpackets:mojmap-${badpackets}")
 }
 
 tasks.processResources {
@@ -61,18 +57,9 @@ tasks.processResources {
 publishing {
     publications {
         register("mavenJava", MavenPublication::class) {
+            groupId = group.toString()
             artifactId = baseArchiveName
-            version = buildString {
-                append(modVersion)
-                if (snapshot) {
-                    append("-SNAPSHOT")
-                } else {
-                    if (buildNumber.isNotBlank()) {
-                        append("+")
-                        append(buildNumber)
-                    }
-                }
-            }
+            version = rootProject.version.toString()
 
             from(components["java"])
 

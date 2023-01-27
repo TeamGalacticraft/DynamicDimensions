@@ -26,9 +26,7 @@ jobs:
         with:
           arguments: publish
         env:
-          SNAPSHOT: true
-          PRE_RELEASE: false
-          NEXUS_REPOSITORY_URL: ${{ secrets.NEXUS_SNAPSHOT_URL }}
-          BUILD_NUMBER: ${{ github.run_id }}
+          PRE_RELEASE: true
+          NEXUS_REPOSITORY_URL: ${{ secrets.NEXUS_RELEASE_URL }}
           NEXUS_USER: ${{ secrets.NEXUS_USER }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
