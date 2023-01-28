@@ -93,7 +93,6 @@ dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
 
     runtimeOnly(fg.deobf("lol.bai:badpackets:forge-${badpackets}"))
-
     testImplementation(project.project(":Common").sourceSets.test.get().output)
 }
 
@@ -118,11 +117,11 @@ tasks.withType<ProcessResources> {
     }
 }
 
-tasks {
-    jar {
-        finalizedBy("reobfJar")
-    }
+tasks.jar {
+    from(project(":Common").sourceSets.main.get().java)
+    finalizedBy("reobfJar")
 }
+
 
 publishing {
     publications {

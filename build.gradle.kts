@@ -53,7 +53,9 @@ allprojects {
 
 subprojects {
     apply(plugin = "java")
-    
+
+    val badpackets = project.property("badpackets.version").toString()
+
     group = "dev.galacticraft"
 
     extensions.configure<JavaPluginExtension> {
@@ -73,6 +75,10 @@ subprojects {
         }
     }
 
+    dependencies {
+        "compileOnly"("lol.bai:badpackets:mojmap-${badpackets}")
+    }
+
     tasks.withType<Jar> {
         manifest {
             attributes(
@@ -90,6 +96,12 @@ subprojects {
             )
         }
     }
+
+//    if (project.name != "Common") {
+//        tasks.getByName<JavaCompile>("compileJava") {
+//            source(project(":Common").extensions.getByType<JavaPluginExtension>().sourceSets.getByName("main").allSource)
+//        }
+//    }
 
     tasks.withType<Javadoc> {
         exclude("**/impl/**")

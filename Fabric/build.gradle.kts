@@ -159,3 +159,9 @@ publishing {
         }
     }
 }
+
+for (configuration in listOf(configurations.apiElements, configurations.runtimeElements)) {
+    configuration.get().artifacts.removeIf {
+        it.file.absolutePath.equals(tasks.jar.get().archiveFile.get().asFile.absolutePath) && it.buildDependencies.getDependencies(null).contains(tasks.jar.get())
+    }
+}

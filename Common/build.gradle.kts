@@ -10,8 +10,6 @@ val modId = project.property("mod.id").toString()
 var modVersion = project.property("mod.version").toString()
 val modName = project.property("mod.name").toString()
 
-val badpackets = project.property("badpackets.version").toString()
-
 val baseArchiveName = "${modId}-common"
 
 base {
@@ -41,7 +39,6 @@ dependencies {
     mappings(loom.officialMojangMappings())
 
     testCompileOnly(compileOnly("org.spongepowered:mixin:0.8.5")!!)
-    compileOnly("lol.bai:badpackets:mojmap-${badpackets}")
 }
 
 tasks.processResources {
@@ -109,18 +106,13 @@ tasks.create("prepareWorkspace") {
     // no-op: for some reason this gets called with IJ gradle refresh... MCDev?
 }
 
-// disable remapping `fabric.loom.dontRemap` can only be set on the root project
-tasks.create("copyNamedJar", Copy::class).apply {
-    from(layout.buildDirectory.file("devlibs/${base.archivesName.get()}-${project.version}-dev.jar"))
-    into(layout.buildDirectory.dir("libs"))
-    rename("-dev", "")
-    dependsOn("jar")
+tasks.jar {
+    archiveClassifier.set("")
+    destinationDirectory.set(File(project.buildDir, "libs"))
 }
 
-tasks.create("copyNamedSourcesJar", Copy::class).apply {
-    from(layout.buildDirectory.file("devlibs/${base.archivesName.get()}-${project.version}-sources.jar"))
-    into(layout.buildDirectory.dir("libs"))
-    dependsOn("sourcesJar")
+tasks.remapJar {
+    enabled = false
 }
 
 tasks.prepareRemapJar {
@@ -129,20 +121,4 @@ tasks.prepareRemapJar {
 
 tasks.remapSourcesJar {
     enabled = false
-}
-
-tasks.forEach {
-    var jar = false;
-    var sources = false;
-    it.dependsOn.forEach { dep ->
-        if (dep is Task) {
-            if (dep.name == "remapJar") {
-                jar = true;
-            } else if (it.name == "remapSourcesJar") {
-                sources = true
-            }
-        }
-    }
-    if (jar) it.dependsOn.add("copyNamedJar")
-    if (sources) it.dependsOn.add("copyNamedSourcesJar")
 }
