@@ -96,6 +96,10 @@ dependencies {
     testImplementation(project.project(":Common").sourceSets.test.get().output)
 }
 
+tasks.compileJava {
+    source(project(":Common").sourceSets.main.get().java)
+}
+
 tasks.processTestResources {
     from(project(":Common").sourceSets.test.get().resources)
 }
@@ -118,7 +122,6 @@ tasks.withType<ProcessResources> {
 }
 
 tasks.jar {
-    from(project(":Common").sourceSets.main.get().java)
     finalizedBy("reobfJar")
 }
 

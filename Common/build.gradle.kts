@@ -1,7 +1,7 @@
 plugins {
     java
     `maven-publish`
-    id("fabric-loom") version("1.0-SNAPSHOT")
+    id("fabric-loom") version("1.1-SNAPSHOT")
     id("io.github.juuxel.loom-quiltflower") version "1.8.0"
 }
 
@@ -112,10 +112,6 @@ tasks.jar {
 }
 
 tasks.remapJar {
-    enabled = false
-}
-
-tasks.prepareRemapJar {
     enabled = false
 }
 

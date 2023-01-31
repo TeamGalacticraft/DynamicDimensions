@@ -1,7 +1,7 @@
 plugins {
     idea
     `maven-publish`
-    id("fabric-loom") version("1.0-SNAPSHOT")
+    id("fabric-loom") version("1.1-SNAPSHOT")
     id("io.github.juuxel.loom-quiltflower") version("1.8.0")
 }
 
@@ -77,6 +77,10 @@ dependencies {
 
     "modTestImplementation"(fapi.module("fabric-gametest-api-v1", fabricApi))
     testImplementation(project.project(":Common").sourceSets.test.get().output)
+}
+
+tasks.compileJava {
+    source(project(":Common").sourceSets.main.get().java)
 }
 
 tasks.processTestResources {
