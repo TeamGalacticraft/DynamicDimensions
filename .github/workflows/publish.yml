@@ -2,8 +2,7 @@ name: Maven Publish
 
 on:
   push:
-    branches:
-      - minecraft/*
+    branches: [ 'minecraft/*' ]
 
 jobs:
   Publish:

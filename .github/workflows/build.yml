@@ -2,8 +2,7 @@ name: Build
 
 on:
   push:
-    branches:
-      - minecraft/*
+    branches: [ 'minecraft/*' ]
 
 jobs:
   Build:
