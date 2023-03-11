@@ -25,10 +25,9 @@ package dev.galacticraft.dynamicdimensions.impl.fabric.platform;
 import dev.galacticraft.dynamicdimensions.api.event.DimensionAddedCallback;
 import dev.galacticraft.dynamicdimensions.api.event.DimensionRemovedCallback;
 import dev.galacticraft.dynamicdimensions.impl.config.DynamicDimensionsConfig;
+import dev.galacticraft.dynamicdimensions.impl.fabric.DynamicDimensionsFabric;
 import dev.galacticraft.dynamicdimensions.impl.fabric.config.DynamicDimensionsConfigImpl;
 import dev.galacticraft.dynamicdimensions.impl.platform.services.PlatformHelper;
-import net.fabricmc.fabric.api.event.Event;
-import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -37,17 +36,6 @@ import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class FabricPlatformHelper implements PlatformHelper {
-    private static final Event<DimensionAddedCallback> DIMENSION_ADDED_EVENT = EventFactory.createArrayBacked(DimensionAddedCallback.class, t -> (key, level) -> {
-        for (DimensionAddedCallback dimensionAddedCallback : t) {
-            dimensionAddedCallback.dimensionAdded(key, level);
-        }
-    });
-    private static final Event<DimensionRemovedCallback> DIMENSION_REMOVED_EVENT = EventFactory.createArrayBacked(DimensionRemovedCallback.class, t -> (key, level) -> {
-        for (DimensionRemovedCallback dimensionAddedCallback : t) {
-            dimensionAddedCallback.dimensionRemoved(key, level);
-        }
-    });
-
     @Override
     public @NotNull DynamicDimensionsConfig getConfig() {
         return DynamicDimensionsConfigImpl.create();
@@ -55,21 +43,21 @@ public final class FabricPlatformHelper implements PlatformHelper {
 
     @Override
     public void registerAddedEvent(DimensionAddedCallback callback) {
-        DIMENSION_ADDED_EVENT.register(callback);
+        DynamicDimensionsFabric.DIMENSION_ADDED_EVENT.register(callback);
     }
 
     @Override
     public void registerRemovedEvent(DimensionRemovedCallback callback) {
-        DIMENSION_REMOVED_EVENT.register(callback);
+        DynamicDimensionsFabric.DIMENSION_REMOVED_EVENT.register(callback);
     }
 
     @Override
     public void invokeRemovedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level) {
-        DIMENSION_REMOVED_EVENT.invoker().dimensionRemoved(key, level);
+        DynamicDimensionsFabric.DIMENSION_REMOVED_EVENT.invoker().dimensionRemoved(key, level);
     }
 
     @Override
     public void invokeAddedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level) {
-        DIMENSION_ADDED_EVENT.invoker().dimensionAdded(key, level);
+        DynamicDimensionsFabric.DIMENSION_ADDED_EVENT.invoker().dimensionAdded(key, level);
     }
 }

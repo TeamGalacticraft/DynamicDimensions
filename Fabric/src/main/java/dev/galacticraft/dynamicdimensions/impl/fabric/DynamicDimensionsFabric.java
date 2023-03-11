@@ -22,22 +22,37 @@
 
 package dev.galacticraft.dynamicdimensions.impl.fabric;
 
+import dev.galacticraft.dynamicdimensions.api.event.DimensionAddedCallback;
+import dev.galacticraft.dynamicdimensions.api.event.DimensionRemovedCallback;
 import dev.galacticraft.dynamicdimensions.impl.Constants;
 import dev.galacticraft.dynamicdimensions.impl.command.DynamicDimensionsCommands;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.EventFactory;
 import net.fabricmc.loader.api.FabricLoader;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
 public final class DynamicDimensionsFabric implements ModInitializer {
+    public static final Event<DimensionAddedCallback> DIMENSION_ADDED_EVENT = EventFactory.createArrayBacked(DimensionAddedCallback.class, t -> (key, level) -> {
+        for (DimensionAddedCallback dimensionAddedCallback : t) {
+            dimensionAddedCallback.dimensionAdded(key, level);
+        }
+    });
+    public static final Event<DimensionRemovedCallback> DIMENSION_REMOVED_EVENT = EventFactory.createArrayBacked(DimensionRemovedCallback.class, t -> (key, level) -> {
+        for (DimensionRemovedCallback dimensionAddedCallback : t) {
+            dimensionAddedCallback.dimensionRemoved(key, level);
+        }
+    });
+
     @Override
     public void onInitialize() {
-        if (FabricLoader.getInstance().isModLoaded("fabric-command-api-v2")) {
-            registerCommandCallback();
-        } else {
-            if (Constants.CONFIG.enableCommands()) {
-                Constants.LOGGER.warn("Unable to register commands as fabric api (fabric-command-api-v2) is not installed.");
+        if (Constants.CONFIG.enableCommands()) {
+            if (FabricLoader.getInstance().isModLoaded("fabric-command-api-v2")) {
+                registerCommandCallback();
+            } else {
+                Constants.LOGGER.warn("Unable to register commands as the fabric command api module (fabric-command-api-v2) is not installed.");
             }
         }
     }
