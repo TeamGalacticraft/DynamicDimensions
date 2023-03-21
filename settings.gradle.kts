@@ -25,4 +25,4 @@ pluginManagement {
 }
 
 rootProject.name = "DynamicDimensions"
-include("Common", "Fabric") //, "Forge")
+include("Common", "Fabric", "Forge")
