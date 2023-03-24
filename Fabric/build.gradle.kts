@@ -67,7 +67,7 @@ dependencies {
     minecraft("com.mojang:minecraft:${minecraft}")
     mappings(loom.officialMojangMappings())
     modImplementation("net.fabricmc:fabric-loader:${fabricLoader}")
-    implementation(project(":Common", "namedElements"))
+    compileOnly(project(":Common", "namedElements"))
 
     fabricModules.forEach {
         modImplementation(fapi.module(it, fabricApi))

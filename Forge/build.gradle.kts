@@ -89,7 +89,7 @@ repositories {
 
 dependencies {
     minecraft("net.minecraftforge:forge:${minecraft}-${forge}")
-    implementation(project(":Common", "namedElements"))
+    compileOnly(project(":Common", "namedElements"))
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
 
     runtimeOnly(fg.deobf("lol.bai:badpackets:forge-${badpackets}"))
