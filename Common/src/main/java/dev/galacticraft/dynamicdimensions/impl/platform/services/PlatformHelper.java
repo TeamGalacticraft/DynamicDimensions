@@ -24,8 +24,10 @@ package dev.galacticraft.dynamicdimensions.impl.platform.services;
 
 import dev.galacticraft.dynamicdimensions.api.event.DimensionAddedCallback;
 import dev.galacticraft.dynamicdimensions.api.event.DimensionRemovedCallback;
+import dev.galacticraft.dynamicdimensions.api.event.DynamicDimensionLoadCallback;
 import dev.galacticraft.dynamicdimensions.impl.config.DynamicDimensionsConfig;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +39,11 @@ public interface PlatformHelper {
 
     void registerRemovedEvent(DimensionRemovedCallback listener);
 
+    void registerLoadEvent(DynamicDimensionLoadCallback callback);
+
     void invokeRemovedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level);
 
     void invokeAddedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level);
+
+    void invokeLoadEvent(MinecraftServer server, DynamicDimensionLoadCallback.DynamicDimensionLoader loader);
 }

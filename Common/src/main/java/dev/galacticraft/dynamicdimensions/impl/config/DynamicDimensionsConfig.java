@@ -26,7 +26,7 @@ public interface DynamicDimensionsConfig {
     default void applyDefaultValues() {
         allowDimensionCreation(true);
         deleteRemovedDimensions(false);
-        deleteDimensionsWithPlayers(true);
+        deleteDimensionsWithPlayers(false);
         enableCommands(false);
         commandPermissionLevel(2);
     }

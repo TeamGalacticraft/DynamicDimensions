@@ -24,6 +24,7 @@ package dev.galacticraft.dynamicdimensions.impl.fabric;
 
 import dev.galacticraft.dynamicdimensions.api.event.DimensionAddedCallback;
 import dev.galacticraft.dynamicdimensions.api.event.DimensionRemovedCallback;
+import dev.galacticraft.dynamicdimensions.api.event.DynamicDimensionLoadCallback;
 import dev.galacticraft.dynamicdimensions.impl.Constants;
 import dev.galacticraft.dynamicdimensions.impl.command.DynamicDimensionsCommands;
 import net.fabricmc.api.ModInitializer;
@@ -36,13 +37,18 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public final class DynamicDimensionsFabric implements ModInitializer {
     public static final Event<DimensionAddedCallback> DIMENSION_ADDED_EVENT = EventFactory.createArrayBacked(DimensionAddedCallback.class, t -> (key, level) -> {
-        for (DimensionAddedCallback dimensionAddedCallback : t) {
-            dimensionAddedCallback.dimensionAdded(key, level);
+        for (DimensionAddedCallback callback : t) {
+            callback.dimensionAdded(key, level);
         }
     });
     public static final Event<DimensionRemovedCallback> DIMENSION_REMOVED_EVENT = EventFactory.createArrayBacked(DimensionRemovedCallback.class, t -> (key, level) -> {
-        for (DimensionRemovedCallback dimensionAddedCallback : t) {
-            dimensionAddedCallback.dimensionRemoved(key, level);
+        for (DimensionRemovedCallback callback : t) {
+            callback.dimensionRemoved(key, level);
+        }
+    });
+    public static final Event<DynamicDimensionLoadCallback> DIMENSION_LOAD_EVENT = EventFactory.createArrayBacked(DynamicDimensionLoadCallback.class, t -> (server, loader) -> {
+        for (DynamicDimensionLoadCallback callback : t) {
+            callback.loadDimensions(server, loader);
         }
     });
 

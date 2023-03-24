@@ -20,19 +20,35 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.impl;
+package dev.galacticraft.dynamicdimensions.api.event;
 
-import dev.galacticraft.dynamicdimensions.impl.config.DynamicDimensionsConfig;
 import dev.galacticraft.dynamicdimensions.impl.platform.Services;
 import net.minecraft.resources.ResourceLocation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.dimension.DimensionType;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
-public interface Constants {
-    String MOD_ID = "dynamicdimensions";
-    Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    DynamicDimensionsConfig CONFIG = Services.PLATFORM.getConfig();
+/**
+ * Called when a dynamic dimension is added.
+ *
+ * @since 0.5.0
+ */
+public interface DynamicDimensionLoadCallback {
+    static void register(DynamicDimensionLoadCallback callback) {
+        Services.PLATFORM.registerLoadEvent(callback);
+    }
 
-    ResourceLocation CREATE_WORLD_PACKET = new ResourceLocation(MOD_ID, "create_world");
-    ResourceLocation DELETE_WORLD_PACKET = new ResourceLocation(MOD_ID, "delete_world");
+    @ApiStatus.Internal
+    static void invoke(@NotNull MinecraftServer server, @NotNull DynamicDimensionLoader loader) {
+        Services.PLATFORM.invokeLoadEvent(server, loader);
+    }
+
+    void loadDimensions(@NotNull MinecraftServer server, @NotNull DynamicDimensionLoader loader);
+
+    @FunctionalInterface
+    interface DynamicDimensionLoader {
+        void loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
+    }
 }

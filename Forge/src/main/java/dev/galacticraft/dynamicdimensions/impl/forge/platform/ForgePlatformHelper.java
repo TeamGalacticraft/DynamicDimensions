@@ -24,10 +24,12 @@ package dev.galacticraft.dynamicdimensions.impl.forge.platform;
 
 import dev.galacticraft.dynamicdimensions.api.event.DimensionAddedCallback;
 import dev.galacticraft.dynamicdimensions.api.event.DimensionRemovedCallback;
+import dev.galacticraft.dynamicdimensions.api.event.DynamicDimensionLoadCallback;
 import dev.galacticraft.dynamicdimensions.impl.config.DynamicDimensionsConfig;
 import dev.galacticraft.dynamicdimensions.impl.forge.config.DynamicDimensionsConfigImpl;
 import dev.galacticraft.dynamicdimensions.impl.platform.services.PlatformHelper;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.ApiStatus;
@@ -39,7 +41,8 @@ import java.util.List;
 @ApiStatus.Internal
 public final class ForgePlatformHelper implements PlatformHelper {
     private final List<DimensionAddedCallback> addedCallbacks = new ArrayList<>();
-    private final List<DimensionRemovedCallback> removedCallbacks = new ArrayList<>(); //todo: use forge event system?
+    private final List<DimensionRemovedCallback> removedCallbacks = new ArrayList<>();
+    private final List<DynamicDimensionLoadCallback> loadCallbacks = new ArrayList<>(); //todo: use forge event system?
 
     @Override
     public @NotNull DynamicDimensionsConfig getConfig() {
@@ -57,6 +60,11 @@ public final class ForgePlatformHelper implements PlatformHelper {
     }
 
     @Override
+    public void registerLoadEvent(DynamicDimensionLoadCallback callback) {
+        this.loadCallbacks.add(callback);
+    }
+
+    @Override
     public void invokeRemovedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level) {
         for (DimensionRemovedCallback removedCallback : this.removedCallbacks) {
             removedCallback.dimensionRemoved(key, level);
@@ -67,6 +75,13 @@ public final class ForgePlatformHelper implements PlatformHelper {
     public void invokeAddedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level) {
         for (DimensionAddedCallback addedCallback : this.addedCallbacks) {
             addedCallback.dimensionAdded(key, level);
+        }
+    }
+
+    @Override
+    public void invokeLoadEvent(MinecraftServer server, DynamicDimensionLoadCallback.DynamicDimensionLoader loader) {
+        for (DynamicDimensionLoadCallback loadCallback : this.loadCallbacks) {
+            loadCallback.loadDimensions(server, loader);
         }
     }
 }

@@ -78,7 +78,4 @@ public interface MappedRegistryAccessor<T> {
 
     @Accessor("registryLifecycle")
     void setRegistryLifecycle(Lifecycle base);
-
-    @Accessor("unregisteredIntrusiveHolders")
-    void setUnregisteredIntrusiveHolders(Map<T, Holder.Reference<T>> map);
 }

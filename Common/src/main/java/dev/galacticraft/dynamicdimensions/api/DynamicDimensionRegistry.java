@@ -28,9 +28,6 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 /**
  * The registry for dynamic dimensions.
@@ -42,51 +39,77 @@ import java.util.List;
 public interface DynamicDimensionRegistry {
     /**
      * Converts a Minecraft server instance into a dynamic dimension registry.
+     *
      * @param server the current Minecraft server instance.
      * @return the server's dynamic dimension registry.
      * @since 0.5.0
      */
     @Contract(value = "_ -> param1", pure = true)
-    static DynamicDimensionRegistry from(MinecraftServer server) {
+    static @NotNull DynamicDimensionRegistry from(@NotNull MinecraftServer server) {
         return ((DynamicDimensionRegistry) server);
     }
 
     /**
-     * Registers a new dimension and updates all clients with the new dimension.
-     * NOTE: The dimension will not be loaded until the next tick.
+     * Returns whether a dynamic dimension exists with the given id
      *
-     * @param chunkGenerator The chunk generator.
-     * @param type    The dimension type.
-     * @return whether a dimension with the given id was created
-     * @since 0.5.0
+     * @param id the id of the dynamic dimension
+     * @return whether a dynamic dimension exists with the given id
      */
-    @Nullable ResourceLocation addDynamicDimension(@NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
-
-    /**
-     * Registers a new dimension and updates all clients with the new dimension.
-     * NOTE: The dimension will not be loaded until the next tick.
-     *
-     * @param chunkGenerator The chunk generator.
-     * @param id      The ID of the dimension.
-     *                This ID must be unique and unused in the {@link net.minecraft.core.registries.Registries#DIMENSION_TYPE} registry and the {@link net.minecraft.world.level.levelgen.WorldDimensions#dimensions()} registry.
-     * @param type    The dimension type.
-     * @return whether a dimension with the given id was created
-     * @since 0.1.0
-     */
-    boolean addDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
-
     boolean dynamicDimensionExists(@NotNull ResourceLocation id);
 
+    /**
+     * Returns whether any dimension, dimension type, or level stem is registered with the given id
+     *
+     * @param id the id of the dimension
+     * @return whether any dimension, dimension type, or level stem is registered with the given id
+     */
     boolean anyDimensionExists(@NotNull ResourceLocation id);
 
     /**
      * Returns whether a level and dimension with the given ID can be deleted.
      *
      * @param id The ID of the level/dimension.
-     * @return {@code true} if the level and dimension can be deleted, {@code false} otherwise.
+     * @return {@code true} if the level and dimension are dynamic and can be deleted, {@code false} otherwise.
      * @since 0.1.0
      */
     boolean canDeleteDimension(@NotNull ResourceLocation id);
+
+    /**
+     * Returns whether a level and dimension with the given ID can be created.
+     *
+     * @param id The ID of the level/dimension.
+     * @return {@code true} if the level and dimension are dynamic and can be created, {@code false} otherwise.
+     * @since 0.6.0
+     */
+    boolean canCreateDimension(@NotNull ResourceLocation id);
+
+    /**
+     * Registers a new dimension and updates all clients with the new dimension.
+     * If world data already exists for this dimension it may be deleted
+     * NOTE: The dimension may not be loaded until the next tick.
+     *
+     * @param chunkGenerator The chunk generator.
+     * @param id             The ID of the dimension.
+     *                       This ID must be unique and unused in the {@link net.minecraft.core.registries.Registries#DIMENSION_TYPE} registry and the {@link net.minecraft.world.level.levelgen.WorldDimensions#dimensions()} registry.
+     * @param type           The dimension type.
+     * @return whether a dimension with the given id was created
+     * @since 0.6.0
+     */
+    boolean createDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
+
+    /**
+     * Registers a new dimension and updates all clients with the new dimension.
+     * If world data already exists for this dimension it will be used, otherwise it will be generated
+     * NOTE: The dimension will not be loaded until the next tick.
+     *
+     * @param chunkGenerator The chunk generator.
+     * @param id             The ID of the dimension.
+     *                       This ID must be unique and unused in the {@link net.minecraft.core.registries.Registries#DIMENSION_TYPE} registry and the {@link net.minecraft.world.level.levelgen.WorldDimensions#dimensions()} registry.
+     * @param type           The dimension type.
+     * @return whether a dimension with the given id was created
+     * @since 0.6.0
+     */
+    boolean loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
 
     /**
      * Removes a dynamic dimension from the server.

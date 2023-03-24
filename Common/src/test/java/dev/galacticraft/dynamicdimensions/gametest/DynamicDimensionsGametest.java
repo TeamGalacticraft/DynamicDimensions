@@ -79,10 +79,12 @@ public class DynamicDimensionsGametest {
             Assertions.assertNotNull(overworld);
             Assertions.assertFalse(((DynamicDimensionRegistry) server).anyDimensionExists(TEST_LEVEL_0));
 
-            Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_0, overworld.getChunkSource().getGenerator(), dimensionType));
+            Assertions.assertTrue(((DynamicDimensionRegistry) server).createDynamicDimension(TEST_LEVEL_0, overworld.getChunkSource().getGenerator(), dimensionType));
             context.runAfterDelay(1, () -> {
                 ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, TEST_LEVEL_0));
                 Assertions.assertNotNull(level);
+                Assertions.assertTrue(((DynamicDimensionRegistry) server).dynamicDimensionExists(TEST_LEVEL_0));
+                Assertions.assertTrue(((DynamicDimensionRegistry) server).anyDimensionExists(TEST_LEVEL_0));
                 ((DynamicDimensionRegistry) server).removeDynamicDimension(TEST_LEVEL_0, (server1, player) -> player.disconnect()); // Forge loads the dimension even though it shouldn't
                 resetLock();
                 context.runAfterDelay(1, context::succeed); // assert that the dimension is actually removed
@@ -102,10 +104,12 @@ public class DynamicDimensionsGametest {
             Assertions.assertNotNull(overworld);
             Assertions.assertFalse(((DynamicDimensionRegistry) server).anyDimensionExists(TEST_LEVEL_2));
 
-            Assertions.assertFalse(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_2, overworld.getChunkSource().getGenerator(), dimensionType));
+            Assertions.assertFalse(((DynamicDimensionRegistry) server).createDynamicDimension(TEST_LEVEL_2, overworld.getChunkSource().getGenerator(), dimensionType));
             context.runAfterDelay(1, () -> {
                 ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, TEST_LEVEL_2));
                 Assertions.assertNull(level);
+                Assertions.assertFalse(((DynamicDimensionRegistry) server).dynamicDimensionExists(TEST_LEVEL_0));
+                Assertions.assertFalse(((DynamicDimensionRegistry) server).anyDimensionExists(TEST_LEVEL_0));
                 context.succeed();
                 resetLock();
             });
@@ -122,7 +126,7 @@ public class DynamicDimensionsGametest {
             Assertions.assertNotNull(overworld);
             Assertions.assertFalse(((DynamicDimensionRegistry) server).anyDimensionExists(TEST_LEVEL_1));
 
-            Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_1, overworld.getChunkSource().getGenerator(), dimensionType));
+            Assertions.assertTrue(((DynamicDimensionRegistry) server).createDynamicDimension(TEST_LEVEL_1, overworld.getChunkSource().getGenerator(), dimensionType));
             context.runAfterDelay(1, () -> {
                 ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, TEST_LEVEL_1));
                 Assertions.assertNotNull(level);
@@ -168,7 +172,7 @@ public class DynamicDimensionsGametest {
             Assertions.assertNotNull(overworld);
             Assertions.assertFalse(((DynamicDimensionRegistry) server).anyDimensionExists(TEST_LEVEL_3));
 
-            Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_3, overworld.getChunkSource().getGenerator(), dimensionType));
+            Assertions.assertTrue(((DynamicDimensionRegistry) server).createDynamicDimension(TEST_LEVEL_3, overworld.getChunkSource().getGenerator(), dimensionType));
             context.runAfterDelay(1, () -> {
                 ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, TEST_LEVEL_3));
                 Assertions.assertNotNull(level);
@@ -219,7 +223,7 @@ public class DynamicDimensionsGametest {
             Assertions.assertNotNull(overworld);
             Assertions.assertFalse(((DynamicDimensionRegistry) server).anyDimensionExists(TEST_LEVEL_4));
 
-            Assertions.assertTrue(((DynamicDimensionRegistry) server).addDynamicDimension(TEST_LEVEL_4, overworld.getChunkSource().getGenerator(), dimensionType));
+            Assertions.assertTrue(((DynamicDimensionRegistry) server).createDynamicDimension(TEST_LEVEL_4, overworld.getChunkSource().getGenerator(), dimensionType));
             context.runAfterDelay(1, () -> {
                 ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, TEST_LEVEL_4));
                 Assertions.assertNotNull(level);

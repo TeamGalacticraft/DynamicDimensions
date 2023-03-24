@@ -24,11 +24,14 @@ package dev.galacticraft.dynamicdimensions.impl.fabric.platform;
 
 import dev.galacticraft.dynamicdimensions.api.event.DimensionAddedCallback;
 import dev.galacticraft.dynamicdimensions.api.event.DimensionRemovedCallback;
+import dev.galacticraft.dynamicdimensions.api.event.DynamicDimensionLoadCallback;
 import dev.galacticraft.dynamicdimensions.impl.config.DynamicDimensionsConfig;
 import dev.galacticraft.dynamicdimensions.impl.fabric.DynamicDimensionsFabric;
 import dev.galacticraft.dynamicdimensions.impl.fabric.config.DynamicDimensionsConfigImpl;
 import dev.galacticraft.dynamicdimensions.impl.platform.services.PlatformHelper;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.ApiStatus;
@@ -52,12 +55,24 @@ public final class FabricPlatformHelper implements PlatformHelper {
     }
 
     @Override
+    public void registerLoadEvent(DynamicDimensionLoadCallback callback) {
+        DynamicDimensionsFabric.DIMENSION_LOAD_EVENT.register(callback);
+    }
+
+    @Override
     public void invokeRemovedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level) {
         DynamicDimensionsFabric.DIMENSION_REMOVED_EVENT.invoker().dimensionRemoved(key, level);
+        ServerWorldEvents.UNLOAD.invoker().onWorldUnload(level.getServer(), level);
     }
 
     @Override
     public void invokeAddedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level) {
         DynamicDimensionsFabric.DIMENSION_ADDED_EVENT.invoker().dimensionAdded(key, level);
+        ServerWorldEvents.LOAD.invoker().onWorldLoad(level.getServer(), level);
+    }
+
+    @Override
+    public void invokeLoadEvent(MinecraftServer server, DynamicDimensionLoadCallback.DynamicDimensionLoader loader) {
+        DynamicDimensionsFabric.DIMENSION_LOAD_EVENT.invoker().loadDimensions(server, loader);
     }
 }

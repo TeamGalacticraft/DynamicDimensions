@@ -30,18 +30,30 @@ import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.CompoundTagArgument;
+import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.levelgen.FlatLevelSource;
+import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
 import net.minecraft.world.level.storage.LevelData;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.OptionalLong;
 
 public final class DynamicDimensionsCommands {
     private static final SimpleCommandExceptionType CANNOT_CREATE = new SimpleCommandExceptionType(Component.translatable("command.dynamicdimensions.create.error"));
@@ -49,7 +61,7 @@ public final class DynamicDimensionsCommands {
 
     public static void register(@NotNull CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess, Commands.CommandSelection environment) {
         if (Constants.CONFIG.enableCommands()) {
-            dispatcher.register(Commands.literal("dimension")
+            dispatcher.register(Commands.literal("dyndim")
                     .requires(s -> s.hasPermission(Constants.CONFIG.commandPermissionLevel()))
                     .then(Commands.literal("create")
                             .then(Commands.argument("id", ResourceLocationArgument.id())
@@ -64,15 +76,62 @@ public final class DynamicDimensionsCommands {
                                                         if (from.anyDimensionExists(id)) {
                                                             throw CANNOT_CREATE.create();
                                                         }
-                                                        if (!from.addDynamicDimension(id, generator, type)) {
+                                                        if (!from.createDynamicDimension(id, generator, type)) {
                                                             throw CANNOT_CREATE.create();
                                                         }
                                                         return 1;
-                                                    })))))
-                    .then(Commands.literal("remove")
-                            .then(Commands.argument("id", ResourceLocationArgument.id())
+                                                    })))
                                     .executes(ctx -> {
                                         ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
+                                        RegistryAccess access = ctx.getSource().registryAccess();
+                                        ChunkGenerator generator = new FlatLevelSource(FlatLevelGeneratorSettings.getDefault(access.lookupOrThrow(Registries.BIOME), access.lookupOrThrow(Registries.STRUCTURE_SET), access.lookupOrThrow(Registries.PLACED_FEATURE)));
+                                        DimensionType type = new DimensionType(OptionalLong.empty(), true, false, false, true, 1.0D, true, false, -64, 384, 384, BlockTags.INFINIBURN_OVERWORLD, BuiltinDimensionTypes.OVERWORLD_EFFECTS, 0.0F, new DimensionType.MonsterSettings(false, true, UniformInt.of(0, 7), 0));
+                                        DynamicDimensionRegistry from = DynamicDimensionRegistry.from(ctx.getSource().getServer());
+                                        if (from.anyDimensionExists(id)) {
+                                            throw CANNOT_CREATE.create();
+                                        }
+                                        if (!from.createDynamicDimension(id, generator, type)) {
+                                            throw CANNOT_CREATE.create();
+                                        }
+                                        return 1;
+                                    })))
+                    .then(Commands.literal("load")
+                            .then(Commands.argument("id", ResourceLocationArgument.id())
+                                    .then(Commands.argument("chunk_generator", CompoundTagArgument.compoundTag())
+                                            .then(Commands.argument("dimension_type", CompoundTagArgument.compoundTag())
+                                                    .executes(ctx -> {
+                                                        ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
+                                                        RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, ctx.getSource().registryAccess());
+                                                        ChunkGenerator generator = ChunkGenerator.CODEC.decode(ops, CompoundTagArgument.getCompoundTag(ctx, "chunk_generator")).get().orThrow().getFirst();
+                                                        DimensionType type = DimensionType.DIRECT_CODEC.decode(ops, CompoundTagArgument.getCompoundTag(ctx, "dimension_type")).get().orThrow().getFirst();
+                                                        DynamicDimensionRegistry from = DynamicDimensionRegistry.from(ctx.getSource().getServer());
+                                                        if (from.anyDimensionExists(id)) {
+                                                            throw CANNOT_CREATE.create();
+                                                        }
+                                                        if (!from.loadDynamicDimension(id, generator, type)) {
+                                                            throw CANNOT_CREATE.create();
+                                                        }
+                                                        return 1;
+                                                    }))).executes(ctx -> {
+                                        ResourceLocation id = ResourceLocationArgument.getId(ctx, "id");
+                                        RegistryAccess access = ctx.getSource().registryAccess();
+                                        ChunkGenerator generator = new FlatLevelSource(FlatLevelGeneratorSettings.getDefault(access.lookupOrThrow(Registries.BIOME), access.lookupOrThrow(Registries.STRUCTURE_SET), access.lookupOrThrow(Registries.PLACED_FEATURE)));
+                                        DimensionType type = new DimensionType(OptionalLong.empty(), true, false, false, true, 1.0D, true, false, -64, 384, 384, BlockTags.INFINIBURN_OVERWORLD, BuiltinDimensionTypes.OVERWORLD_EFFECTS, 0.0F, new DimensionType.MonsterSettings(false, true, UniformInt.of(0, 7), 0));
+                                        DynamicDimensionRegistry from = DynamicDimensionRegistry.from(ctx.getSource().getServer());
+                                        if (from.anyDimensionExists(id)) {
+                                            throw CANNOT_CREATE.create();
+                                        }
+                                        if (!from.loadDynamicDimension(id, generator, type)) {
+                                            throw CANNOT_CREATE.create();
+                                        }
+                                        return 1;
+                                    })))
+                    .then(Commands.literal("remove")
+                            .then(Commands.argument("id", DimensionArgument.dimension())
+                                    .executes(ctx -> {
+                                        ServerLevel levelToDelete = DimensionArgument.getDimension(ctx, "id");
+                                        ResourceKey<Level> key = levelToDelete.dimension();
+                                        ResourceLocation id = key.location();
                                         if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(id)) {
                                             throw CANNOT_DELETE.create();
                                         }

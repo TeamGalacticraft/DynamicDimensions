@@ -41,7 +41,7 @@ public final class RegistryUtil {
             if (registry instanceof MappedRegistry<T>) {
                 if (registry instanceof DefaultedRegistry<?> reg) {
                     if (reg.getDefaultKey().equals(id)) {
-                        throw new IllegalArgumentException();
+                        throw new IllegalArgumentException("Cannot remove default value in registry!");
                     }
                 }
 
@@ -116,7 +116,7 @@ public final class RegistryUtil {
             }
         } else {
             Constants.LOGGER.warn("Tried to add pre-existing key" + id);
-            return null;
+            return registry.getHolderOrThrow(ResourceKey.create(registry.key(), id));
         }
     }
 
@@ -134,8 +134,8 @@ public final class RegistryUtil {
                 throw new IllegalStateException("Dynamic Dimensions: Non-vanilla '" + registry.key().location() + "' registry! " + registry.getClass().getName());
             }
         } else {
-            Constants.LOGGER.warn("Tried to add pre-existing key" + id);
-            return null;
+            Constants.LOGGER.warn("Tried to add pre-existing key " + id + " with raw id " + rawId + " (contains: " + registry.getId(registry.get(id)) + ")");
+            return registry.getHolderOrThrow(ResourceKey.create(registry.key(), id));
         }
     }
 }

@@ -22,36 +22,17 @@
 
 package dev.galacticraft.dynamicdimensions.impl.accessor;
 
-import com.mojang.datafixers.util.Pair;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * Saves and loads dynamic dimension registrations from the world file
  */
 @ApiStatus.Internal
 public interface PrimaryLevelDataAccessor {
-    /**
-     * Adds a dynamic dimension to the level data
-     * @param id the id of the dimension
-     * @param chunkGenerator the chunk generator of the dimension
-     * @param type the dimension type
-     */
-    void addDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
-
-    /**
-     * Removes a dynamic dimension from the level data
-     * @param id the id of the dimension to be removed
-     * @return whether the dynamic dimension was removed
-     */
-    boolean removeDynamicDimension(ResourceLocation id);
-
-    boolean dynamicDimensionExists(ResourceLocation id);
-
-    @NotNull Map<ResourceLocation, Pair<ChunkGenerator, DimensionType>> dynamicDimensions();
+    void setDynamicList(@NotNull List<ResourceKey<Level>> dynamicDimensions);
 }
