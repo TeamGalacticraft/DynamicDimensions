@@ -6,7 +6,7 @@ plugins {
     id("org.cadixdev.licenser") version("0.6.1") apply(false)
 }
 
-val buildNumber = System.getenv("BUILD_NUMBER") ?: ""
+val buildNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
 val prerelease = (System.getenv("PRE_RELEASE") ?: "false") == "true"
 val commitHash = (System.getenv("GITHUB_SHA") ?: grgit.head().id.orEmpty())
 
