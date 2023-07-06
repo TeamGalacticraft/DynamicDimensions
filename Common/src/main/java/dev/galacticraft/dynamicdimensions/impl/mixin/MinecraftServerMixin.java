@@ -324,7 +324,8 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
                 worldData.isDebugWorld(),
                 BiomeManager.obfuscateSeed(worldData.worldGenOptions().seed()),
                 ImmutableList.of(),
-                false
+                false,
+                null
         );
         overworld.getWorldBorder().addListener(new BorderChangeListener.DelegateBorderChangeListener(level.getWorldBorder()));
         level.getChunkSource().setSimulationDistance(((DistanceManagerAccessor) ((ServerChunkCacheAccessor) overworld.getChunkSource()).getDistanceManager()).getSimulationDistance());
