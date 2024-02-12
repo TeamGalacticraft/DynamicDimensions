@@ -23,28 +23,28 @@
 package dev.galacticraft.dynamicdimensions.impl.forge.config;
 
 import dev.galacticraft.dynamicdimensions.impl.config.DynamicDimensionsConfig;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 
 public class DynamicDimensionsConfigImpl implements DynamicDimensionsConfig {
     public static final DynamicDimensionsConfigImpl INSTANCE;
-    public static final ForgeConfigSpec SPEC;
+    public static final ModConfigSpec SPEC;
 
     static {
-        Pair<DynamicDimensionsConfigImpl, ForgeConfigSpec> pair = new ForgeConfigSpec.Builder()
+        Pair<DynamicDimensionsConfigImpl, ModConfigSpec> pair = new ModConfigSpec.Builder()
                 .configure(DynamicDimensionsConfigImpl::new);
         INSTANCE = pair.getLeft();
         SPEC = pair.getRight();
     }
 
-    private final @NotNull ForgeConfigSpec.BooleanValue allowDimensionCreation;
-    private final @NotNull ForgeConfigSpec.BooleanValue deleteRemovedDimensions;
-    private final @NotNull ForgeConfigSpec.BooleanValue deleteDimensionsWithPlayers;
-    private final @NotNull ForgeConfigSpec.BooleanValue enableCommands;
-    private final @NotNull ForgeConfigSpec.IntValue commandPermissionLevel;
+    private final @NotNull ModConfigSpec.BooleanValue allowDimensionCreation;
+    private final @NotNull ModConfigSpec.BooleanValue deleteRemovedDimensions;
+    private final @NotNull ModConfigSpec.BooleanValue deleteDimensionsWithPlayers;
+    private final @NotNull ModConfigSpec.BooleanValue enableCommands;
+    private final @NotNull ModConfigSpec.IntValue commandPermissionLevel;
 
-    private DynamicDimensionsConfigImpl(@NotNull ForgeConfigSpec.Builder builder) {
+    private DynamicDimensionsConfigImpl(@NotNull ModConfigSpec.Builder builder) {
         this.allowDimensionCreation = builder
                 .comment("Set this to false to disable DynamicDimensions")
                 .translation("dynamicdimensions.config.allow_dimension_creation")

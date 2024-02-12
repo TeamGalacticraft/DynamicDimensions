@@ -44,8 +44,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
-import net.minecraft.network.protocol.game.ClientboundUpdateTagsPacket;
+import net.minecraft.network.protocol.common.ClientboundUpdateTagsPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -178,7 +177,7 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
 
         FriendlyByteBuf packetByteBuf = new FriendlyByteBuf(Unpooled.buffer());
         packetByteBuf.writeResourceLocation(key.location());
-        this.getPlayerList().broadcastAll(new ClientboundCustomPayloadPacket(Constants.DELETE_WORLD_PACKET, packetByteBuf));
+        this.getPlayerList().getPlayers().forEach(player -> PacketSender.s2c(player).send(Constants.DELETE_WORLD_PACKET, packetByteBuf));
     }
 
     @Unique

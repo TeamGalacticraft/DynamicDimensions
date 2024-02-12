@@ -8,8 +8,8 @@ pluginManagement {
         maven("https://repo.spongepowered.org/repository/maven-public/") {
             name = "Sponge Snapshots"
         }
-        maven("https://maven.minecraftforge.net/") {
-            name = "Forge"
+        maven("https://maven.neoforged.net/releases") {
+            name = "NeoForge"
         }
     }
     resolutionStrategy {

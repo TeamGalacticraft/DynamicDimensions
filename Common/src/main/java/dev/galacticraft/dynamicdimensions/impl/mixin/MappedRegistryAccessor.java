@@ -23,8 +23,8 @@
 package dev.galacticraft.dynamicdimensions.impl.mixin;
 
 import com.mojang.serialization.Lifecycle;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectList;
+import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.MappedRegistry;
@@ -53,7 +53,7 @@ public interface MappedRegistryAccessor<T> {
     ObjectList<Holder.Reference<T>> getById();
 
     @Accessor("toId")
-    Object2IntMap<T> getToId();
+    Reference2IntMap<T> getToId();
 
     @Accessor("byLocation")
     Map<ResourceLocation, Holder.Reference<T>> getByLocation();

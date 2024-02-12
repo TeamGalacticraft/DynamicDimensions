@@ -13,6 +13,9 @@ description='''
 ${mod_description}
 '''
 
+[[mixins]]
+config="dynamicdimensions_test.mixins.json"
+
 [[dependencies.dynamicdimensions_test]]
 modId="dynamicdimensions"
 mandatory=true

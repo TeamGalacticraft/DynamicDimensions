@@ -1,8 +1,7 @@
 plugins {
     java
     eclipse
-    id("net.minecraftforge.gradle") version("5.1.+")
-    id("org.spongepowered.mixin") version("0.7-SNAPSHOT")
+    id("net.neoforged.gradle.userdev") version("7.0.+")
     `maven-publish`
 }
 
@@ -20,61 +19,21 @@ base {
     archivesName.set(baseArchiveName)
 }
 
-mixin {
-    add(sourceSets.main.get(), "${baseArchiveName}.refmap.json")
+runs {
+    configureEach {
+        workingDirectory(project.file("run"))
+//        idea {
+//            primarySourceSet(project.sourceSets.main.get())
+//        }
+        modSources(sourceSets.main.get(), project(":Common").sourceSets.main.get())
+    }
+    create("client") {}
 
-    config("${modId}.mixins.json")
-}
+    create("server") {}
 
-minecraft {
-    mappings("official", minecraft)
-
-    runs {
-        create("client") {
-            workingDirectory(project.file("run"))
-            args("-mixin.config=${modId}.mixins.json")
-            ideaModule("${rootProject.name}.${project.name}.main")
-            taskName("runClient")
-            mods {
-                create(modId) {
-                    source(sourceSets.main.get())
-                    source(project(":Common").sourceSets.main.get())
-                }
-            }
-        }
-
-        create("server") {
-            workingDirectory(project.file("run"))
-            args("-mixin.config=${modId}.mixins.json")
-            ideaModule("${rootProject.name}.${project.name}.main")
-            taskName("runServer")
-            mods {
-                create(modId) {
-                    source(sourceSets.main.get())
-                    source(project(":Common").sourceSets.main.get())
-                }
-            }
-        }
-
-        create("gameTestServer") { // name must match exactly for options to be applied, apparently
-            workingDirectory(project.file("run"))
-            args("-mixin.config=${modId}.mixins.json", "-mixin.config=dynamicdimensions_test.mixins.json")
-            ideaModule("${rootProject.name}.${project.name}.test")
-            taskName("runGametest")
-            sources(sourceSets.main.get(), sourceSets.test.get())
-            property("forge.enabledGameTestNamespaces", "dynamicdimensions_test,minecraft") // minecraft because forge patches @GameTest for the filtering... and common cannot implement the patch
-            mods {
-                create(modId) {
-                    source(sourceSets.main.get())
-                    source(project(":Common").sourceSets.main.get())
-                }
-                create("dynamicdimensions_test") {
-                    source(sourceSets.test.get())
-                    source(project(":Common").sourceSets.test.get())
-                }
-            }
-            forceExit = false
-        }
+    create("gameTestServer") { // name must match exactly for options to be applied, apparently
+        systemProperty("forge.enabledGameTestNamespaces", "dynamicdimensions_test,minecraft") // minecraft because forge patches @GameTest for the filtering... and common cannot implement the patch
+        modSource(sourceSets.test.get())
     }
 }
 
@@ -88,11 +47,11 @@ repositories {
 }
 
 dependencies {
-    minecraft("net.minecraftforge:forge:${minecraft}-${forge}")
+    implementation("net.neoforged:neoforge:${forge}")
     compileOnly(project(":Common", "namedElements"))
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
 
-    runtimeOnly(fg.deobf("lol.bai:badpackets:forge-${badpackets}"))
+    runtimeOnly("lol.bai:badpackets:neo-${badpackets}")
     testImplementation(project.project(":Common").sourceSets.test.get().output)
 }
 
@@ -119,10 +78,6 @@ tasks.withType<ProcessResources> {
             "mod_description" to modDescription
         )
     }
-}
-
-tasks.jar {
-    finalizedBy("reobfJar")
 }
 
 

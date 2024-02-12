@@ -4,6 +4,7 @@ import java.util.Date
 plugins {
     id("org.ajoberstar.grgit") version("5.0.0")
     id("org.cadixdev.licenser") version("0.6.1") apply(false)
+    id("fabric-loom") version("1.5-SNAPSHOT") apply false
 }
 
 val buildNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""

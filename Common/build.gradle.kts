@@ -1,8 +1,7 @@
 plugins {
     java
     `maven-publish`
-    id("fabric-loom") version("1.1-SNAPSHOT")
-    id("io.github.juuxel.loom-quiltflower") version "1.8.0"
+    id("fabric-loom") version("1.5-SNAPSHOT")
 }
 
 val minecraft = project.property("minecraft.version").toString()
@@ -111,10 +110,10 @@ tasks.jar {
     destinationDirectory.set(File(project.buildDir, "libs"))
 }
 
-tasks.remapJar {
-    enabled = false
-}
-
-tasks.remapSourcesJar {
-    enabled = false
-}
+//tasks.remapJar {
+//    enabled = false
+//}
+//
+//tasks.remapSourcesJar {
+//    enabled = false
+//}

@@ -22,15 +22,17 @@
 
 package dev.galacticraft.dynamicdimensions.gametest;
 
-import net.minecraftforge.event.RegisterGameTestsEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import org.jetbrains.annotations.NotNull;
 
 @Mod("dynamicdimensions_test")
 public final class DynamicDimensionsTest {
-    public DynamicDimensionsTest() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerGametests);
+    public DynamicDimensionsTest(IEventBus modEventBus, Dist dist, ModContainer container) {
+        modEventBus.addListener(this::registerGametests);
     }
 
     public void registerGametests(@NotNull RegisterGameTestsEvent event) {
