@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[45,)"
+loaderVersion = "[2,)"
 license = "MIT"
 issueTrackerURL="https://github.com/TeamGalacticraft/DynamicDimensions/issues/"
 [[mods]]
@@ -19,21 +19,21 @@ config="${mod_id}.mixins.json"
 
 [[dependencies.${mod_id}]]
     modId="badpackets"
-mandatory = true
+type="required"
 versionRange = "[0.4,)"
 ordering = "NONE"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="forge"
-mandatory = true
-versionRange = "[47,)"
+    modId="neoforge"
+type="required"
+versionRange = "[20,)"
 ordering = "NONE"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
     modId="minecraft"
-mandatory = true
-versionRange = "[1.20.1,1.21)"
+type="required"
+versionRange = "[1.20.4,1.21)"
 ordering = "NONE"
     side="BOTH"

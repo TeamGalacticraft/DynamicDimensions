@@ -24,7 +24,7 @@ package dev.galacticraft.dynamicdimensions.impl.client.network;
 
 import dev.galacticraft.dynamicdimensions.impl.Constants;
 import dev.galacticraft.dynamicdimensions.impl.registry.RegistryUtil;
-import lol.bai.badpackets.api.S2CPacketReceiver;
+import lol.bai.badpackets.api.play.PlayPackets;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.registries.Registries;
@@ -37,8 +37,8 @@ import org.jetbrains.annotations.NotNull;
 
 public final class DynamicDimensionsS2CPacketReceivers {
     public static void registerReceivers() {
-        S2CPacketReceiver.register(Constants.CREATE_WORLD_PACKET, (client, handler, buf, responseSender) -> createDynamicWorld(client, handler, buf));
-        S2CPacketReceiver.register(Constants.DELETE_WORLD_PACKET, (client, handler, buf, responseSender) -> deleteDynamicWorld(client, handler, buf));
+        PlayPackets.registerClientReceiver(Constants.CREATE_WORLD_PACKET, (client, handler, buf, responseSender) -> createDynamicWorld(client, handler, buf));
+        PlayPackets.registerClientReceiver(Constants.DELETE_WORLD_PACKET, (client, handler, buf, responseSender) -> deleteDynamicWorld(client, handler, buf));
     }
 
     private static void createDynamicWorld(@NotNull Minecraft client, @NotNull ClientPacketListener handler, @NotNull FriendlyByteBuf buf) {

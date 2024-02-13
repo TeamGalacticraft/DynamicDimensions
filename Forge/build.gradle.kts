@@ -32,7 +32,7 @@ runs {
     create("server") {}
 
     create("gameTestServer") { // name must match exactly for options to be applied, apparently
-        systemProperty("forge.enabledGameTestNamespaces", "dynamicdimensions_test,minecraft") // minecraft because forge patches @GameTest for the filtering... and common cannot implement the patch
+        systemProperty("neoforge.enabledGameTestNamespaces", "dynamicdimensions_test,minecraft") // minecraft because forge patches @GameTest for the filtering... and common cannot implement the patch
         modSource(sourceSets.test.get())
     }
 }
