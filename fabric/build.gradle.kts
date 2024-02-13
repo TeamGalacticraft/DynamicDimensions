@@ -88,7 +88,6 @@ tasks.processTestResources {
 
 tasks.withType<ProcessResources> {
     from(project(":common").sourceSets.main.get().resources)
-    from(loom.accessWidenerPath)
 
     inputs.property("version", project.version)
 
