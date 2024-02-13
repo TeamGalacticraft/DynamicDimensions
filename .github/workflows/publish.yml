@@ -23,7 +23,7 @@ jobs:
       - name: Publish
         uses: gradle/actions/setup-gradle@v3
         with:
-          arguments: publish
+          arguments: :Fabric:publish
         env:
           PRE_RELEASE: true
           NEXUS_REPOSITORY_URL: ${{ secrets.NEXUS_RELEASE_URL }}

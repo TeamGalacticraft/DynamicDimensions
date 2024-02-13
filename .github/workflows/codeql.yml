@@ -35,7 +35,7 @@ jobs:
       - name: Build
         uses: gradle/actions/setup-gradle@v3
         with:
-          arguments: build
+          arguments: :Fabric:build
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2

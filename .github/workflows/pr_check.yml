@@ -32,7 +32,7 @@ jobs:
         id: build
         uses: gradle/actions/setup-gradle@v3
         with:
-          arguments: build
+          arguments: :Fabric:build
 
       - name: Gametest
         id: gametest
