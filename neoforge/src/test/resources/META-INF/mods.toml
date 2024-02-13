@@ -16,9 +16,17 @@ ${mod_description}
 [[mixins]]
 config="dynamicdimensions_test.mixins.json"
 
-[[dependencies.dynamicdimensions_test]]
+# HACK - two mods.toml files can't exist at once, and neoforge doesn't seem to want to load files from other places,
+# so we have to put the main mod's info in here
+[[mods]]
 modId="dynamicdimensions"
-type="required"
-versionRange="[0.4.1,)"
-ordering="NONE"
-side="BOTH"
+version = "0.0.0"
+displayName = "DynamicDimensions"
+displayURL = "https://galacticraft.dev/"
+credits = "Team Galacticraft"
+authors = "Team Galacticraft"
+description = '''
+${mod_description}
+'''
+[[mixins]]
+config = "dynamicdimensions.mixins.json"

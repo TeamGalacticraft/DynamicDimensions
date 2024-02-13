@@ -18,22 +18,22 @@ ${mod_description}
 config="${mod_id}.mixins.json"
 
 [[dependencies.${mod_id}]]
-    modId="badpackets"
+modId = "badpackets"
 type="required"
 versionRange = "[0.4,)"
 ordering = "NONE"
-    side="BOTH"
+side = "BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="neoforge"
+modId = "neoforge"
 type="required"
 versionRange = "[20,)"
 ordering = "NONE"
-    side="BOTH"
+side = "BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="minecraft"
+modId = "minecraft"
 type="required"
 versionRange = "[1.20.4,1.21)"
 ordering = "NONE"
-    side="BOTH"
+side = "BOTH"

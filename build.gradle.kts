@@ -1,10 +1,11 @@
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 
 plugins {
     id("org.ajoberstar.grgit") version("5.0.0")
     id("org.cadixdev.licenser") version("0.6.1") apply(false)
-    id("fabric-loom") version("1.5-SNAPSHOT") apply false
+    id("fabric-loom") version ("1.5-SNAPSHOT") apply (false)
+    id("org.jetbrains.gradle.plugin.idea-ext") version ("1.1.7") // required for neoforge
 }
 
 val buildNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
@@ -41,10 +42,6 @@ allprojects {
         mavenLocal()
     }
 
-    tasks.withType<GenerateModuleMetadata> {
-        enabled = false
-    }
-
     extensions.configure<org.cadixdev.gradle.licenser.LicenseExtension> {
         setHeader(rootProject.file("LICENSE_HEADER.txt"))
         include("**/dev/galacticraft/**/*.java")
@@ -54,6 +51,7 @@ allprojects {
 
 subprojects {
     apply(plugin = "java")
+    apply(plugin = "maven-publish")
 
     val badpackets = project.property("badpackets.version").toString()
 
@@ -81,6 +79,10 @@ subprojects {
     }
 
     tasks.withType<Jar> {
+        from("LICENSE") {
+            rename { "${it}_${modName}" }
+        }
+
         manifest {
             attributes(
                 "Specification-Title" to modName,
@@ -96,16 +98,6 @@ subprojects {
                 "Automatic-Module-Name" to modId
             )
         }
-    }
-
-//    if (project.name != "Common") {
-//        tasks.getByName<JavaCompile>("compileJava") {
-//            source(project(":Common").extensions.getByType<JavaPluginExtension>().sourceSets.getByName("main").allSource)
-//        }
-//    }
-
-    tasks.withType<Javadoc> {
-        exclude("**/impl/**")
     }
 
     tasks.withType<ProcessResources> {
@@ -126,5 +118,59 @@ subprojects {
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.release.set(17)
+    }
+
+    extensions.configure<PublishingExtension> {
+        publications {
+            register("mavenJava", MavenPublication::class) {
+                artifactId = extensions.getByType<BasePluginExtension>().archivesName.get()
+                version = rootProject.version.toString()
+
+                from(components["java"])
+
+                pom {
+                    name.set(modName)
+                    inceptionYear.set("2021")
+
+                    organization {
+                        name.set("Team Galacticraft")
+                        url.set("https://github.com/TeamGalacticraft")
+                    }
+
+                    scm {
+                        url.set("https://github.com/TeamGalacticraft/DynamicDimensions")
+                        connection.set("scm:git:git://github.com/TeamGalacticraft/DynamicDimensions.git")
+                        developerConnection.set("scm:git:git@github.com:TeamGalacticraft/DynamicDimensions.git")
+                    }
+
+                    issueManagement {
+                        system.set("github")
+                        url.set("https://github.com/TeamGalacticraft/DynamicDimensions/issues")
+                    }
+
+                    licenses {
+                        license {
+                            name.set("MIT")
+                            url.set("https://github.com/TeamGalacticraft/DynamicDimensions/blob/main/LICENSE")
+                        }
+                    }
+                }
+            }
+        }
+
+        repositories {
+            if (System.getenv().containsKey("NEXUS_REPOSITORY_URL")) {
+                maven(System.getenv("NEXUS_REPOSITORY_URL")!!) {
+                    credentials {
+                        username = System.getenv("NEXUS_USER")
+                        password = System.getenv("NEXUS_PASSWORD")
+                    }
+                }
+            }
+        }
+    }
+
+    tasks.withType<GenerateModuleMetadata> {
+        enabled = false
     }
 }
