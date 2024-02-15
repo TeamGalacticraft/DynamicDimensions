@@ -55,7 +55,7 @@ subprojects {
 
     val badpackets = project.property("badpackets.version").toString()
 
-    group = "dev.galacticraft"
+    group = "dev.galacticraft.dynamicdimensions"
 
     extensions.configure<JavaPluginExtension> {
         toolchain.languageVersion.set(JavaLanguageVersion.of(17))
