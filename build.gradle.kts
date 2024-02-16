@@ -25,6 +25,7 @@ allprojects {
         if (prerelease) {
             append("-pre")
         }
+        append("-$minecraft")
         append('+')
         if (buildNumber.isNotBlank()) {
             append(buildNumber)
@@ -55,7 +56,7 @@ subprojects {
 
     val badpackets = project.property("badpackets.version").toString()
 
-    group = "dev.galacticraft.dynamicdimensions"
+    group = "dev.galacticraft"
 
     extensions.configure<JavaPluginExtension> {
         toolchain.languageVersion.set(JavaLanguageVersion.of(17))
@@ -120,50 +121,53 @@ subprojects {
         options.release.set(17)
     }
 
-    extensions.configure<PublishingExtension> {
-        publications {
-            register("mavenJava", MavenPublication::class) {
-                artifactId = extensions.getByType<BasePluginExtension>().archivesName.get()
-                version = rootProject.version.toString()
+    afterEvaluate {
+        extensions.configure<PublishingExtension> {
+            publications {
+                register("mavenJava", MavenPublication::class) {
+                    System.out.println(extensions.getByType<BasePluginExtension>().archivesName.get())
+                    artifactId = extensions.getByType<BasePluginExtension>().archivesName.get()
+                    version = rootProject.version.toString()
 
-                from(components["java"])
+                    from(components["java"])
 
-                pom {
-                    name.set(modName)
-                    inceptionYear.set("2021")
+                    pom {
+                        name.set(modName)
+                        inceptionYear.set("2021")
 
-                    organization {
-                        name.set("Team Galacticraft")
-                        url.set("https://github.com/TeamGalacticraft")
-                    }
+                        organization {
+                            name.set("Team Galacticraft")
+                            url.set("https://github.com/TeamGalacticraft")
+                        }
 
-                    scm {
-                        url.set("https://github.com/TeamGalacticraft/DynamicDimensions")
-                        connection.set("scm:git:git://github.com/TeamGalacticraft/DynamicDimensions.git")
-                        developerConnection.set("scm:git:git@github.com:TeamGalacticraft/DynamicDimensions.git")
-                    }
+                        scm {
+                            url.set("https://github.com/TeamGalacticraft/DynamicDimensions")
+                            connection.set("scm:git:git://github.com/TeamGalacticraft/DynamicDimensions.git")
+                            developerConnection.set("scm:git:git@github.com:TeamGalacticraft/DynamicDimensions.git")
+                        }
 
-                    issueManagement {
-                        system.set("github")
-                        url.set("https://github.com/TeamGalacticraft/DynamicDimensions/issues")
-                    }
+                        issueManagement {
+                            system.set("github")
+                            url.set("https://github.com/TeamGalacticraft/DynamicDimensions/issues")
+                        }
 
-                    licenses {
-                        license {
-                            name.set("MIT")
-                            url.set("https://github.com/TeamGalacticraft/DynamicDimensions/blob/main/LICENSE")
+                        licenses {
+                            license {
+                                name.set("MIT")
+                                url.set("https://github.com/TeamGalacticraft/DynamicDimensions/blob/main/LICENSE")
+                            }
                         }
                     }
                 }
             }
-        }
 
-        repositories {
-            if (System.getenv().containsKey("NEXUS_REPOSITORY_URL")) {
-                maven(System.getenv("NEXUS_REPOSITORY_URL")!!) {
-                    credentials {
-                        username = System.getenv("NEXUS_USER")
-                        password = System.getenv("NEXUS_PASSWORD")
+            repositories {
+                if (System.getenv().containsKey("NEXUS_REPOSITORY_URL")) {
+                    maven(System.getenv("NEXUS_REPOSITORY_URL")!!) {
+                        credentials {
+                            username = System.getenv("NEXUS_USER")
+                            password = System.getenv("NEXUS_PASSWORD")
+                        }
                     }
                 }
             }
