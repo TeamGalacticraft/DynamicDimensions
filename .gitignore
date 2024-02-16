@@ -232,6 +232,6 @@ gradle-app.setting
 
 # End of https://www.toptal.com/developers/gitignore/api/java,gradle,eclipse,jetbrains+all,visualstudiocode
 
-# Fabric/Forge
-run/
-remappedSrc/
+# Fabric/NeoForge
+fabric/run/
+neoforge/run/

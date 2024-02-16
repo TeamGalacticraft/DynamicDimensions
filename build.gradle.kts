@@ -2,7 +2,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 plugins {
-    id("org.ajoberstar.grgit") version("5.0.0")
+    id("org.ajoberstar.grgit") version ("5.2.1")
     id("org.cadixdev.licenser") version("0.6.1") apply(false)
     id("fabric-loom") version ("1.5-SNAPSHOT") apply (false)
     id("org.jetbrains.gradle.plugin.idea-ext") version ("1.1.7") // required for neoforge
@@ -13,50 +13,44 @@ val prerelease = (System.getenv("PRE_RELEASE") ?: "false") == "true"
 val commitHash = (System.getenv("GITHUB_SHA") ?: grgit.head().id.orEmpty())
 
 val minecraft = project.property("minecraft.version").toString()
-val modName = project.property("mod.name").toString()
 val modId = project.property("mod.id").toString()
-var modVersion = project.property("mod.version").toString()
+val modName = project.property("mod.name").toString()
+val modVersion = project.property("mod.version").toString()
+val modDescription = project.property("mod.description").toString()
+val modLicense = project.property("mod.license").toString()
 
-allprojects {
-    apply(plugin = "org.cadixdev.licenser")
-
-    version = buildString {
-        append(modVersion)
-        if (prerelease) {
-            append("-pre")
-        }
-        append("-$minecraft")
-        append('+')
-        if (buildNumber.isNotBlank()) {
-            append(buildNumber)
-        } else if (commitHash.isNotEmpty()) {
-            append(commitHash.substring(0, 8))
-            if (!rootProject.grgit.status().isClean) {
-                append("-dirty")
-            }
-        } else {
-            append("unknown")
-        }
+group = "dev.galacticraft"
+version = buildString {
+    append(modVersion)
+    if (prerelease) {
+        append("-pre")
     }
-
-    repositories {
-        mavenLocal()
-    }
-
-    extensions.configure<org.cadixdev.gradle.licenser.LicenseExtension> {
-        setHeader(rootProject.file("LICENSE_HEADER.txt"))
-        include("**/dev/galacticraft/**/*.java")
+    append('+')
+    if (buildNumber.isNotBlank()) {
+        append(buildNumber)
+    } else if (commitHash.isNotEmpty()) {
+        append(commitHash.substring(0, 8))
+        if (!rootProject.grgit.status().isClean) {
+            append("-dirty")
+        }
+    } else {
+        append("unknown")
     }
 }
-
+description = modDescription
 
 subprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
+    apply(plugin = "org.cadixdev.licenser")
+
+    group = rootProject.group
+    version = rootProject.version
+    description = rootProject.description
+
+    extensions.getByType<BasePluginExtension>().archivesName.set("$modId-${project.name}")
 
     val badpackets = project.property("badpackets.version").toString()
-
-    group = "dev.galacticraft"
 
     extensions.configure<JavaPluginExtension> {
         toolchain.languageVersion.set(JavaLanguageVersion.of(17))
@@ -67,8 +61,19 @@ subprojects {
         withSourcesJar()
     }
 
+    extensions.configure<org.cadixdev.gradle.licenser.LicenseExtension> {
+        setHeader(rootProject.file("LICENSE_HEADER.txt"))
+        include("**/dev/galacticraft/**/*.java")
+    }
+
     repositories {
-        maven ("https://maven.bai.lol") {
+        maven("https://maven.parchmentmc.org") {
+            name = "ParchmentMC"
+            content {
+                includeGroup("org.parchmentmc.data")
+            }
+        }
+        maven("https://maven.bai.lol") {
             content {
                 includeGroup("lol.bai")
             }
@@ -86,17 +91,17 @@ subprojects {
 
         manifest {
             attributes(
-                "Specification-Title" to modName,
-                "Specification-Vendor" to "Team Galacticraft",
-                "Specification-Version" to archiveVersion,
-                "Implementation-Title" to project.name,
-                "Implementation-Version" to archiveVersion,
-                "Implementation-Vendor" to "Team Galacticraft",
-                "Implementation-Timestamp" to SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(Date()),
-                "Timestamp" to System.currentTimeMillis(),
-                "Built-On-Java" to "${System.getProperty("java.vm.version")} (${System.getProperty("java.vm.vendor")})",
-                "Build-On-Minecraft" to minecraft,
-                "Automatic-Module-Name" to modId
+                    "Specification-Title" to modId,
+                    "Specification-Vendor" to "Team Galacticraft",
+                    "Specification-Version" to modVersion,
+                    "Implementation-Title" to archiveBaseName,
+                    "Implementation-Version" to archiveVersion,
+                    "Implementation-Vendor" to "Team Galacticraft",
+                    "Implementation-Timestamp" to SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(Date()),
+                    "Timestamp" to System.currentTimeMillis(),
+                    "Built-On-Java" to "${System.getProperty("java.vm.version")} (${System.getProperty("java.vm.vendor")})",
+                    "Built-On-Minecraft" to minecraft,
+                    "Automatic-Module-Name" to modId
             )
         }
     }
@@ -106,10 +111,10 @@ subprojects {
         // https://stackoverflow.com/questions/41028030/gradle-minimize-json-resources-in-processresources#41029113
         doLast {
             fileTree(
-                mapOf(
-                    "dir" to outputs.files.asPath,
-                    "includes" to listOf("**/*.json", "**/*.mcmeta")
-                )
+                    mapOf(
+                            "dir" to outputs.files.asPath,
+                            "includes" to listOf("**/*.json", "**/*.mcmeta")
+                    )
             ).forEach { file: File ->
                 file.writeText(groovy.json.JsonOutput.toJson(groovy.json.JsonSlurper().parse(file)))
             }
@@ -121,53 +126,68 @@ subprojects {
         options.release.set(17)
     }
 
-    afterEvaluate {
-        extensions.configure<PublishingExtension> {
-            publications {
-                register("mavenJava", MavenPublication::class) {
-                    System.out.println(extensions.getByType<BasePluginExtension>().archivesName.get())
-                    artifactId = extensions.getByType<BasePluginExtension>().archivesName.get()
-                    version = rootProject.version.toString()
+    tasks.withType<ProcessResources> {
+        val properties = mapOf(
+                "mod_id" to modId,
+                "mod_name" to modName,
+                "mod_description" to modDescription,
+                "mod_license" to modLicense,
+                "mod_version" to project.version,
+                "min_minecraft" to project.property("minecraft.version.min"),
+                "min_fabric_loader" to project.property("fabric.loader.version.min"),
+                "min_neoforge" to project.property("neoforge.version.min"),
+        )
 
-                    from(components["java"])
+        filesMatching(listOf("pack.mcmeta", "fabric.mod.json", "META-INF/mods.toml", "*.mixins.json")) {
+            expand(properties)
+        }
+        inputs.properties(properties);
+    }
 
-                    pom {
-                        name.set(modName)
-                        inceptionYear.set("2021")
+    extensions.configure<PublishingExtension> {
+        publications {
+            register("mavenJava", MavenPublication::class) {
+                artifactId = extensions.getByType<BasePluginExtension>().archivesName.get()
+                version = rootProject.version.toString()
 
-                        organization {
-                            name.set("Team Galacticraft")
-                            url.set("https://github.com/TeamGalacticraft")
-                        }
+                from(components["java"])
 
-                        scm {
-                            url.set("https://github.com/TeamGalacticraft/DynamicDimensions")
-                            connection.set("scm:git:git://github.com/TeamGalacticraft/DynamicDimensions.git")
-                            developerConnection.set("scm:git:git@github.com:TeamGalacticraft/DynamicDimensions.git")
-                        }
+                pom {
+                    name.set(modName)
+                    inceptionYear.set("2021")
 
-                        issueManagement {
-                            system.set("github")
-                            url.set("https://github.com/TeamGalacticraft/DynamicDimensions/issues")
-                        }
+                    organization {
+                        name.set("Team Galacticraft")
+                        url.set("https://github.com/TeamGalacticraft")
+                    }
 
-                        licenses {
-                            license {
-                                name.set("MIT")
-                                url.set("https://github.com/TeamGalacticraft/DynamicDimensions/blob/main/LICENSE")
-                            }
+                    scm {
+                        url.set("https://github.com/TeamGalacticraft/DynamicDimensions")
+                        connection.set("scm:git:git://github.com/TeamGalacticraft/DynamicDimensions.git")
+                        developerConnection.set("scm:git:git@github.com:TeamGalacticraft/DynamicDimensions.git")
+                    }
+
+                    issueManagement {
+                        system.set("github")
+                        url.set("https://github.com/TeamGalacticraft/DynamicDimensions/issues")
+                    }
+
+                    licenses {
+                        license {
+                            name.set(modLicense)
+                            url.set("https://github.com/TeamGalacticraft/DynamicDimensions/blob/main/LICENSE")
                         }
                     }
                 }
             }
+        }
 
-            repositories {
-                if (System.getenv().containsKey("NEXUS_REPOSITORY_URL")) {
-                    maven(System.getenv("NEXUS_REPOSITORY_URL")!!) {
-                        credentials {
-                            username = System.getenv("NEXUS_USER")
-                            password = System.getenv("NEXUS_PASSWORD")
-                        }
+        repositories {
+            if (System.getenv().containsKey("NEXUS_REPOSITORY_URL")) {
+                maven(System.getenv("NEXUS_REPOSITORY_URL")!!) {
+                    credentials {
+                        username = System.getenv("NEXUS_USER")
+                        password = System.getenv("NEXUS_PASSWORD")
                     }
                 }
             }
@@ -178,3 +198,4 @@ subprojects {
         enabled = false
     }
 }
+

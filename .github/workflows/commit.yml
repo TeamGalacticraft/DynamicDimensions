@@ -26,7 +26,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-${{github.ref_name}}-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', 'build.gradle.kts', 'gradle.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-${{github.ref_name}}-
@@ -55,7 +58,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-${{github.ref_name}}-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', 'build.gradle.kts', 'gradle.properties') }}
 
       - name: License headers
@@ -82,7 +88,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-${{github.ref_name}}-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', 'build.gradle.kts', 'gradle.properties') }}
 
       - name: Build
@@ -92,9 +101,9 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            .gradle/
-            !.gradle/loom-cache
-            build/
+            ./common/build
+            ./fabric/build
+            ./neoforge/build
           key: ${{ runner.os }}-build-${{ github.sha }}
 
   analysis:
@@ -120,7 +129,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-${{github.ref_name}}-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', 'build.gradle.kts', 'gradle.properties') }}
 
       - name: Initialize CodeQL
@@ -155,7 +167,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-${{github.ref_name}}-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', 'build.gradle.kts', 'gradle.properties') }}
 
       - name: Restore cached build output
@@ -193,7 +208,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-${{github.ref_name}}-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', 'build.gradle.kts', 'gradle.properties') }}
 
       - name: Restore cached build output

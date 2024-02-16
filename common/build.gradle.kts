@@ -1,53 +1,29 @@
 plugins {
-    java
     id("fabric-loom")
 }
 
 val modId = project.property("mod.id").toString()
-var modVersion = project.property("mod.version").toString()
-val modName = project.property("mod.name").toString()
 val minecraft = project.property("minecraft.version").toString()
+val parchment = project.property("parchment.version").toString()
 val fabricLoader = project.property("fabric.loader.version").toString()
 
-base.archivesName.set("${modId}-common")
-
 loom {
-    runtimeOnlyLog4j.set(true)
     accessWidenerPath.set(project(":fabric").file("src/main/resources/${modId}.accesswidener"))
+    // disable Minecraft-altering loom features, so that we can have one less copy of Minecraft
+    interfaceInjection.enableDependencyInterfaceInjection.set(false)
+    interfaceInjection.getIsEnabled().set(false)
+    enableTransitiveAccessWideners.set(false)
 
-    mixin {
-        useLegacyMixinAp.set(false)
-    }
-}
-
-repositories {
-    maven("https://repo.spongepowered.org/repository/maven-public/") {
-        name = "Sponge Snapshots"
-        content {
-            includeGroup("org.spongepowered")
-        }
-    }
+    mixin.useLegacyMixinAp.set(false)
 }
 
 dependencies {
     minecraft("com.mojang:minecraft:$minecraft")
-    mappings(loom.officialMojangMappings())
+    mappings(if (parchment.isBlank()) loom.officialMojangMappings() else loom.layered {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-$parchment@zip")
+    })
 
-    // loom expects some loader classes to exist
-    compileOnly("net.fabricmc:fabric-loader:${fabricLoader}")
-    testCompileOnly(compileOnly("org.spongepowered:mixin:0.8.5")!!)
-}
-
-tasks.processResources {
-    filesMatching("pack.mcmeta") {
-        expand(
-                "mod_version" to project.version,
-                "mod_id" to modId,
-                "mod_name" to modName
-        )
-    }
-}
-
-tasks.withType<net.fabricmc.loom.task.AbstractRemapJarTask> {
-    targetNamespace.set("named")
+    // loom expects some loader classes to exist, mod spec provides mixin and mixin-extras too
+    modCompileOnly("net.fabricmc:fabric-loader:${fabricLoader}")
 }

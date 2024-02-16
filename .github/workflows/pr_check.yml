@@ -27,7 +27,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle.properties', 'gradle/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-PR${{github.event.number}}-
@@ -58,7 +61,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle.properties', 'gradle/gradle-wrapper.properties') }}
 
       - name: License headers
@@ -85,20 +91,14 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle.properties', 'gradle/gradle-wrapper.properties') }}
 
       - name: Build
         run: ./gradlew assemble testClasses -x checkLicenses --no-daemon
-
-      - name: Cache build output
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            .gradle/
-            !.gradle/loom-cache
-            build/
-          key: ${{ runner.os }}-build-PR${{github.event.number}}-${{ github.sha }}
 
   analysis:
     needs: build
@@ -122,7 +122,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle.properties', 'gradle/gradle-wrapper.properties') }}
 
       - name: Initialize CodeQL
@@ -158,7 +161,10 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            .gradle/loom-cache
+            ./.gradle
+            ./common/.gradle
+            ./fabric/.gradle
+            ./neoforge/.gradle
           key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle.properties', 'gradle/gradle-wrapper.properties') }}
 
       - name: Restore cached build output
