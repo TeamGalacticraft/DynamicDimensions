@@ -6,14 +6,14 @@ on:
     branches: [ 'minecraft/*' ]
 
 jobs:
-  initialize:
+  build:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/wrapper-validation-action@v2
 
       - name: Setup JDK 17
         uses: actions/setup-java@v4
@@ -27,155 +27,32 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            ./.gradle
-            ./common/.gradle
-            ./fabric/.gradle
-            ./neoforge/.gradle
-          key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle.properties', 'gradle/gradle-wrapper.properties') }}
+            .gradle
+            common/.gradle
+            fabric/.gradle
+            neoforge/.gradle
+            neoforge/build/jars
+            neoforge/build/neoForge
+            neoforge/build/neoForm
+            neoforge/build/tmp/neoFormRecompile
+          key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', '**/build.gradle.kts', '**/gradle.properties') }}-${{github.ref_name}}
           restore-keys: |
+            ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', '**/build.gradle.kts', '**/gradle.properties') }}
             ${{ runner.os }}-gradle-PR${{github.event.number}}-
-            ${{ runner.os }}-gradle-${{github.base_ref}}-
+            ${{ runner.os }}-gradle-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', '**/build.gradle.kts', '**/gradle.properties') }}
             ${{ runner.os }}-gradle-
 
-      - name: Initialize caches
-        run: ./gradlew --no-daemon
+      - name: Initialize build environment
+        run: ./gradlew
 
-
-  license-headers:
-    needs: initialize
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: temurin
-
-      - name: Restore gradle cache
-        uses: actions/cache/restore@v4
-        with:
-          fail-on-cache-miss: true
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ./.gradle
-            ./common/.gradle
-            ./fabric/.gradle
-            ./neoforge/.gradle
-          key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle.properties', 'gradle/gradle-wrapper.properties') }}
-
-      - name: License headers
-        run: ./gradlew checkLicenses --no-daemon
-
-  build:
-    needs: initialize
-    runs-on: ubuntu-22.04
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: temurin
-
-      - name: Restore gradle cache
-        uses: actions/cache/restore@v4
-        with:
-          fail-on-cache-miss: true
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ./.gradle
-            ./common/.gradle
-            ./fabric/.gradle
-            ./neoforge/.gradle
-          key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle.properties', 'gradle/gradle-wrapper.properties') }}
+      - name: Check license headers
+        run: ./gradlew checkLicenses
 
       - name: Build
-        run: ./gradlew assemble testClasses -x checkLicenses --no-daemon
-
-  analysis:
-    needs: build
-    runs-on: ubuntu-22.04
-    permissions:
-      security-events: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: temurin
-
-      - name: Restore gradle cache
-        uses: actions/cache/restore@v4
-        with:
-          fail-on-cache-miss: true
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ./.gradle
-            ./common/.gradle
-            ./fabric/.gradle
-            ./neoforge/.gradle
-          key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle.properties', 'gradle/gradle-wrapper.properties') }}
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: java
-          debug: true
-
-      - name: Build
-        run: ./gradlew assemble testClasses -x checkLicenses --no-daemon
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-
-  test:
-    needs: build
-    runs-on: ubuntu-22.04
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: temurin
-
-      - name: Restore gradle cache
-        uses: actions/cache/restore@v4
-        with:
-          fail-on-cache-miss: true
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ./.gradle
-            ./common/.gradle
-            ./fabric/.gradle
-            ./neoforge/.gradle
-          key: ${{ runner.os }}-gradle-PR${{github.event.number}}-${{ hashFiles('gradle.properties', 'gradle/gradle-wrapper.properties') }}
-
-      - name: Restore cached build output
-        uses: actions/cache/restore@v4
-        with:
-          fail-on-cache-miss: true
-          path: |
-            .gradle/
-            !.gradle/loom-cache
-            build/
-          key: ${{ runner.os }}-build-PR${{github.event.number}}-${{ github.sha }}
+        if: ${{ !cancelled() }}
+        id: build
+        run: ./gradlew assemble -x checkLicenses
 
       - name: Test
-        run: ./gradlew :fabric:runGametest :neoforge:runGameTestServer --no-daemon
+        if: ${{ steps.build.outcome == 'success' && !cancelled() }}
+        run: ./gradlew :fabric:runGametest :neoforge:runGameTestServer

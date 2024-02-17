@@ -20,22 +20,15 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.impl.mixin;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.storage.LevelStorageSource;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mod("dynamicdimensions_test")
-public final class DynamicDimensionsTest {
-    public DynamicDimensionsTest(IEventBus modEventBus, Dist dist, ModContainer container) {
-        modEventBus.addListener(this::registerGametests);
-    }
-
-    public void registerGametests(@NotNull RegisterGameTestsEvent event) {
-        event.register(DynamicDimensionsGametest.class);
-    }
+@Mixin(MinecraftServer.class)
+public interface MinecraftServerAccessor {
+    @Accessor("storageSource")
+    LevelStorageSource.LevelStorageAccess getStorageSource();
 }

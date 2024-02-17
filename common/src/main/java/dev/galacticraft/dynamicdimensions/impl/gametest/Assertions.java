@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.impl.gametest;
 
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.world.item.ItemStack;

@@ -20,11 +20,11 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.gametest;
+package dev.galacticraft.dynamicdimensions.impl.gametest;
 
 import dev.galacticraft.dynamicdimensions.api.DynamicDimensionRegistry;
-import dev.galacticraft.dynamicdimensions.gametest.mixin.MinecraftServerAccessor;
 import dev.galacticraft.dynamicdimensions.impl.Constants;
+import dev.galacticraft.dynamicdimensions.impl.mixin.MinecraftServerAccessor;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;

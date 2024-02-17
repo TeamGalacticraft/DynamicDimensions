@@ -1,12 +1,15 @@
-name: Commit
+name: CodeQL
 
 on:
-  push:
-    branches: [ 'minecraft/*' ]
+  workflow_run:
+    workflows: [ Commit ]
+    types:
+      - completed
 
 jobs:
-  build:
+  codeql:
     runs-on: ubuntu-22.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,8 +24,9 @@ jobs:
           distribution: temurin
 
       - name: Cache gradle dependencies
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
+          fail-on-cache-miss: true
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
@@ -35,29 +39,17 @@ jobs:
             neoforge/build/neoForm
             neoforge/build/tmp/neoFormRecompile
           key: ${{ runner.os }}-gradle-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', '**/build.gradle.kts', '**/gradle.properties') }}-${{github.ref_name}}
-          restore-keys: |
-            ${{ runner.os }}-gradle-${{ hashFiles('gradle/gradle-wrapper.properties', 'settings.gradle.kts', '**/build.gradle.kts', '**/gradle.properties') }}
-            ${{ runner.os }}-gradle-
 
       - name: Initialize build environment
         run: ./gradlew
 
-      - name: Check license headers
-        run: ./gradlew checkLicenses
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
 
       - name: Build
-        if: ${{ !cancelled() }}
-        id: build
-        run: ./gradlew assemble -x checkLicenses
+        run: ./gradlew assemble -x checkLicenses --no-daemon
 
-      - name: Test
-        if: ${{ steps.build.outcome == 'success' && !cancelled() }}
-        run: ./gradlew :fabric:runGametest :neoforge:runGameTestServer
-
-      - name: Publish
-        if: ${{ github.repository == 'TeamGalacticraft/DynamicDimensions' && success() }}
-        run: ./gradlew publish -x test --no-daemon
-        env:
-          NEXUS_REPOSITORY_URL: ${{ secrets.NEXUS_RELEASE_URL }}
-          NEXUS_USER: ${{ secrets.NEXUS_USER }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3

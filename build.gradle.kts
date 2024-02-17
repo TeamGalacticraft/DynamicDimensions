@@ -1,16 +1,9 @@
-import java.text.SimpleDateFormat
-import java.util.*
-
 plugins {
-    id("org.ajoberstar.grgit") version ("5.2.1")
+    id("org.ajoberstar.grgit.service") version ("5.2.1")
     id("org.cadixdev.licenser") version("0.6.1") apply(false)
     id("fabric-loom") version ("1.5-SNAPSHOT") apply (false)
     id("org.jetbrains.gradle.plugin.idea-ext") version ("1.1.7") // required for neoforge
 }
-
-val buildNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
-val prerelease = (System.getenv("PRE_RELEASE") ?: "false") == "true"
-val commitHash = (System.getenv("GITHUB_SHA") ?: grgit.head().id.orEmpty())
 
 val minecraft = project.property("minecraft.version").toString()
 val modId = project.property("mod.id").toString()
@@ -22,22 +15,29 @@ val modLicense = project.property("mod.license").toString()
 group = "dev.galacticraft"
 version = buildString {
     append(modVersion)
-    if (prerelease) {
+    val env = System.getenv()
+    if (env.containsKey("PRE_RELEASE") && env["PRE_RELEASE"] == "true") {
         append("-pre")
     }
     append('+')
-    if (buildNumber.isNotBlank()) {
-        append(buildNumber)
-    } else if (commitHash.isNotEmpty()) {
-        append(commitHash.substring(0, 8))
-        if (!rootProject.grgit.status().isClean) {
-            append("-dirty")
-        }
+    if (env.containsKey("GITHUB_RUN_NUMBER")) {
+        append(env["GITHUB_RUN_NUMBER"])
     } else {
-        append("unknown")
+        val svc = extensions.findByType<org.ajoberstar.grgit.gradle.GrgitServiceExtension>()
+        if (svc != null && svc.service.isPresent) {
+            val grgit = svc.service.get().grgit
+            append(grgit.head().id.substring(0, 8))
+            if (!grgit.status().isClean) {
+                append("-dirty")
+            }
+        } else {
+            append("unknown")
+        }
     }
 }
 description = modDescription
+
+println("$modName: $version")
 
 subprojects {
     apply(plugin = "java")
@@ -97,27 +97,12 @@ subprojects {
                     "Implementation-Title" to archiveBaseName,
                     "Implementation-Version" to archiveVersion,
                     "Implementation-Vendor" to "Team Galacticraft",
-                    "Implementation-Timestamp" to SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(Date()),
+                    "Implementation-Timestamp" to java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(java.util.Date()),
                     "Timestamp" to System.currentTimeMillis(),
                     "Built-On-Java" to "${System.getProperty("java.vm.version")} (${System.getProperty("java.vm.vendor")})",
                     "Built-On-Minecraft" to minecraft,
                     "Automatic-Module-Name" to modId
             )
-        }
-    }
-
-    tasks.withType<ProcessResources> {
-        // Minify json resources
-        // https://stackoverflow.com/questions/41028030/gradle-minimize-json-resources-in-processresources#41029113
-        doLast {
-            fileTree(
-                    mapOf(
-                            "dir" to outputs.files.asPath,
-                            "includes" to listOf("**/*.json", "**/*.mcmeta")
-                    )
-            ).forEach { file: File ->
-                file.writeText(groovy.json.JsonOutput.toJson(groovy.json.JsonSlurper().parse(file)))
-            }
         }
     }
 
@@ -142,6 +127,19 @@ subprojects {
             expand(properties)
         }
         inputs.properties(properties);
+
+        // Minify json resources
+        // https://stackoverflow.com/questions/41028030/gradle-minimize-json-resources-in-processresources#41029113
+        doLast {
+            fileTree(
+                    mapOf(
+                            "dir" to outputs.files.asPath,
+                            "includes" to listOf("**/*.json", "**/*.mcmeta")
+                    )
+            ).forEach { file: File ->
+                file.writeText(groovy.json.JsonOutput.toJson(groovy.json.JsonSlurper().parse(file)))
+            }
+        }
     }
 
     extensions.configure<PublishingExtension> {

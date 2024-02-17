@@ -35,6 +35,9 @@
     ],
     "client": [
       "dev.galacticraft.dynamicdimensions.impl.fabric.client.DynamicDimensionsFabricClient"
+    ],
+    "fabric-gametest": [
+      "dev.galacticraft.dynamicdimensions.impl.gametest.DynamicDimensionsGametest"
     ]
   },
   "mixins": [
