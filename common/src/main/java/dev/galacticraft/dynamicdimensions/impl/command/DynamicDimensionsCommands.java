@@ -32,7 +32,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.CompoundTagArgument;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtOps;
@@ -50,7 +49,6 @@ import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.FlatLevelSource;
 import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
-import net.minecraft.world.level.storage.LevelData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.OptionalLong;
@@ -86,11 +84,11 @@ public final class DynamicDimensionsCommands {
                                         RegistryAccess access = ctx.getSource().registryAccess();
                                         ChunkGenerator generator = new FlatLevelSource(FlatLevelGeneratorSettings.getDefault(access.lookupOrThrow(Registries.BIOME), access.lookupOrThrow(Registries.STRUCTURE_SET), access.lookupOrThrow(Registries.PLACED_FEATURE)));
                                         DimensionType type = new DimensionType(OptionalLong.empty(), true, false, false, true, 1.0D, true, false, -64, 384, 384, BlockTags.INFINIBURN_OVERWORLD, BuiltinDimensionTypes.OVERWORLD_EFFECTS, 0.0F, new DimensionType.MonsterSettings(false, true, UniformInt.of(0, 7), 0));
-                                        DynamicDimensionRegistry from = DynamicDimensionRegistry.from(ctx.getSource().getServer());
-                                        if (from.anyDimensionExists(id)) {
+                                        DynamicDimensionRegistry registry = DynamicDimensionRegistry.from(ctx.getSource().getServer());
+                                        if (registry.anyDimensionExists(id)) {
                                             throw CANNOT_CREATE.create();
                                         }
-                                        if (!from.createDynamicDimension(id, generator, type)) {
+                                        if (!registry.createDynamicDimension(id, generator, type)) {
                                             throw CANNOT_CREATE.create();
                                         }
                                         return 1;
@@ -135,24 +133,7 @@ public final class DynamicDimensionsCommands {
                                         if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(id)) {
                                             throw CANNOT_DELETE.create();
                                         }
-                                        ((DynamicDimensionRegistry) ctx.getSource().getServer()).removeDynamicDimension(id, (server, player) -> {
-                                            player.sendSystemMessage(Component.translatable("command.dynamicdimensions.delete.removed", id), true);
-                                            ServerLevel level = server.getLevel(player.getRespawnDimension());
-                                            if (level != null) {
-                                                BlockPos pos = player.getRespawnPosition();
-                                                if (pos != null) {
-                                                    player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), player.getXRot());
-                                                } else {
-                                                    LevelData levelData = level.getLevelData();
-                                                    player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
-                                                }
-                                            } else {
-                                                level = server.overworld();
-                                                LevelData levelData = level.getLevelData();
-                                                player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
-                                            }
-                                            player.setDeltaMovement(0.0, 0.0, 0.0);
-                                        });
+                                        ((DynamicDimensionRegistry) ctx.getSource().getServer()).removeDynamicDimension(id, null);
                                         return 1;
                                     }))));
         }

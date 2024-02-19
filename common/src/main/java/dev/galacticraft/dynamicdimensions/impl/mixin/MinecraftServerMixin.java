@@ -35,15 +35,13 @@ import dev.galacticraft.dynamicdimensions.impl.accessor.PrimaryLevelDataAccessor
 import dev.galacticraft.dynamicdimensions.impl.registry.RegistryUtil;
 import io.netty.buffer.Unpooled;
 import lol.bai.badpackets.api.PacketSender;
-import net.minecraft.core.Holder;
-import net.minecraft.core.LayeredRegistryAccess;
-import net.minecraft.core.Registry;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ClientboundUpdateTagsPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -66,10 +64,12 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.storage.DerivedLevelData;
+import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.WorldData;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -235,7 +235,7 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
         this.tickingLevels = false;
     }
 
-    @Inject(method = "loadLevel", at = @At("HEAD"))
+    @Inject(method = "createLevels", at = @At(value = "INVOKE", target = "Lnet/minecraft/core/Registry;entrySet()Ljava/util/Set;", shift = At.Shift.BEFORE))
     private void loadDynamicDimensions(CallbackInfo ci) {
         final Registry<DimensionType> typeRegistry = this.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
         final Registry<LevelStem> stemRegistry = this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
@@ -372,7 +372,28 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
     }
 
     @Override
-    public boolean removeDynamicDimension(@NotNull ResourceLocation id, @NotNull PlayerRemover remover) {
+    public boolean removeDynamicDimension(@NotNull ResourceLocation id, @Nullable PlayerRemover remover) {
+        if (remover == null) {
+            remover = (server, player) -> {
+                player.sendSystemMessage(Component.translatable("command.dynamicdimensions.delete.removed", id), true);
+                ServerLevel level = server.getLevel(player.getRespawnDimension());
+                if (level != null && level != player.serverLevel()) {
+                    BlockPos pos = player.getRespawnPosition();
+                    if (pos != null) {
+                        player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), player.getXRot());
+                    } else {
+                        LevelData levelData = level.getLevelData();
+                        player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
+                    }
+                } else {
+                    level = server.overworld();
+                    LevelData levelData = level.getLevelData();
+                    player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
+                }
+                player.setDeltaMovement(0.0, 0.0, 0.0);
+            };
+        }
+
         ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
         if (!this.canDeleteDimension(id) || this.levelsAwaitingDeletion.containsKey(key)) return false;
 

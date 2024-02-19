@@ -28,6 +28,7 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The registry for dynamic dimensions.
@@ -121,5 +122,5 @@ public interface DynamicDimensionRegistry {
      * @return whether a dimension with the given id was removed
      * @since 0.1.0
      */
-    boolean removeDynamicDimension(@NotNull ResourceLocation id, @NotNull PlayerRemover remover);
+    boolean removeDynamicDimension(@NotNull ResourceLocation id, @Nullable PlayerRemover remover);
 }
