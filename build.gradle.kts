@@ -1,5 +1,5 @@
 plugins {
-    id("org.ajoberstar.grgit.service") version("5.2.1")
+    id("org.ajoberstar.grgit") version ("5.2.1")
     id("org.cadixdev.licenser") version("0.6.1") apply(false)
     id("fabric-loom") version("1.5-SNAPSHOT") apply(false)
     id("org.jetbrains.gradle.plugin.idea-ext") version("1.1.7") // required for neoforge
@@ -23,9 +23,8 @@ version = buildString {
     if (env.containsKey("GITHUB_RUN_NUMBER")) {
         append(env["GITHUB_RUN_NUMBER"])
     } else {
-        val svc = extensions.findByType<org.ajoberstar.grgit.gradle.GrgitServiceExtension>()
-        if (svc != null && svc.service.isPresent) {
-            val grgit = svc.service.get().grgit
+        val grgit = extensions.findByType<org.ajoberstar.grgit.Grgit>()
+        if (grgit?.head() != null) {
             append(grgit.head().id.substring(0, 8))
             if (!grgit.status().isClean) {
                 append("-dirty")

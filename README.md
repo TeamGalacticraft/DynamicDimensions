@@ -15,14 +15,14 @@ Then add the appropriate dependency:
 ### Fabric
 ```groovy
 dependencies {
-    modImplementation("dev.galacticraft.dynamicdimensions-fabric:$dynDims")
+    modImplementation("dev.galacticraft.dynamicdimensions-fabric:$dyndims")
 }
 ```
 
 ### NeoForge
 ```groovy
 dependencies {
-    implementation(fg.deobf("dev.galacticraft.dynamicdimensions-neoforge:$dynDims"))
+    implementation("dev.galacticraft.dynamicdimensions-neoforge:$dyndims")
 }
 ```
 
@@ -30,17 +30,17 @@ dependencies {
 ```groovy
 // Common
 dependencies {
-    implementation("dev.galacticraft.dynamicdimensions-common:$dynDims")
+    compileOnly("dev.galacticraft.dynamicdimensions-common:$dyndims")
 }
 
 // Fabric
 dependencies {
-    modRuntimeOnly("dev.galacticraft.dynamicdimensions-fabric:$dynDims")
+    modRuntimeOnly("dev.galacticraft.dynamicdimensions-fabric:$dyndims")
 }
 
 // NeoForge
 dependencies {
-    runtimeOnly(fg.deobf("dev.galacticraft.dynamicdimensions-neoforge:$dynDims"))
+    runtimeOnly("dev.galacticraft.dynamicdimensions-neoforge:$dyndims")
 }
 ```
 
