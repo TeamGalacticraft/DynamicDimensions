@@ -32,6 +32,7 @@ dependencies {
 dependencies {
     implementation("dev.galacticraft.dynamicdimensions-common:$dynDims")
 }
+
 // Fabric
 dependencies {
     modRuntimeOnly("dev.galacticraft.dynamicdimensions-fabric:$dynDims")

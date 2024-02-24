@@ -88,6 +88,7 @@ public interface DynamicDimensionRegistry {
     /**
      * Registers a new dimension and updates all clients with the new dimension.
      * If world data already exists for this dimension it will be overwritten.
+     * Note: The dimension may not be loaded until the next tick.
      *
      * @param chunkGenerator The chunk generator.
      * @param id             The ID of the dimension.
@@ -95,7 +96,6 @@ public interface DynamicDimensionRegistry {
      * @param type           The dimension type.
      * @return the server level of the new dimension if successful, {@code null} otherwise.
      * @see #loadDynamicDimension(ResourceLocation, ChunkGenerator, DimensionType) if you want to load previous data
-     * @implNote The dimension may not be loaded until the next tick.
      * @since 0.6.0
      */
     @Nullable ServerLevel createDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
@@ -103,6 +103,7 @@ public interface DynamicDimensionRegistry {
     /**
      * Registers a new dimension and updates all clients with the new dimension.
      * If world data already exists for this dimension it will be used, otherwise it will be created.
+     * Note: The dimension may not be loaded until the next tick.
      *
      * @param chunkGenerator The chunk generator.
      * @param id             The ID of the dimension.
@@ -110,7 +111,6 @@ public interface DynamicDimensionRegistry {
      *                       and the {@link net.minecraft.world.level.levelgen.WorldDimensions#dimensions() dimensions} registry.
      * @param type           The dimension type.
      * @return the server level of the new dimension if successful, {@code null} otherwise.
-     * @implNote The dimension may not be loaded until the next tick.
      * @since 0.6.0
      */
     @Nullable ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
@@ -119,11 +119,11 @@ public interface DynamicDimensionRegistry {
      * Deletes a dynamic dimension from the server.
      * This may delete the dimension files permanently.
      * Remaining players will be removed from the dimension using the provided player remover.
+     * Note: The dimension may not be deleted until the next tick.
      *
      * @param id      The ID of the dimension.
      * @param remover The method to remove players from the dimension.
      * @return whether a dimension with the given id was deleted
-     * @implNote The dimension may not be deleted until the next tick.
      * @since 0.7.0
      */
     boolean deleteDynamicDimension(@NotNull ResourceLocation id, @Nullable PlayerRemover remover);
@@ -131,11 +131,11 @@ public interface DynamicDimensionRegistry {
     /**
      * Removes a dynamic dimension from the server, saving the level to disk.
      * Remaining players will be removed from the dimension using the provided player remover.
+     * Note: The dimension may not be unloaded until the next tick.
      *
      * @param id      The ID of the dimension.
      * @param remover The method to remove players from the dimension.
      * @return whether a dimension with the given id was unloaded
-     * @implNote The dimension may not be unloaded until the next tick.
      * @since 0.7.0
      */
     boolean unloadDynamicDimension(@NotNull ResourceLocation id, @Nullable PlayerRemover remover);

@@ -21,7 +21,7 @@ jobs:
           java-version: 17
           distribution: temurin
 
-      - name: Cache gradle dependencies
+      - name: Gradle cache
         uses: actions/cache@v4
         with:
           path: |
@@ -51,8 +51,12 @@ jobs:
       - name: Build
         if: ${{ !cancelled() }}
         id: build
-        run: ./gradlew assemble -x checkLicenses
+        run: ./gradlew assemble -x checkLicenses -x javadoc
 
       - name: Test
         if: ${{ steps.build.outcome == 'success' && !cancelled() }}
         run: ./gradlew :fabric:runGametest :neoforge:runGameTestServer
+
+      - name: Javadoc
+        if: ${{ success() }}
+        run: ./gradlew javadoc
