@@ -53,11 +53,6 @@ public final class DynamicDimensionsFabric implements ModInitializer {
         }
     });
 
-    private static void registerFabricEventListeners() {
-        DIMENSION_ADDED_EVENT.register((key, level) -> ServerWorldEvents.LOAD.invoker().onWorldLoad(level.getServer(), level));
-        DIMENSION_REMOVED_EVENT.register((key, level) -> ServerWorldEvents.UNLOAD.invoker().onWorldUnload(level.getServer(), level));
-    }
-
     @Override
     public void onInitialize() {
         if (Constants.CONFIG.enableCommands()) {
@@ -70,6 +65,11 @@ public final class DynamicDimensionsFabric implements ModInitializer {
         if (FabricLoader.getInstance().isModLoaded("fabric-lifecycle-events-v1")) {
             registerFabricEventListeners();
         }
+    }
+
+    private static void registerFabricEventListeners() {
+        DIMENSION_ADDED_EVENT.register((key, level) -> ServerWorldEvents.LOAD.invoker().onWorldLoad(level.getServer(), level));
+        DIMENSION_REMOVED_EVENT.register((key, level) -> ServerWorldEvents.UNLOAD.invoker().onWorldUnload(level.getServer(), level));
     }
 
     private static void registerCommandCallback() {

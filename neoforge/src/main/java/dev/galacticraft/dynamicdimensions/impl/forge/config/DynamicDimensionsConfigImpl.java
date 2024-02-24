@@ -38,25 +38,10 @@ public class DynamicDimensionsConfigImpl implements DynamicDimensionsConfig {
         SPEC = pair.getRight();
     }
 
-    private final @NotNull ModConfigSpec.BooleanValue allowDimensionCreation;
-    private final @NotNull ModConfigSpec.BooleanValue deleteRemovedDimensions;
-    private final @NotNull ModConfigSpec.BooleanValue deleteDimensionsWithPlayers;
     private final @NotNull ModConfigSpec.BooleanValue enableCommands;
     private final @NotNull ModConfigSpec.IntValue commandPermissionLevel;
 
     private DynamicDimensionsConfigImpl(@NotNull ModConfigSpec.Builder builder) {
-        this.allowDimensionCreation = builder
-                .comment("Set this to false to disable DynamicDimensions")
-                .translation("dynamicdimensions.config.allow_dimension_creation")
-                .define("allow_dimension_creation", true);
-        this.deleteRemovedDimensions = builder
-                .comment("Set this to true to permanently delete the files of removed dimensions")
-                .translation("dynamicdimensions.config.delete_removed_dimensions")
-                .define("delete_removed_dimensions", false);
-        this.deleteDimensionsWithPlayers = builder
-                .comment("Set this to true to permanently delete the files of removed dimensions")
-                .translation("dynamicdimensions.config.delete_dimensions_with_players")
-                .define("delete_dimensions_with_players", true);
         this.enableCommands = builder
                 .comment("Set this to true to enable commands")
                 .translation("dynamicdimensions.config.enable_commands")
@@ -68,21 +53,6 @@ public class DynamicDimensionsConfigImpl implements DynamicDimensionsConfig {
     }
 
     @Override
-    public boolean allowDimensionCreation() {
-        return this.allowDimensionCreation.get();
-    }
-
-    @Override
-    public boolean deleteRemovedDimensions() {
-        return this.deleteRemovedDimensions.get();
-    }
-
-    @Override
-    public boolean deleteDimensionsWithPlayers() {
-        return this.deleteDimensionsWithPlayers.get();
-    }
-
-    @Override
     public boolean enableCommands() {
         return this.enableCommands.get();
     }
@@ -90,21 +60,6 @@ public class DynamicDimensionsConfigImpl implements DynamicDimensionsConfig {
     @Override
     public int commandPermissionLevel() {
         return this.commandPermissionLevel.get();
-    }
-
-    @Override
-    public void allowDimensionCreation(boolean value) {
-        this.allowDimensionCreation.set(value);
-    }
-
-    @Override
-    public void deleteRemovedDimensions(boolean value) {
-        this.deleteRemovedDimensions.set(value);
-    }
-
-    @Override
-    public void deleteDimensionsWithPlayers(boolean value) {
-        this.deleteDimensionsWithPlayers.set(value);
     }
 
     @Override

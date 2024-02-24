@@ -1,6 +1,6 @@
 plugins {
     eclipse
-    id("net.neoforged.gradle.userdev") version ("7.0.+")
+    id("net.neoforged.gradle.userdev") version("7.0.+")
 }
 
 val modId = project.property("mod.id").toString()

@@ -49,17 +49,28 @@ import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.FlatLevelSource;
 import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.OptionalLong;
 
+/**
+ * Commands for creating, unloading, and deleting dynamic dimensions
+ */
+@ApiStatus.Internal
 public final class DynamicDimensionsCommands {
     private static final SimpleCommandExceptionType CANNOT_CREATE = new SimpleCommandExceptionType(Component.translatable("command.dynamicdimensions.create.error"));
     private static final SimpleCommandExceptionType CANNOT_DELETE = new SimpleCommandExceptionType(Component.translatable("command.dynamicdimensions.delete.error"));
 
+    /**
+     * Registers debug commands
+     * @param dispatcher the server command dispatcher
+     * @param registryAccess registry lookup for dynamic registries
+     * @param environment the command environment
+     */
     public static void register(@NotNull CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess, Commands.CommandSelection environment) {
         if (Constants.CONFIG.enableCommands()) {
-            dispatcher.register(Commands.literal("dyndim")
+            dispatcher.register(Commands.literal("dynamicdimension")
                     .requires(s -> s.hasPermission(Constants.CONFIG.commandPermissionLevel()))
                     .then(Commands.literal("create")
                             .then(Commands.argument("id", ResourceLocationArgument.id())
@@ -74,7 +85,7 @@ public final class DynamicDimensionsCommands {
                                                         if (from.anyDimensionExists(id)) {
                                                             throw CANNOT_CREATE.create();
                                                         }
-                                                        if (!from.createDynamicDimension(id, generator, type)) {
+                                                        if (from.createDynamicDimension(id, generator, type) == null) {
                                                             throw CANNOT_CREATE.create();
                                                         }
                                                         return 1;
@@ -88,7 +99,7 @@ public final class DynamicDimensionsCommands {
                                         if (registry.anyDimensionExists(id)) {
                                             throw CANNOT_CREATE.create();
                                         }
-                                        if (!registry.createDynamicDimension(id, generator, type)) {
+                                        if (registry.createDynamicDimension(id, generator, type) == null) {
                                             throw CANNOT_CREATE.create();
                                         }
                                         return 1;
@@ -106,7 +117,7 @@ public final class DynamicDimensionsCommands {
                                                         if (from.anyDimensionExists(id)) {
                                                             throw CANNOT_CREATE.create();
                                                         }
-                                                        if (!from.loadDynamicDimension(id, generator, type)) {
+                                                        if (from.loadDynamicDimension(id, generator, type) == null) {
                                                             throw CANNOT_CREATE.create();
                                                         }
                                                         return 1;
@@ -119,12 +130,12 @@ public final class DynamicDimensionsCommands {
                                         if (from.anyDimensionExists(id)) {
                                             throw CANNOT_CREATE.create();
                                         }
-                                        if (!from.loadDynamicDimension(id, generator, type)) {
+                                        if (from.loadDynamicDimension(id, generator, type) == null) {
                                             throw CANNOT_CREATE.create();
                                         }
                                         return 1;
                                     })))
-                    .then(Commands.literal("remove")
+                    .then(Commands.literal("unload")
                             .then(Commands.argument("id", DimensionArgument.dimension())
                                     .executes(ctx -> {
                                         ServerLevel levelToDelete = DimensionArgument.getDimension(ctx, "id");
@@ -133,9 +144,22 @@ public final class DynamicDimensionsCommands {
                                         if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(id)) {
                                             throw CANNOT_DELETE.create();
                                         }
-                                        ((DynamicDimensionRegistry) ctx.getSource().getServer()).removeDynamicDimension(id, null);
+                                        ((DynamicDimensionRegistry) ctx.getSource().getServer()).unloadDynamicDimension(id, null);
+                                        return 1;
+                                    })))
+                    .then(Commands.literal("delete")
+                            .then(Commands.argument("id", DimensionArgument.dimension())
+                                    .executes(ctx -> {
+                                        ServerLevel levelToDelete = DimensionArgument.getDimension(ctx, "id");
+                                        ResourceKey<Level> key = levelToDelete.dimension();
+                                        ResourceLocation id = key.location();
+                                        if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(id)) {
+                                            throw CANNOT_DELETE.create();
+                                        }
+                                        ((DynamicDimensionRegistry) ctx.getSource().getServer()).deleteDynamicDimension(id, null);
                                         return 1;
                                     }))));
+            dispatcher.register(Commands.literal("dyndim").redirect(dispatcher.getRoot().getChild("dynamicdimension")));
         }
     }
 }

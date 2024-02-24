@@ -44,7 +44,6 @@ import org.jetbrains.annotations.NotNull;
 @Mod(Constants.MOD_ID)
 public final class DynamicDimensionsForge {
     public DynamicDimensionsForge(IEventBus modEventBus, Dist dist, ModContainer container) {
-        System.out.println("DDFI");
         NeoForge.EVENT_BUS.addListener(this::registerCommands);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DynamicDimensionsConfigImpl.SPEC);
 

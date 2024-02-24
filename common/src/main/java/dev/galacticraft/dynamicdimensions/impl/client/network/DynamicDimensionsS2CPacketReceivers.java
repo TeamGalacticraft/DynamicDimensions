@@ -37,11 +37,11 @@ import org.jetbrains.annotations.NotNull;
 
 public final class DynamicDimensionsS2CPacketReceivers {
     public static void registerReceivers() {
-        PlayPackets.registerClientReceiver(Constants.CREATE_WORLD_PACKET, (client, handler, buf, responseSender) -> createDynamicWorld(client, handler, buf));
-        PlayPackets.registerClientReceiver(Constants.DELETE_WORLD_PACKET, (client, handler, buf, responseSender) -> deleteDynamicWorld(client, handler, buf));
+        PlayPackets.registerClientReceiver(Constants.CREATE_DIMENSION_PACKET, (client, handler, buf, responseSender) -> createDynamicDimension(client, handler, buf));
+        PlayPackets.registerClientReceiver(Constants.REMOVE_DIMENSION_PACKET, (client, handler, buf, responseSender) -> removeDynamicDimension(client, handler, buf));
     }
 
-    private static void createDynamicWorld(@NotNull Minecraft client, @NotNull ClientPacketListener handler, @NotNull FriendlyByteBuf buf) {
+    private static void createDynamicDimension(@NotNull Minecraft client, @NotNull ClientPacketListener handler, @NotNull FriendlyByteBuf buf) {
         ResourceLocation id = buf.readResourceLocation();
         int rawId = buf.readInt();
         DimensionType type = DimensionType.DIRECT_CODEC.decode(NbtOps.INSTANCE, buf.readNbt()).get().orThrow().getFirst();
@@ -51,7 +51,7 @@ public final class DynamicDimensionsS2CPacketReceivers {
         });
     }
 
-    private static void deleteDynamicWorld(@NotNull Minecraft client, @NotNull ClientPacketListener handler, @NotNull FriendlyByteBuf buf) {
+    private static void removeDynamicDimension(@NotNull Minecraft client, @NotNull ClientPacketListener handler, @NotNull FriendlyByteBuf buf) {
         ResourceLocation id = buf.readResourceLocation();
         client.execute(() -> {
             RegistryUtil.unregister(handler.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE), id);

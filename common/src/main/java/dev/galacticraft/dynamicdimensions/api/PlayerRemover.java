@@ -22,14 +22,40 @@
 
 package dev.galacticraft.dynamicdimensions.api;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.storage.LevelData;
 
 /**
  * Removes players from a {@link net.minecraft.world.level.Level}.
  */
 @FunctionalInterface
 public interface PlayerRemover {
+    /**
+     * Attempts to bring players to their personal spawn point, otherwise to the default (overworld) spawn point.
+     */
+    PlayerRemover DEFAULT = (server, player) -> {
+        player.sendSystemMessage(Component.translatable("command.dynamicdimensions.delete.removed", player.serverLevel().dimension().location()), true);
+        ServerLevel level = server.getLevel(player.getRespawnDimension());
+        if (level != null && level != player.serverLevel()) {
+            BlockPos pos = player.getRespawnPosition();
+            if (pos != null) {
+                player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), player.getXRot());
+            } else {
+                LevelData levelData = level.getLevelData();
+                player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
+            }
+        } else {
+            level = server.overworld();
+            LevelData levelData = level.getLevelData();
+            player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
+        }
+        player.setDeltaMovement(0.0, 0.0, 0.0);
+    };
+
     /**
      * Called when a player must be removed from the level.
      * May cause unexpected behaviour if the player is not actually removed from the level.

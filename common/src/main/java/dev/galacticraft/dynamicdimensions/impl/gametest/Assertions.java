@@ -97,6 +97,12 @@ public final class Assertions {
         }
     }
 
+    public static void assertNotEquals(Object a, Object b) {
+        if (Objects.equals(a, b)) {
+            failure(format(a, b, 1));
+        }
+    }
+
     //apparently itemstack does not implement Object#equals()
     public static void assertEquals(ItemStack a, ItemStack b) {
         if (a == null || b == null || !ItemStack.isSameItemSameTags(a, b) || a.getCount() != b.getCount()) {
@@ -172,7 +178,6 @@ public final class Assertions {
 
     @Contract(value = "_ -> fail", pure = true)
     public static void failure(String value) {
-        DynamicDimensionsGametest.resetLock();
         throw new GameTestAssertException(value);
     }
 }

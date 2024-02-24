@@ -1,8 +1,8 @@
 plugins {
-    id("org.ajoberstar.grgit.service") version ("5.2.1")
+    id("org.ajoberstar.grgit.service") version("5.2.1")
     id("org.cadixdev.licenser") version("0.6.1") apply(false)
-    id("fabric-loom") version ("1.5-SNAPSHOT") apply (false)
-    id("org.jetbrains.gradle.plugin.idea-ext") version ("1.1.7") // required for neoforge
+    id("fabric-loom") version("1.5-SNAPSHOT") apply(false)
+    id("org.jetbrains.gradle.plugin.idea-ext") version("1.1.7") // required for neoforge
 }
 
 val minecraft = project.property("minecraft.version").toString()

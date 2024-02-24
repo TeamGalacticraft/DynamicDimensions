@@ -32,16 +32,19 @@ import dev.galacticraft.dynamicdimensions.api.event.DimensionRemovedCallback;
 import dev.galacticraft.dynamicdimensions.api.event.DynamicDimensionLoadCallback;
 import dev.galacticraft.dynamicdimensions.impl.Constants;
 import dev.galacticraft.dynamicdimensions.impl.accessor.PrimaryLevelDataAccessor;
+import dev.galacticraft.dynamicdimensions.impl.internal.DimensionRemovalTicket;
 import dev.galacticraft.dynamicdimensions.impl.registry.RegistryUtil;
 import io.netty.buffer.Unpooled;
 import lol.bai.badpackets.api.PacketSender;
-import net.minecraft.core.*;
+import net.minecraft.core.Holder;
+import net.minecraft.core.LayeredRegistryAccess;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ClientboundUpdateTagsPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -64,7 +67,6 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.storage.DerivedLevelData;
-import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.WorldData;
 import org.apache.commons.io.FileUtils;
@@ -80,11 +82,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.IOException;
 import java.net.Proxy;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -93,15 +92,6 @@ import java.util.stream.Collectors;
 
 @Mixin(MinecraftServer.class)
 public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
-    @Unique
-    private final @NotNull Map<ResourceKey<Level>, ServerLevel> levelsAwaitingCreation = new HashMap<>();
-    @Unique
-    private final @NotNull Map<ResourceKey<Level>, PlayerRemover> levelsAwaitingDeletion = new HashMap<>();
-    @Unique
-    private final @NotNull List<ResourceKey<Level>> dynamicDimensions = new ArrayList<>();
-    @Unique
-    private boolean tickingLevels = false;
-
     @Shadow
     @Final
     protected LevelStorageSource.LevelStorageAccess storageSource;
@@ -132,31 +122,47 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
     @Shadow
     public abstract LayeredRegistryAccess<RegistryLayer> registries();
 
+    @Unique
+    private final @NotNull List<ServerLevel> pendingLevels = new ArrayList<>();
+    @Unique
+    private final @NotNull List<DimensionRemovalTicket> pendingDeletions = new ArrayList<>();
+    @Unique
+    private final @NotNull List<ResourceKey<Level>> dynamicDimensions = new ArrayList<>();
+    @Unique
+    private boolean tickingLevels = false;
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initDynamicDimensions(Thread thread, LevelStorageSource.LevelStorageAccess levelStorageAccess, PackRepository packRepository, WorldStem worldStem, Proxy proxy, DataFixer dataFixer, Services services, ChunkProgressListenerFactory chunkProgressListenerFactory, CallbackInfo ci) {
-        ((PrimaryLevelDataAccessor) worldStem.worldData()).setDynamicList(this.dynamicDimensions);
+        ((PrimaryLevelDataAccessor) worldStem.worldData()).dynamicDimensions$setDynamicList(this.dynamicDimensions);
     }
 
     @Inject(method = "tickServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;tickChildren(Ljava/util/function/BooleanSupplier;)V", shift = At.Shift.BEFORE))
     private void addLevels(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-        if (!this.levelsAwaitingCreation.isEmpty()) {
-            for (Map.Entry<ResourceKey<Level>, ServerLevel> entry : this.levelsAwaitingCreation.entrySet()) {
-                this.registerLevel(entry.getKey(), entry.getValue());
+        if (!this.pendingLevels.isEmpty()) {
+            for (ServerLevel level : this.pendingLevels) {
+                this.registerLevel(level);
             }
-            this.levelsAwaitingCreation.clear();
+            this.pendingLevels.clear();
         }
 
-        if (!this.levelsAwaitingDeletion.isEmpty()) {
-            for (Map.Entry<ResourceKey<Level>, PlayerRemover> entry : this.levelsAwaitingDeletion.entrySet()) {
-                this.deleteLevel(entry.getKey(), entry.getValue());
+        if (!this.pendingDeletions.isEmpty()) {
+            for (DimensionRemovalTicket ticket : this.pendingDeletions) {
+                this.unloadLevel(ticket.key(), ticket.removalMode());
+                if (ticket.removeFiles()) {
+                    this.deleteLevelData(ticket.key());
+                }
             }
-            this.levelsAwaitingDeletion.clear();
+            this.pendingDeletions.clear();
         }
     }
 
     @Unique
-    private void deleteLevel(ResourceKey<Level> key, PlayerRemover playerRemover) {
+    private void unloadLevel(ResourceKey<Level> key, PlayerRemover playerRemover) {
         try (ServerLevel level = this.levels.remove(key)) {
+            if (level == null) {
+                assert !this.dynamicDimensions.contains(key);
+                return;
+            }
             DimensionRemovedCallback.invoke(key, level);
 
             List<ServerPlayer> players = new ArrayList<>(level.players()); // prevent co-modification
@@ -169,59 +175,32 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
             Constants.LOGGER.error("Failed to close level upon removal! Memory may have been leaked.", e);
         }
 
-        this.deleteLevelData(key);
-
         RegistryUtil.unregister(this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM), key.location());
         RegistryUtil.unregister(this.registries().compositeAccess().registryOrThrow(Registries.DIMENSION_TYPE), key.location());
         this.dynamicDimensions.remove(key);
 
         FriendlyByteBuf packetByteBuf = new FriendlyByteBuf(Unpooled.buffer());
         packetByteBuf.writeResourceLocation(key.location());
-        this.getPlayerList().getPlayers().forEach(player -> PacketSender.s2c(player).send(Constants.DELETE_WORLD_PACKET, packetByteBuf));
+        this.getPlayerList().getPlayers().forEach(player -> PacketSender.s2c(player).send(Constants.REMOVE_DIMENSION_PACKET, packetByteBuf));
     }
 
     @Unique
     private void deleteLevelData(ResourceKey<Level> key) {
         Path worldDir = this.storageSource.getDimensionPath(key);
         if (worldDir.toFile().exists()) {
-            if (Constants.CONFIG.deleteRemovedDimensions()) {
-                try {
-                    FileUtils.deleteDirectory(worldDir.toFile());
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to delete deleted world directory!", e);
-                }
-            } else {
-                try {
-                    Path resolved;
-                    String id = key.location().toString().replace(":", ",");
-                    if (worldDir.getParent().getFileName().toString().equals(key.location().getNamespace())) {
-                        resolved = worldDir.getParent().resolveSibling("deleted").resolve(id);
-                    } else {
-                        resolved = worldDir.resolveSibling(id + "_deleted");
-                    }
-                    if (resolved.toFile().exists()) {
-                        FileUtils.deleteDirectory(resolved.toFile());
-                    }
-                    resolved.toFile().mkdirs();
-                    Files.move(worldDir, resolved, StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                    Constants.LOGGER.error("Failed to move removed dimension's directory.", e);
-                    try {
-                        FileUtils.deleteDirectory(worldDir.toFile());
-                    } catch (IOException ex) {
-                        ex.addSuppressed(e);
-                        throw new RuntimeException("Failed to delete removed dimension's directory!", ex); // TODO: is a throw necessary here? what happens if a world is re-created with the same id? is it exploitable?
-                    }
-                }
+            try {
+                FileUtils.deleteDirectory(worldDir.toFile());
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to delete deleted world directory!", e);
             }
         }
     }
 
     @Unique
-    private void registerLevel(ResourceKey<Level> key, ServerLevel level) {
-        DimensionAddedCallback.invoke(key, level);
-        this.levels.put(key, level);
-        this.dynamicDimensions.add(key);
+    private void registerLevel(ServerLevel level) {
+        DimensionAddedCallback.invoke(level.dimension(), level);
+        this.levels.put(level.dimension(), level);
+        this.dynamicDimensions.add(level.dimension());
         level.tick(() -> true);
     }
 
@@ -249,55 +228,110 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
     }
 
     @Override
-    public boolean createDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type) {
+    public @Nullable ServerLevel createDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type) {
         ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
-        if (!this.canCreateDimension(id) || this.levelsAwaitingCreation.containsKey(key)) return false;
+        if (!this.canCreateDimension(id)) return null;
         final Registry<DimensionType> typeRegistry = this.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
         final Registry<LevelStem> stemRegistry = this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
         Constants.LOGGER.debug("Attempting to create dynamic dimension '{}'", id);
 
         if (typeRegistry.stream().anyMatch(t -> t == type)) {
-            return false;
+            return null;
         }
 
         final DataResult<Tag> encodedType = DimensionType.DIRECT_CODEC.encode(type, NbtOps.INSTANCE, new CompoundTag());
         if (encodedType.error().isPresent()) {
             Constants.LOGGER.error("Failed to encode dimension type! {}", encodedType.error().get().message());
-            return false;
+            return null;
         }
 
         final CompoundTag serializedType = (CompoundTag) encodedType.get().orThrow();
 
-        this.createDynamicWorld(id, generator, type, typeRegistry, stemRegistry, serializedType, key, true);
+        return this.createDynamicLevel(id, generator, type, typeRegistry, stemRegistry, serializedType, key, true);
+    }
+
+    @Override
+    public @Nullable ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type) {
+        ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
+        if (!this.canCreateDimension(id)) return null;
+        final Registry<DimensionType> typeRegistry = this.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
+        final Registry<LevelStem> stemRegistry = this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
+        Constants.LOGGER.debug("Attempting to create dynamic dimension '{}'", id);
+
+        if (typeRegistry.stream().anyMatch(t -> t == type)) {
+            return null;
+        }
+
+        final DataResult<Tag> encodedType = DimensionType.DIRECT_CODEC.encode(type, NbtOps.INSTANCE, new CompoundTag());
+        if (encodedType.error().isPresent()) {
+            Constants.LOGGER.error("Failed to encode dimension type! {}", encodedType.error().get().message());
+            return null;
+        }
+
+        final CompoundTag serializedType = (CompoundTag) encodedType.get().orThrow();
+
+        return this.createDynamicLevel(id, generator, type, typeRegistry, stemRegistry, serializedType, key, false);
+    }
+
+    @Override
+    public boolean dynamicDimensionExists(@NotNull ResourceLocation id) {
+        return this.dynamicDimensions.contains(ResourceKey.create(Registries.DIMENSION, id));
+    }
+
+    @Override
+    public boolean anyDimensionExists(@NotNull ResourceLocation id) {
+        return this.levels.containsKey(ResourceKey.create(Registries.DIMENSION, id)) || this.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE).containsKey(id) || this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM).containsKey(id);
+    }
+
+    @Override
+    public boolean canDeleteDimension(@NotNull ResourceLocation id) {
+        return this.dynamicDimensionExists(id);
+    }
+
+    @Override
+    public boolean canCreateDimension(@NotNull ResourceLocation id) {
+        return !this.anyDimensionExists(id) && !this.dynamicDimensionExists(id) && !this.isIdPendingCreation(id);
+    }
+
+    @Override
+    public boolean deleteDynamicDimension(@NotNull ResourceLocation id, @Nullable PlayerRemover remover) {
+        if (remover == null) {
+            remover = PlayerRemover.DEFAULT;
+        }
+
+        ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
+        if (!this.canDeleteDimension(id)) return false;
+
+        if (this.tickingLevels) {
+            this.pendingDeletions.add(new DimensionRemovalTicket(key, remover, true));
+        } else {
+            this.unloadLevel(key, remover);
+            this.deleteLevelData(key);
+        }
+
         return true;
     }
 
     @Override
-    public boolean loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type) {
+    public boolean unloadDynamicDimension(@NotNull ResourceLocation id, @Nullable PlayerRemover remover) {
+        if (remover == null) {
+            remover = PlayerRemover.DEFAULT;
+        }
+
         ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
-        if (!this.canCreateDimension(id) || this.levelsAwaitingCreation.containsKey(key)) return false;
-        final Registry<DimensionType> typeRegistry = this.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
-        final Registry<LevelStem> stemRegistry = this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
-        Constants.LOGGER.debug("Attempting to create dynamic dimension '{}'", id);
+        if (!this.canDeleteDimension(id)) return false;
 
-        if (typeRegistry.stream().anyMatch(t -> t == type)) {
-            return false;
+        if (this.tickingLevels) {
+            this.pendingDeletions.add(new DimensionRemovalTicket(key, remover, false));
+        } else {
+            this.unloadLevel(key, remover);
         }
 
-        final DataResult<Tag> encodedType = DimensionType.DIRECT_CODEC.encode(type, NbtOps.INSTANCE, new CompoundTag());
-        if (encodedType.error().isPresent()) {
-            Constants.LOGGER.error("Failed to encode dimension type! {}", encodedType.error().get().message());
-            return false;
-        }
-
-        final CompoundTag serializedType = (CompoundTag) encodedType.get().orThrow();
-
-        this.createDynamicWorld(id, generator, type, typeRegistry, stemRegistry, serializedType, key, false);
         return true;
     }
 
     @Unique
-    private void createDynamicWorld(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type, Registry<DimensionType> typeRegistry, Registry<LevelStem> stemRegistry, CompoundTag serializedType, ResourceKey<Level> key, boolean deleteOldData) {
+    private ServerLevel createDynamicLevel(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type, Registry<DimensionType> typeRegistry, Registry<LevelStem> stemRegistry, CompoundTag serializedType, ResourceKey<Level> key, boolean deleteOldData) {
         final WorldData worldData = this.getWorldData();
         final ServerLevel overworld = this.overworld();
         assert overworld != null;
@@ -331,9 +365,9 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
         level.getChunkSource().setViewDistance(((ChunkMapAccessor) overworld.getChunkSource().chunkMap).getViewDistance());
 
         if (this.tickingLevels) {
-            this.levelsAwaitingCreation.put(key, level); //prevent co-modification
+            this.pendingLevels.add(level); //prevent co-modification
         } else {
-            this.registerLevel(key, level);
+            this.registerLevel(level);
         }
 
         FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
@@ -341,73 +375,22 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
         buf.writeInt(typeRegistry.getId(type));
         buf.writeNbt(serializedType);
         for (ServerPlayer player : this.getPlayerList().getPlayers()) {
-            PacketSender.s2c(player).send(Constants.CREATE_WORLD_PACKET, new FriendlyByteBuf(buf.copy()));
+            PacketSender.s2c(player).send(Constants.CREATE_DIMENSION_PACKET, new FriendlyByteBuf(buf.copy()));
         }
-        this.reloadTags();
-    }
-
-    @Override
-    public boolean dynamicDimensionExists(@NotNull ResourceLocation id) {
-        return this.dynamicDimensions.contains(ResourceKey.create(Registries.DIMENSION, id));
-    }
-
-    @Override
-    public boolean anyDimensionExists(@NotNull ResourceLocation id) {
-        return this.levels.containsKey(ResourceKey.create(Registries.DIMENSION, id)) || this.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE).containsKey(id) || this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM).containsKey(id);
+        this.reloadDimensionTags();
+        return level;
     }
 
     @Unique
-    private boolean canCreateDimensions() {
-        return Constants.CONFIG.allowDimensionCreation();
-    }
-
-    @Override
-    public boolean canDeleteDimension(@NotNull ResourceLocation id) {
-        return this.dynamicDimensionExists(id) && (Constants.CONFIG.deleteDimensionsWithPlayers() || this.levels.get(ResourceKey.create(Registries.DIMENSION, id)).players().size() == 0);
-    }
-
-    @Override
-    public boolean canCreateDimension(@NotNull ResourceLocation id) {
-        return !this.anyDimensionExists(id) && !this.dynamicDimensionExists(id) && this.canCreateDimensions();
-    }
-
-    @Override
-    public boolean removeDynamicDimension(@NotNull ResourceLocation id, @Nullable PlayerRemover remover) {
-        if (remover == null) {
-            remover = (server, player) -> {
-                player.sendSystemMessage(Component.translatable("command.dynamicdimensions.delete.removed", id), true);
-                ServerLevel level = server.getLevel(player.getRespawnDimension());
-                if (level != null && level != player.serverLevel()) {
-                    BlockPos pos = player.getRespawnPosition();
-                    if (pos != null) {
-                        player.teleportTo(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), player.getXRot());
-                    } else {
-                        LevelData levelData = level.getLevelData();
-                        player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
-                    }
-                } else {
-                    level = server.overworld();
-                    LevelData levelData = level.getLevelData();
-                    player.teleportTo(level, levelData.getXSpawn() + 0.5, levelData.getYSpawn(), levelData.getZSpawn() + 0.5, player.getYRot(), player.getXRot());
-                }
-                player.setDeltaMovement(0.0, 0.0, 0.0);
-            };
+    private boolean isIdPendingCreation(ResourceLocation id) {
+        for (ServerLevel pendingLevel : this.pendingLevels) {
+            if (pendingLevel.dimension().location().equals(id)) return true;
         }
-
-        ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
-        if (!this.canDeleteDimension(id) || this.levelsAwaitingDeletion.containsKey(key)) return false;
-
-        if (this.tickingLevels) {
-            this.levelsAwaitingDeletion.put(key, remover);
-        } else {
-            this.deleteLevel(key, remover);
-        }
-
-        return true;
+        return false;
     }
 
     @Unique
-    private void reloadTags() {
+    private void reloadDimensionTags() {
         for (TagManager.LoadResult<?> result : ((ReloadableServerResourcesAccessor) this.resources.managers()).getTagManager().getResult()) {
             if (result.key() == Registries.DIMENSION_TYPE) {
                 Registry<DimensionType> types = this.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);

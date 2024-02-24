@@ -24,28 +24,13 @@ package dev.galacticraft.dynamicdimensions.impl.config;
 
 public interface DynamicDimensionsConfig {
     default void applyDefaultValues() {
-        allowDimensionCreation(true);
-        deleteRemovedDimensions(false);
-        deleteDimensionsWithPlayers(false);
         enableCommands(false);
         commandPermissionLevel(2);
     }
 
-    boolean allowDimensionCreation();
-
-    boolean deleteRemovedDimensions();
-
-    boolean deleteDimensionsWithPlayers();
-
     boolean enableCommands();
 
     int commandPermissionLevel();
-
-    void allowDimensionCreation(boolean value);
-
-    void deleteRemovedDimensions(boolean value);
-
-    void deleteDimensionsWithPlayers(boolean value);
 
     void enableCommands(boolean value);
 

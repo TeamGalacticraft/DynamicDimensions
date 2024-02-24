@@ -20,19 +20,12 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.impl.accessor;
+package dev.galacticraft.dynamicdimensions.impl.internal;
 
+import dev.galacticraft.dynamicdimensions.api.PlayerRemover;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
-/**
- * Saves and loads dynamic dimension registrations from the world file
- */
-@ApiStatus.Internal
-public interface PrimaryLevelDataAccessor {
-    void dynamicDimensions$setDynamicList(@NotNull List<ResourceKey<Level>> dynamicDimensions);
+public record DimensionRemovalTicket(ResourceKey<Level> key, @Nullable PlayerRemover removalMode, boolean removeFiles) {
 }

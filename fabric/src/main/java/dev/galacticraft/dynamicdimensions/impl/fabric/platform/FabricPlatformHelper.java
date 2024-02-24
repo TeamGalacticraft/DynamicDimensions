@@ -29,7 +29,6 @@ import dev.galacticraft.dynamicdimensions.impl.config.DynamicDimensionsConfig;
 import dev.galacticraft.dynamicdimensions.impl.fabric.DynamicDimensionsFabric;
 import dev.galacticraft.dynamicdimensions.impl.fabric.config.DynamicDimensionsConfigImpl;
 import dev.galacticraft.dynamicdimensions.impl.platform.services.PlatformHelper;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -62,13 +61,11 @@ public final class FabricPlatformHelper implements PlatformHelper {
     @Override
     public void invokeRemovedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level) {
         DynamicDimensionsFabric.DIMENSION_REMOVED_EVENT.invoker().dimensionRemoved(key, level);
-        ServerWorldEvents.UNLOAD.invoker().onWorldUnload(level.getServer(), level);
     }
 
     @Override
     public void invokeAddedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level) {
         DynamicDimensionsFabric.DIMENSION_ADDED_EVENT.invoker().dimensionAdded(key, level);
-        ServerWorldEvents.LOAD.invoker().onWorldLoad(level.getServer(), level);
     }
 
     @Override
