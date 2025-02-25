@@ -38,7 +38,7 @@ public interface PlayerRemover {
      * Attempts to bring players to their personal spawn point, otherwise to the default (overworld) spawn point.
      */
     PlayerRemover DEFAULT = (server, player) -> {
-        player.sendSystemMessage(Component.translatable("command.dynamicdimensions.delete.removed", player.serverLevel().dimension().location()), true);
+        player.sendSystemMessage(Component.translatable("command.dynamicdimensions.delete.removed", player.serverLevel().dimension().location().toString()), true);
         ServerLevel level = server.getLevel(player.getRespawnDimension());
         if (level != null && level != player.serverLevel()) {
             BlockPos pos = player.getRespawnPosition();
