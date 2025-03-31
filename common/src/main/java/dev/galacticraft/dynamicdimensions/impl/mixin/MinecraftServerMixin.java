@@ -233,7 +233,7 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
         final Registry<LevelStem> stemRegistry = this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
         Constants.LOGGER.debug("Attempting to create dynamic dimension '{}'", id);
 
-        if (typeRegistry.stream().anyMatch(t -> t == type)) {
+        if (typeRegistry.stream().anyMatch(t -> t != null && t == type)) {
             return null;
         }
 
@@ -256,7 +256,7 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
         final Registry<LevelStem> stemRegistry = this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
         Constants.LOGGER.debug("Attempting to create dynamic dimension '{}'", id);
 
-        if (typeRegistry.stream().anyMatch(t -> t == type)) {
+        if (typeRegistry.stream().anyMatch(t -> t != null && t == type)) {
             return null;
         }
 
