@@ -131,6 +131,18 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initDynamicDimensions(Thread thread, LevelStorageSource.LevelStorageAccess levelStorageAccess, PackRepository packRepository, WorldStem worldStem, Proxy proxy, DataFixer dataFixer, Services services, ChunkProgressListenerFactory chunkProgressListenerFactory, CallbackInfo ci) {
+        final Registry<DimensionType> typeRegistry = this.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
+        final Registry<LevelStem> stemRegistry = this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
+
+        DynamicDimensionLoadCallback.invoke((MinecraftServer) (Object) this, (id, chunkGenerator, type) -> {
+            Constants.LOGGER.debug("Loading dynamic dimension '{}'", id);
+            Holder.Reference<DimensionType> ref = RegistryUtil.registerUnfreeze(typeRegistry, id, type);
+            RegistryUtil.registerUnfreeze(stemRegistry, id, new LevelStem(ref, chunkGenerator));
+            this.dynamicDimensions.add(ResourceKey.create(Registries.DIMENSION, id));
+        });
+
+        Constants.LOGGER.info("Loaded {} dynamic dimensions", this.dynamicDimensions.size());
+
         ((PrimaryLevelDataAccessor) worldStem.worldData()).dynamicDimensions$setDynamicList(this.dynamicDimensions);
     }
 
@@ -210,19 +222,6 @@ public abstract class MinecraftServerMixin implements DynamicDimensionRegistry {
     @Inject(method = "tickChildren", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerConnectionListener;tick()V", shift = At.Shift.BEFORE))
     private void markNotTickingLevels(BooleanSupplier booleanSupplier, CallbackInfo ci) {
         this.tickingLevels = false;
-    }
-
-    @Inject(method = "createLevels", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/border/WorldBorder;applySettings(Lnet/minecraft/world/level/border/WorldBorder$Settings;)V", shift = At.Shift.BEFORE))
-    private void loadDynamicDimensions(CallbackInfo ci) {
-        final Registry<DimensionType> typeRegistry = this.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
-        final Registry<LevelStem> stemRegistry = this.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
-
-        DynamicDimensionLoadCallback.invoke((MinecraftServer) (Object) this, (id, chunkGenerator, type) -> {
-            Constants.LOGGER.debug("Loading dynamic dimension '{}'", id);
-            Holder.Reference<DimensionType> ref = RegistryUtil.registerUnfreeze(typeRegistry, id, type);
-            RegistryUtil.registerUnfreeze(stemRegistry, id, new LevelStem(ref, chunkGenerator));
-            this.dynamicDimensions.add(ResourceKey.create(Registries.DIMENSION, id));
-        });
     }
 
     @Override
