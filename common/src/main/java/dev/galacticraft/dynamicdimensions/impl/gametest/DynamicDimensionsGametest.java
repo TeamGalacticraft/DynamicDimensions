@@ -37,7 +37,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
@@ -135,7 +134,7 @@ public class DynamicDimensionsGametest {
         final File file = worldDir.toFile();
         final ServerLevel overworld = server.overworld();
         final DimensionType dimensionType = createDimensionType();
-        
+
         try {
             FileUtils.deleteDirectory(file); // make sure there is no directory in the first place
         } catch (IOException e) {
@@ -176,7 +175,7 @@ public class DynamicDimensionsGametest {
         final File file = levelDir.toFile();
         final ServerLevel overworld = server.overworld();
         final DimensionType dimensionType = createDimensionType();
-        
+
         try {
             FileUtils.deleteDirectory(file); // make sure there is no directory in the first place
         } catch (IOException e) {
@@ -204,7 +203,7 @@ public class DynamicDimensionsGametest {
                 try {
                     FileUtils.deleteDirectory(file); // cleanup
                 } catch (IOException ignored) {}
-                
+
                 context.succeed();
             });
         });

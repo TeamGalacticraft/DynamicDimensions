@@ -1,17 +1,44 @@
-plugins {
-    id("org.ajoberstar.grgit") version ("5.2.2")
-    id("org.cadixdev.licenser") version("0.6.1") apply(false)
-    id("fabric-loom") version("1.7-SNAPSHOT") apply(false)
-    id("dev.galacticraft.mojarn") version("0.4.0+10") apply(false)
-    id("org.jetbrains.gradle.plugin.idea-ext") version("1.1.8") // required for neoforge
-}
+/*
+ * Copyright (c) 2021-2025 Team Galacticraft
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-val minecraft = project.property("minecraft.version").toString()
+import com.diffplug.gradle.spotless.SpotlessExtension
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 val modId = project.property("mod.id").toString()
 val modName = project.property("mod.name").toString()
 val modVersion = project.property("mod.version").toString()
 val modDescription = project.property("mod.description").toString()
 val modLicense = project.property("mod.license").toString()
+
+val minecraft = project.property("minecraft.version").toString()
+
+plugins {
+    id("org.ajoberstar.grgit") version ("5.3.0")
+    id("fabric-loom") version("1.10-SNAPSHOT") apply(false)
+    id("dev.galacticraft.mojarn") version("0.6.0+18") apply(false)
+    id("net.neoforged.moddev") version("2.0.80") apply(false)
+    id("com.diffplug.spotless") version("7.0.3") apply(false)
+}
 
 group = "dev.galacticraft"
 version = buildString {
@@ -42,28 +69,19 @@ println("$modName: $version")
 subprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
-    apply(plugin = "org.cadixdev.licenser")
+    apply(plugin = "com.diffplug.spotless")
 
     group = rootProject.group
     version = rootProject.version
     description = rootProject.description
 
-    extensions.getByType<BasePluginExtension>().archivesName.set("$modId-${project.name}")
-
-    val badpackets = project.property("badpackets.version").toString()
-
-    extensions.configure<JavaPluginExtension> {
-        toolchain.languageVersion.set(JavaLanguageVersion.of(21))
-        targetCompatibility = JavaVersion.VERSION_21
-        sourceCompatibility = JavaVersion.VERSION_21
-
-        withJavadocJar()
-        withSourcesJar()
+    extensions.configure<BasePluginExtension> {
+        archivesName.set("$modId-${project.name}")
     }
 
-    extensions.configure<org.cadixdev.gradle.licenser.LicenseExtension> {
-        setHeader(rootProject.file("LICENSE_HEADER.txt"))
-        include("**/dev/galacticraft/**/*.java")
+    extensions.configure<JavaPluginExtension> {
+        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_21
     }
 
     repositories {
@@ -75,41 +93,7 @@ subprojects {
     }
 
     dependencies {
-        "compileOnly"("lol.bai:badpackets:mojmap-${badpackets}")
-    }
-
-    tasks.withType<Jar> {
-        from("LICENSE") {
-            rename { "${it}_${modName}" }
-        }
-
-        manifest {
-            attributes(
-                    "Specification-Title" to modId,
-                    "Specification-Vendor" to "Team Galacticraft",
-                    "Specification-Version" to modVersion,
-                    "Implementation-Title" to archiveBaseName,
-                    "Implementation-Version" to archiveVersion,
-                    "Implementation-Vendor" to "Team Galacticraft",
-                    "Implementation-Timestamp" to java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(java.util.Date()),
-                    "Timestamp" to System.currentTimeMillis(),
-                    "Built-On-Java" to "${System.getProperty("java.vm.version")} (${System.getProperty("java.vm.vendor")})",
-                    "Built-On-Minecraft" to minecraft,
-                    "Automatic-Module-Name" to modId
-            )
-        }
-    }
-
-    tasks.withType<JavaCompile> {
-        options.encoding = "UTF-8"
-        options.release.set(21)
-    }
-
-    tasks.withType<Javadoc> {
-        title = "$modName (${project.name}) $modVersion"
-        options.encoding = "UTF-8"
-
-        exclude("**/impl/**")
+        "compileOnly"("lol.bai:badpackets:mojmap-${project.property("badpackets.version")}")
     }
 
     tasks.withType<ProcessResources> {
@@ -124,22 +108,47 @@ subprojects {
                 "min_neoforge" to project.property("neoforge.version.min"),
         )
 
+        inputs.properties(properties)
         filesMatching(listOf("pack.mcmeta", "fabric.mod.json", "META-INF/neoforge.mods.toml", "*.mixins.json")) {
             expand(properties)
         }
-        inputs.properties(properties)
 
         // Minify json resources
         // https://stackoverflow.com/questions/41028030/gradle-minimize-json-resources-in-processresources#41029113
         doLast {
             fileTree(
-                    mapOf(
-                            "dir" to outputs.files.asPath,
-                            "includes" to listOf("**/*.json", "**/*.mcmeta")
-                    )
+                mapOf(
+                    "dir" to outputs.files.asPath,
+                    "includes" to listOf("**/*.json", "**/*.mcmeta")
+                )
             ).forEach { file: File ->
                 file.writeText(groovy.json.JsonOutput.toJson(groovy.json.JsonSlurper().parse(file)))
             }
+        }
+    }
+
+    tasks.withType<JavaCompile> {
+        options.encoding = "UTF-8"
+        options.release.set(21)
+    }
+
+    tasks.withType<Jar> {
+        from("LICENSE") {
+            rename { "${it}_${modId}"}
+        }
+
+        manifest {
+            attributes(
+                "Specification-Title" to modId,
+                "Specification-Vendor" to "Team Galacticraft",
+                "Specification-Version" to modVersion,
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to "${project.version}",
+                "Implementation-Vendor" to "Team Galacticraft",
+                "Implementation-Timestamp" to LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
+                "Maven-Artifact" to "${project.group}:${modName}:${project.version}",
+                "Built-On-Java" to "${System.getProperty("java.vm.version")} (${System.getProperty("java.vm.vendor")})"
+            )
         }
     }
 
@@ -193,8 +202,22 @@ subprojects {
         }
     }
 
-    tasks.withType<GenerateModuleMetadata> {
-        enabled = false
+    fun processLicenseHeader(license: File): String {
+        val text = license.readText()
+        return "/*\n * " + text.substring(text.indexOf("Copyright"))
+            .replace("\n", "\n * ")
+            .replace("* \n", "*\n")
+            .trim() + "/\n\n"
+    }
+
+    extensions.configure<SpotlessExtension> {
+        lineEndings = com.diffplug.spotless.LineEnding.UNIX
+
+        java {
+            licenseHeader(processLicenseHeader(rootProject.file("LICENSE")))
+            leadingTabsToSpaces()
+            removeUnusedImports()
+            trimTrailingWhitespace()
+        }
     }
 }
-

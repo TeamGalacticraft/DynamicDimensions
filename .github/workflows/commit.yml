@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,12 +42,12 @@ jobs:
         run: ./gradlew
 
       - name: Check license headers
-        run: ./gradlew checkLicenses
+        run: ./gradlew spotlessCheck
 
       - name: Build
         if: ${{ !cancelled() }}
         id: build
-        run: ./gradlew assemble -x checkLicenses
+        run: ./gradlew assemble -x spotlessCheck
 
       - name: Test
         if: ${{ steps.build.outcome == 'success' && !cancelled() }}

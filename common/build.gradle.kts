@@ -1,12 +1,12 @@
-plugins {
-    id("fabric-loom")
-    id("dev.galacticraft.mojarn")
-}
-
 val modId = project.property("mod.id").toString()
 val minecraft = project.property("minecraft.version").toString()
 val yarn = project.property("fabric.yarn.build").toString()
 val fabricLoader = project.property("fabric.loader.version").toString()
+
+plugins {
+    id("fabric-loom")
+    id("dev.galacticraft.mojarn")
+}
 
 loom {
     // configure access widener

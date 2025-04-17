@@ -66,7 +66,7 @@ public final class DynamicDimensionsFabric implements ModInitializer {
         if (FabricLoader.getInstance().isModLoaded("fabric-lifecycle-events-v1")) {
             registerFabricEventListeners();
         }
-        
+
         S2CPackets.registerChannels();
     }
 

@@ -1,8 +1,3 @@
-plugins {
-    id("fabric-loom")
-    id("dev.galacticraft.mojarn")
-}
-
 val modId = project.property("mod.id").toString()
 val minecraft = project.property("minecraft.version").toString()
 val yarn = project.property("fabric.yarn.build").toString()
@@ -10,6 +5,11 @@ val fabricLoader = project.property("fabric.loader.version").toString()
 val fabricAPI = project.property("fabric.api.version").toString()
 val fabricModules = project.property("fabric.api.modules").toString().split(',')
 val badpackets = project.property("badpackets.version").toString()
+
+plugins {
+    id("fabric-loom")
+    id("dev.galacticraft.mojarn")
+}
 
 loom {
     // configure access widener
@@ -29,23 +29,21 @@ loom {
     runs {
         named("client") {
             client()
-            name("Fabric: Client")
+            name("Client")
         }
         named("server") {
             server()
-            name("Fabric: Server")
+            name("Server")
         }
         create("gametest") {
             server()
-            name("Fabric: GameTest")
+            name("GameTest")
             property("fabric-api.gametest")
             vmArgs("-ea")
         }
 
         configureEach {
             runDir("run")
-            // copy neogradle naming format
-            appendProjectPathToConfigName.set(false)
             ideConfigGenerated(true)
         }
     }
@@ -74,8 +72,4 @@ tasks.processResources {
 
 tasks.javadoc {
     source(project(":common").sourceSets.main.get().allJava)
-}
-
-tasks.sourcesJar {
-    from(project(":common").sourceSets.main.get().allSource)
 }
