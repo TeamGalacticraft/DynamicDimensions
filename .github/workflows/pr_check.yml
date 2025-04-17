@@ -45,12 +45,12 @@ jobs:
         run: ./gradlew
 
       - name: Check license headers
-        run: ./gradlew checkLicenses
+        run: ./gradlew spotlessCheck
 
       - name: Build
         if: ${{ !cancelled() }}
         id: build
-        run: ./gradlew assemble -x checkLicenses
+        run: ./gradlew assemble -x spotlessCheck
 
       - name: Test
         if: ${{ steps.build.outcome == 'success' && !cancelled() }}
