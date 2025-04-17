@@ -22,7 +22,6 @@
 
 package dev.galacticraft.dynamicdimensions.impl.mixin;
 
-import dev.galacticraft.dynamicdimensions.impl.Constants;
 import dev.galacticraft.dynamicdimensions.impl.accessor.PrimaryLevelDataAccessor;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
@@ -49,8 +48,6 @@ public abstract class PrimaryLevelDataMixin implements PrimaryLevelDataAccessor 
             for (ResourceKey<Level> dynamicDimension : this.dynamicDimensions) {
                 dimensions.remove(dynamicDimension.location().toString());
             }
-        } else {
-            Constants.LOGGER.warn("Failed to obtain list of dynamic dimensions");
         }
     }
 

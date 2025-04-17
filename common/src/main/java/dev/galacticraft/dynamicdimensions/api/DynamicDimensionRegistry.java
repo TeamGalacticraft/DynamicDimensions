@@ -22,9 +22,13 @@
 
 package dev.galacticraft.dynamicdimensions.api;
 
+import dev.galacticraft.dynamicdimensions.impl.accessor.DynamicDimensionProvider;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import org.jetbrains.annotations.Contract;
@@ -40,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface DynamicDimensionRegistry {
     /**
-     * Converts a Minecraft server instance into a dynamic dimension registry.
+     * Obtains a dynamic dimension registry from a Minecraft server instance.
      *
      * @param server the current Minecraft server instance.
      * @return the server's dynamic dimension registry.
@@ -48,7 +52,7 @@ public interface DynamicDimensionRegistry {
      */
     @Contract(value = "_ -> param1", pure = true)
     static @NotNull DynamicDimensionRegistry from(@NotNull MinecraftServer server) {
-        return ((DynamicDimensionRegistry) server);
+        return ((DynamicDimensionProvider) server).dynamicdimensions$registry();
     }
 
     /**
@@ -57,7 +61,19 @@ public interface DynamicDimensionRegistry {
      * @param id the id of the dynamic dimension
      * @return whether a dynamic dimension exists with the given id
      */
-    boolean dynamicDimensionExists(@NotNull ResourceLocation id);
+    @Deprecated(since = "0.9.0", forRemoval = true)
+    default boolean dynamicDimensionExists(@NotNull ResourceLocation id) {
+        return dynamicDimensionExists(ResourceKey.create(Registries.DIMENSION, id));
+    }
+
+    /**
+     * Returns whether a dynamic dimension exists with the given id
+     *
+     * @param key the id of the dynamic dimension
+     * @return whether a dynamic dimension exists with the given id
+     * @since 0.9.0
+     */
+    boolean dynamicDimensionExists(@NotNull ResourceKey<Level> key);
 
     /**
      * Returns whether any dimension, dimension type, or level stem is registered with the given id
@@ -74,7 +90,19 @@ public interface DynamicDimensionRegistry {
      * @return {@code true} if the dimension is dynamic and can be deleted, {@code false} otherwise.
      * @since 0.1.0
      */
-    boolean canDeleteDimension(@NotNull ResourceLocation id);
+    @Deprecated(since = "0.9.0", forRemoval = true)
+    default boolean canDeleteDimension(@NotNull ResourceLocation id) {
+        return this.canDeleteDimension(ResourceKey.create(Registries.DIMENSION, id));
+    }
+
+    /**
+     * Returns whether a level and dimension with the given ID can be deleted.
+     *
+     * @param key The ID of the dimension.
+     * @return {@code true} if the dimension is dynamic and can be deleted, {@code false} otherwise.
+     * @since 0.9.0
+     */
+    boolean canDeleteDimension(@NotNull ResourceKey<Level> key);
 
     /**
      * Returns whether a level and dimension with the given ID can be created.

@@ -47,7 +47,7 @@
   "depends": {
     "fabricloader": ">=${min_fabric_loader}",
     "minecraft": ">=${min_minecraft}",
-    "badpackets": ">=0.6.0"
+    "badpackets": ">=0.8"
   },
   "custom": {
     "modmenu": {

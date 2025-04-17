@@ -20,27 +20,24 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.impl.mixin;
+package dev.galacticraft.dynamicdimensions.impl.accessor;
 
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.progress.ChunkProgressListenerFactory;
-import net.minecraft.world.level.storage.LevelStorageSource;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import dev.galacticraft.dynamicdimensions.api.DynamicDimensionRegistry;
+import dev.galacticraft.dynamicdimensions.api.PlayerRemover;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.Executor;
+public interface DynamicDimensionProvider {
+    void dynamicdimensions$removeLevel(ResourceKey<Level> key, @Nullable PlayerRemover removalMode, boolean removeFiles);
 
-@Mixin(MinecraftServer.class)
-public interface MinecraftServerAccessor {
-    @Accessor
-    LevelStorageSource.LevelStorageAccess getStorageSource();
+    void dynamicdimensions$deleteLevelData(ResourceKey<Level> key);
 
-    @Accessor
-    Executor getExecutor();
+    boolean dynamicdimensions$isIdPendingCreation(@NotNull ResourceKey<Level> key);
 
-    @Accessor
-    ChunkProgressListenerFactory getProgressListenerFactory();
+    void dynamicdimensions$registerLevel(ServerLevel level);
 
-    @Accessor
-    MinecraftServer.ReloadableResources getResources();
+    @NotNull DynamicDimensionRegistry dynamicdimensions$registry();
 }

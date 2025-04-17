@@ -31,8 +31,10 @@ import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.core.*;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public final class RegistryUtil {
     private RegistryUtil() {}
 

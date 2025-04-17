@@ -141,7 +141,7 @@ public final class DynamicDimensionsCommands {
                                         ServerLevel levelToDelete = DimensionArgument.getDimension(ctx, "id");
                                         ResourceKey<Level> key = levelToDelete.dimension();
                                         ResourceLocation id = key.location();
-                                        if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(id)) {
+                                        if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(key)) {
                                             throw CANNOT_DELETE.create();
                                         }
                                         ((DynamicDimensionRegistry) ctx.getSource().getServer()).unloadDynamicDimension(id, null);
@@ -153,7 +153,7 @@ public final class DynamicDimensionsCommands {
                                         ServerLevel levelToDelete = DimensionArgument.getDimension(ctx, "id");
                                         ResourceKey<Level> key = levelToDelete.dimension();
                                         ResourceLocation id = key.location();
-                                        if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(id)) {
+                                        if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(key)) {
                                             throw CANNOT_DELETE.create();
                                         }
                                         ((DynamicDimensionRegistry) ctx.getSource().getServer()).deleteDynamicDimension(id, null);
