@@ -35,24 +35,23 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Mixin(PrimaryLevelData.class)
 public abstract class PrimaryLevelDataMixin implements PrimaryLevelDataAccessor {
-    private @Unique List<ResourceKey<Level>> dynamicDimensions = null;
+    private final @Unique List<ResourceKey<Level>> dynamicDimensions = new ArrayList<>();
 
     @Inject(method = "setTagData", at = @At("RETURN"))
     private void skipWritingDynamicDimensions(RegistryAccess registryAccess, @NotNull CompoundTag levelNbt, CompoundTag playerNbt, CallbackInfo ci) {
-        if (this.dynamicDimensions != null) {
-            CompoundTag dimensions = levelNbt.getCompound("WorldGenSettings").getCompound("dimensions");
-            for (ResourceKey<Level> dynamicDimension : this.dynamicDimensions) {
-                dimensions.remove(dynamicDimension.location().toString());
-            }
+        CompoundTag dimensions = levelNbt.getCompound("WorldGenSettings").getCompound("dimensions");
+        for (ResourceKey<Level> dynamicDimension : this.dynamicDimensions) {
+            dimensions.remove(dynamicDimension.location().toString());
         }
     }
 
     @Override
-    public void dynamicDimensions$setDynamicList(@NotNull List<ResourceKey<Level>> dynamicDimensions) {
-        this.dynamicDimensions = dynamicDimensions;
+    public @NotNull List<ResourceKey<Level>> dynamicDimensions$getDynamicDimensions() {
+        return this.dynamicDimensions;
     }
 }

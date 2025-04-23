@@ -2,7 +2,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
-        maven("https://repo.terradevelopment.net/repository/maven-releases/") {
+        maven("https://repo.terradevelopment.net/repository/maven-releases") {
             // https://maven.galacticraft.net/repository/maven-releases
             name = "Galacticraft"
             content {

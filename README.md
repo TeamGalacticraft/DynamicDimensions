@@ -6,7 +6,8 @@ Add the Galacticraft maven to your project
 ```groovy
 repositories {
     maven {
-        url = "https://maven.galacticraft.net/repository/maven-releases"
+//        url = "https://maven.galacticraft.net/repository/maven-releases" // currently offline
+        url = "https://repo.terradevelopment.net/repository/maven-releases"
     }
 }
 ```
@@ -126,6 +127,7 @@ to create the dimension again (loading the same world data).
 
 #### Caveats
 * There may be a one-tick delay before the dimension is removed from the server.
+* If no callback is provided, players will be teleported to their spawn point
 
 ### Deleting a dimension
 Call 
@@ -141,3 +143,4 @@ The dimension will be unloaded, then all the dimension files will be deleted.
 
 * There may be a one-tick delay before the dimension is removed from the server.
 * Once deleted, dimension files are not recoverable
+* If no callback is provided, players will be teleported to their spawn point

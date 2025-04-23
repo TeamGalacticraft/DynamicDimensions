@@ -25,6 +25,7 @@ package dev.galacticraft.dynamicdimensions.api.event;
 import dev.galacticraft.dynamicdimensions.impl.platform.Services;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import org.jetbrains.annotations.ApiStatus;
@@ -49,6 +50,13 @@ public interface DynamicDimensionLoadCallback {
 
     @FunctionalInterface
     interface DynamicDimensionLoader {
-        void loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
+        /**
+         * Creates/loads a new dynamic dimension with the specified properties.
+         * @param id the id of the dimension. Must be free in the level stem, dimension type, and level registries.
+         * @param chunkGenerator the chunk generator to generate the dimension with
+         * @param type the dimension type
+         * @return the newly loaded level
+         */
+        @NotNull ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
     }
 }

@@ -56,10 +56,8 @@ public interface DynamicDimensionRegistry {
     }
 
     /**
-     * Returns whether a dynamic dimension exists with the given id
-     *
      * @param id the id of the dynamic dimension
-     * @return whether a dynamic dimension exists with the given id
+     * {@return whether a dynamic dimension exists with the given id}
      */
     @Deprecated(since = "0.9.0", forRemoval = true)
     default boolean dynamicDimensionExists(@NotNull ResourceLocation id) {
@@ -67,19 +65,15 @@ public interface DynamicDimensionRegistry {
     }
 
     /**
-     * Returns whether a dynamic dimension exists with the given id
-     *
      * @param key the id of the dynamic dimension
-     * @return whether a dynamic dimension exists with the given id
+     * {@return whether a dynamic dimension exists with the given id}
      * @since 0.9.0
      */
     boolean dynamicDimensionExists(@NotNull ResourceKey<Level> key);
 
     /**
-     * Returns whether any dimension, dimension type, or level stem is registered with the given id
-     *
      * @param id the id of the dimension
-     * @return whether any dimension, dimension type, or level stem is registered with the given id
+     * {@return whether any dimension, dimension type, or level stem is registered with the given id}
      */
     boolean anyDimensionExists(@NotNull ResourceLocation id);
 

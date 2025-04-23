@@ -73,3 +73,7 @@ tasks.processResources {
 tasks.javadoc {
     source(project(":common").sourceSets.main.get().allJava)
 }
+
+tasks.validateAccessWidener {
+    enabled = false // access widener validated by :common
+}

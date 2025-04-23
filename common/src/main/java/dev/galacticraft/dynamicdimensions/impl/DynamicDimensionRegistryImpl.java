@@ -23,7 +23,6 @@
 package dev.galacticraft.dynamicdimensions.impl;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.serialization.DataResult;
 import dev.galacticraft.dynamicdimensions.api.DynamicDimensionRegistry;
 import dev.galacticraft.dynamicdimensions.api.PlayerRemover;
 import dev.galacticraft.dynamicdimensions.api.event.DynamicDimensionLoadCallback;
@@ -32,13 +31,14 @@ import dev.galacticraft.dynamicdimensions.impl.accessor.PrimaryLevelDataAccessor
 import dev.galacticraft.dynamicdimensions.impl.mixin.*;
 import dev.galacticraft.dynamicdimensions.impl.network.S2CPackets;
 import dev.galacticraft.dynamicdimensions.impl.registry.RegistryUtil;
+import it.unimi.dsi.fastutil.longs.LongIterator;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.common.ClientboundUpdateTagsPacket;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -47,6 +47,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagManager;
 import net.minecraft.tags.TagNetworkSerialization;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.ForcedChunksSavedData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.border.BorderChangeListener;
@@ -58,12 +60,11 @@ import net.minecraft.world.level.storage.WorldData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
-    private final @NotNull List<ResourceKey<Level>> dynamicDimensions = new ArrayList<>();
+    private final @NotNull List<ResourceKey<Level>> dynamicDimensions;
     private final MinecraftServer server;
     private final Registry<DimensionType> dimTypes;
     private final Registry<LevelStem> stems;
@@ -72,17 +73,18 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
         this.server = server;
         this.dimTypes = server.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
         this.stems = server.registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
+        this.dynamicDimensions = ((PrimaryLevelDataAccessor) server.getWorldData()).dynamicDimensions$getDynamicDimensions();
+    }
 
+    public void loadDynamicDimensions() {
         DynamicDimensionLoadCallback.invoke(server, (id, chunkGenerator, type) -> {
             Constants.LOGGER.debug("Loading dynamic dimension '{}'", id);
-            Holder.Reference<DimensionType> ref = RegistryUtil.registerUnfreeze(this.dimTypes, id, type);
-            RegistryUtil.registerUnfreeze(this.stems, id, new LevelStem(ref, chunkGenerator));
-            this.dynamicDimensions.add(ResourceKey.create(Registries.DIMENSION, id));
+            ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
+
+            return this.createDynamicLevel(id, chunkGenerator, type, key);
         });
 
         Constants.LOGGER.info("Loaded {} dynamic dimensions", this.dynamicDimensions.size());
-
-        ((PrimaryLevelDataAccessor) server.getWorldData()).dynamicDimensions$setDynamicList(this.dynamicDimensions);
     }
 
     @Override
@@ -147,28 +149,20 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
             return null;
         }
 
-        final DataResult<Tag> encodedType = DimensionType.DIRECT_CODEC.encode(type, NbtOps.INSTANCE, new CompoundTag());
-        if (encodedType.error().isPresent()) {
-            Constants.LOGGER.error("Failed to encode dimension type! {}", encodedType.error().get().message());
-            return null;
-        }
-
-        final CompoundTag serializedType = (CompoundTag) encodedType.result().orElseThrow();
-
         if (deleteData) ((DynamicDimensionProvider) this.server).dynamicdimensions$deleteLevelData(key);
-        return this.createDynamicLevel(id, generator, type, serializedType, key);
+        return this.createDynamicLevel(id, generator, type, key);
     }
 
-    private @NotNull ServerLevel createDynamicLevel(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type, CompoundTag serializedType, ResourceKey<Level> key) {
-        final WorldData worldData = this.server.getWorldData();
-        final ServerLevel overworld = this.server.overworld();
-
-        final Holder.Reference<DimensionType> typeHolder = RegistryUtil.registerUnfreeze(this.dimTypes, id, type);
-        assert typeHolder.isBound() : "Registered dimension type not bound?!";
-
-        final LevelStem stem = new LevelStem(typeHolder, generator);
+    private @NotNull ServerLevel createDynamicLevel(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type, ResourceKey<Level> key) {
+        Holder.Reference<DimensionType> typeHolder = RegistryUtil.registerUnfreeze(this.dimTypes, id, type);
+        LevelStem stem = new LevelStem(typeHolder, generator);
         RegistryUtil.registerUnfreeze(this.stems, id, stem); // todo: look into whether stem registration is necessary
 
+        return this.createDynamicLevel(key, this.server.getWorldData(), stem, this.server.overworld());
+    }
+
+    private @NotNull ServerLevel createDynamicLevel(ResourceKey<Level> key, WorldData worldData, LevelStem stem, ServerLevel overworld) {
+        // -- start createLevels --
         final DerivedLevelData data = new DerivedLevelData(worldData, worldData.overworldData()); //todo: do we want separate data?
         final ServerLevel level = new ServerLevel(
                 this.server,
@@ -185,12 +179,30 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
                 null
         );
         overworld.getWorldBorder().addListener(new BorderChangeListener.DelegateBorderChangeListener(level.getWorldBorder()));
+        // -- end createLevels --
+
+        // see PlayerList
         level.getChunkSource().setSimulationDistance(((DistanceManagerAccessor) ((ServerChunkCacheAccessor) overworld.getChunkSource()).getDistanceManager()).getSimulationDistance());
         level.getChunkSource().setViewDistance(((ChunkMapAccessor) overworld.getChunkSource().chunkMap).getViewDistance());
 
+        // -- start prepareLevels --
+        ForcedChunksSavedData forcedChunksSavedData = level.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
+        if (forcedChunksSavedData != null) {
+            LongIterator longIterator = forcedChunksSavedData.getChunks().iterator();
+
+            while (longIterator.hasNext()) {
+                long l = longIterator.nextLong();
+                ChunkPos chunkPos = new ChunkPos(l);
+                level.getChunkSource().updateChunkForced(chunkPos, true);
+            }
+        }
+
+        level.setSpawnSettings(this.server.isSpawningMonsters(), this.server.isSpawningAnimals());
+        // -- end prepareLevels --
+
         ((DynamicDimensionProvider) this.server).dynamicdimensions$registerLevel(level);
 
-
+        final var serializedType = ((CompoundTag) DimensionType.DIRECT_CODEC.encode(stem.type().value(), RegistryOps.create(NbtOps.INSTANCE, this.server.registryAccess()), new CompoundTag()).getOrThrow());
         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
             S2CPackets.sendCreateDimension(player, key.location(), serializedType);
         }
@@ -198,11 +210,11 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
         return level;
     }
 
+    @SuppressWarnings("unchecked") // we know that the registry is a registry of dimension types as the key is correct
     private void reloadDimensionTags() {
         for (TagManager.LoadResult<?> result : ((ReloadableServerResourcesAccessor) ((MinecraftServerAccessor)this.server).getResources().managers()).getTagManager().getResult()) {
             if (result.key() == Registries.DIMENSION_TYPE) {
                 this.dimTypes.resetTags();
-                //noinspection unchecked - we know that the registry is a registry of dimension types as the key is correct
                 this.dimTypes.bindTags(((TagManager.LoadResult<DimensionType>) result).tags().entrySet()
                         .stream()
                         .collect(Collectors.toUnmodifiableMap(entry -> TagKey.create(Registries.DIMENSION_TYPE, entry.getKey()), entry -> entry.getValue().stream().toList())));

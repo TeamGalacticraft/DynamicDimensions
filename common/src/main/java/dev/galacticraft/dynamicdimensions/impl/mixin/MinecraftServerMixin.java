@@ -43,6 +43,7 @@ import net.minecraft.server.Services;
 import net.minecraft.server.WorldStem;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.server.level.progress.ChunkProgressListenerFactory;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.players.PlayerList;
@@ -96,6 +97,16 @@ public abstract class MinecraftServerMixin implements DynamicDimensionProvider {
         this.dynamicDimensions = new DynamicDimensionRegistryImpl((MinecraftServer) (Object) this);
     }
 
+    /**
+     * Load dynamic dimensions AFTER all normal levels have been loaded,
+     * but still during server load (so that it's not too late).
+     * Hopefully hints that these dimension may be removed later.
+     */
+    @Inject(method = "prepareLevels", at = @At("RETURN"))
+    private void loadDynamicDimensions(ChunkProgressListener chunkProgressListener, CallbackInfo ci) {
+        this.dynamicDimensions.loadDynamicDimensions();
+    }
+
     @Override
     public void dynamicdimensions$removeLevel(ResourceKey<Level> key, @Nullable PlayerRemover removalMode, boolean removeFiles) {
         if (this.tickingLevels) {
@@ -108,12 +119,12 @@ public abstract class MinecraftServerMixin implements DynamicDimensionProvider {
 
     @Override
     public void dynamicdimensions$deleteLevelData(ResourceKey<Level> key) {
-        Path worldDir = this.storageSource.getDimensionPath(key);
-        if (worldDir.toFile().exists()) {
+        Path dimensionPath = this.storageSource.getDimensionPath(key);
+        if (dimensionPath.toFile().exists()) {
             try {
-                FileUtils.deleteDirectory(worldDir.toFile());
+                FileUtils.deleteDirectory(dimensionPath.toFile());
             } catch (IOException e) {
-                throw new RuntimeException("Failed to delete deleted world directory!", e);
+                throw new RuntimeException("Failed to delete deleted level directory!", e);
             }
         }
     }
@@ -164,7 +175,7 @@ public abstract class MinecraftServerMixin implements DynamicDimensionProvider {
     private void unloadLevel(ResourceKey<Level> key, PlayerRemover playerRemover) {
         ResourceLocation dimType = null;
 
-        try (ServerLevel level = this.levels.remove(key)) {
+        try (ServerLevel level = this.levels.get(key)) {
             if (level == null) {
                 Constants.LOGGER.error("Attempted to unload non-existent level {}", key);
                 return;
@@ -176,10 +187,12 @@ public abstract class MinecraftServerMixin implements DynamicDimensionProvider {
                 playerRemover.removePlayer((MinecraftServer) (Object) this, player);
             }
 
-            level.save(null, true, false);
+            level.save(null, true, level.noSave);
             dimType = level.dimensionTypeRegistration().unwrapKey().get().location();
         } catch (IOException e) {
             Constants.LOGGER.error("Failed to close level upon removal! Memory may have been leaked.", e);
+        } finally {
+            this.levels.remove(key);
         }
         assert dimType != null;
 
