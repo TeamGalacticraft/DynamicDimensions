@@ -141,10 +141,10 @@ public final class DynamicDimensionsCommands {
                                         ServerLevel levelToDelete = DimensionArgument.getDimension(ctx, "id");
                                         ResourceKey<Level> key = levelToDelete.dimension();
                                         ResourceLocation id = key.location();
-                                        if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(key)) {
+                                        if (!DynamicDimensionRegistry.from(ctx.getSource().getServer()).canDeleteDimension(key)) {
                                             throw CANNOT_DELETE.create();
                                         }
-                                        ((DynamicDimensionRegistry) ctx.getSource().getServer()).unloadDynamicDimension(id, null);
+                                        DynamicDimensionRegistry.from(ctx.getSource().getServer()).unloadDynamicDimension(id, null);
                                         return 1;
                                     })))
                     .then(Commands.literal("delete")
@@ -153,10 +153,10 @@ public final class DynamicDimensionsCommands {
                                         ServerLevel levelToDelete = DimensionArgument.getDimension(ctx, "id");
                                         ResourceKey<Level> key = levelToDelete.dimension();
                                         ResourceLocation id = key.location();
-                                        if (!((DynamicDimensionRegistry) ctx.getSource().getServer()).canDeleteDimension(key)) {
+                                        if (!DynamicDimensionRegistry.from(ctx.getSource().getServer()).canDeleteDimension(key)) {
                                             throw CANNOT_DELETE.create();
                                         }
-                                        ((DynamicDimensionRegistry) ctx.getSource().getServer()).deleteDynamicDimension(id, null);
+                                        DynamicDimensionRegistry.from(ctx.getSource().getServer()).deleteDynamicDimension(id, null);
                                         return 1;
                                     }))));
             dispatcher.register(Commands.literal("dyndim").redirect(dispatcher.getRoot().getChild("dynamicdimension")));

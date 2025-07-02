@@ -48,39 +48,27 @@ public final class RegistryUtil {
                 }
 
                 MappedRegistryAccessor<T> accessor = ((MappedRegistryAccessor<T>) registry);
+                ResourceKey<T> key = ResourceKey.create(registry.key(), id);
+                T value = accessor.getByLocation().get(id).value();
 
-                T type = accessor.getByLocation().get(id).value();
                 ObjectList<Holder.Reference<T>> byId = accessor.getById();
-                if (byId.size() <= accessor.getToId().getInt(type)) {
+                int rawId = accessor.getToId().removeInt(value);
+                if (byId.get(rawId).value() != value) {
                     Constants.LOGGER.warn("ID mismatch in registry '{}'", registry.key());
                 }
-                accessor.getToId().removeInt(type);
 
-                boolean success = false;
-                for (int i = 0; i < byId.size(); i++) {
-                    Holder.Reference<T> reference = byId.get(i);
-                    if (reference != null) {
-                        if (reference.key().location().equals(id)) {
-                            byId.set(i, null);
-                            success = true;
-                            int max = 0;
-                            for (int i1 = 0; i1 < byId.size(); i1++) {
-                                max = byId.get(i1) != null ? i1 : max;
-                            }
-                            byId.size(max + 1);
-                            break;
-                        }
-                    }
-                }
+                // fixme: this is very unsafe !!!
+                Holder.Reference<T> removed = byId.remove(rawId);
+                assert removed.value() == value;
+                accessor.getToId().replaceAll((t, i) -> i > rawId ? i - 1 : i);
 
-                assert success;
                 accessor.getByLocation().remove(id);
-                accessor.getByKey().remove(ResourceKey.create(registry.key(), id));
-                accessor.getByValue().remove(type);
-                accessor.getRegistrationInfos().remove(type);
+                accessor.getByKey().remove(key);
+                accessor.getByValue().remove(value);
+                accessor.getRegistrationInfos().remove(key);
                 Lifecycle base = Lifecycle.stable();
-                for (RegistrationInfo value : accessor.getRegistrationInfos().values()) {
-                    base.add(value.lifecycle());
+                for (RegistrationInfo info : accessor.getRegistrationInfos().values()) {
+                    base.add(info.lifecycle());
                 }
                 accessor.setRegistryLifecycle(base);
                 for (HolderSet.Named<T> holderSet : accessor.tags().values()) {
@@ -92,7 +80,7 @@ public final class RegistryUtil {
                     set.setContents(list.build());
                 }
                 if (accessor.getUnregisteredIntrusiveHolders() != null) {
-                    accessor.getUnregisteredIntrusiveHolders().remove(type);
+                    accessor.getUnregisteredIntrusiveHolders().remove(value);
                 }
             }
         } else {
@@ -115,7 +103,7 @@ public final class RegistryUtil {
                 throw new IllegalStateException("Dynamic Dimensions: Non-vanilla '" + registry.key().location() + "' registry! " + registry.getClass().getName());
             }
         } else {
-            Constants.LOGGER.warn("Tried to add pre-existing key" + id);
+            Constants.LOGGER.warn("Tried to add pre-existing key {}", id);
             return registry.getHolderOrThrow(ResourceKey.create(registry.key(), id));
         }
     }
@@ -134,7 +122,7 @@ public final class RegistryUtil {
                 throw new IllegalStateException("Dynamic Dimensions: Non-vanilla '" + registry.key().location() + "' registry! " + registry.getClass().getName());
             }
         } else {
-            Constants.LOGGER.warn("Tried to add pre-existing key " + id + " (contains: " + registry.getId(registry.get(id)) + ")");
+            Constants.LOGGER.warn("Tried to add pre-existing key {} (contains: {})", id, registry.getId(registry.get(id)));
             return registry.getHolderOrThrow(ResourceKey.create(registry.key(), id));
         }
     }
