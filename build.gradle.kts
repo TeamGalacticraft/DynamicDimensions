@@ -35,7 +35,7 @@ val minecraft = project.property("minecraft.version").toString()
 plugins {
     id("org.ajoberstar.grgit") version ("5.3.0")
     id("fabric-loom") version("1.10-SNAPSHOT") apply(false)
-    id("dev.galacticraft.mojarn") version("0.6.1+19") apply(false)
+    id("dev.galacticraft.mojarn") version("0.6.2") apply(false)
     id("net.neoforged.moddev") version("2.0.80") apply(false)
     id("com.diffplug.spotless") version("7.0.3") apply(false)
 }
