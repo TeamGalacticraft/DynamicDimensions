@@ -181,6 +181,8 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
                 worldData.worldGenSettingsLifecycle()
         );
 
+       long customSeed = overworld.getSeed() + key.location().hashCode();
+
         final ServerLevel level = new ServerLevel(
                 this.server,
                 ((MinecraftServerAccessor) this.server).getExecutor(),
@@ -190,11 +192,17 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
                 stem,
                 ((MinecraftServerAccessor) this.server).getProgressListenerFactory().create(10),
                 worldData.isDebugWorld(),
-                BiomeManager.obfuscateSeed(overworld.getSeed() + key.location().hashCode()),
+                BiomeManager.obfuscateSeed(customSeed),
                 ImmutableList.of(),
                 true,
-                new RandomSequences(overworld.getSeed() + key.location().hashCode())
-        );
+                new RandomSequences(customSeed)
+        ){
+            @Override
+            public long getSeed() {
+                return customSeed;
+            }
+        }
+                ;
         overworld.getWorldBorder().addListener(new BorderChangeListener.DelegateBorderChangeListener(level.getWorldBorder()));
         // -- end createLevels --
 
