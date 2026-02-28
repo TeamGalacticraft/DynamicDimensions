@@ -61,6 +61,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.Proxy;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -206,11 +207,30 @@ public abstract class MinecraftServerMixin implements DynamicDimensionProvider {
     }
 
     @Unique
+    void neoforgeInvalidateWorldArray(){
+        /// invalidate neoforge level array cache or levels will not tick!!!
+        // Use Reflection to safely handle NeoForge-only fields
+        try {
+            // We look for the field by its exact name
+            Field worldArrayField = MinecraftServer.class.getDeclaredField("worldArray");
+            worldArrayField.setAccessible(true);
+            worldArrayField.set(this, null);
+            System.out.println("reset worldArray");
+        } catch (NoSuchFieldException e) {
+            // We are likely on Fabric/Vanilla; no worldArray to clear!
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Unique
     private void registerLevel(ServerLevel level) {
         DimensionAddedCallback.invoke(level.dimension(), level);
         this.levels.put(level.dimension(), level);
         this.dynamicDimensions.add(level.dimension());
         level.tick(() -> true);
+        neoforgeInvalidateWorldArray();
     }
 
     @Inject(method = "tickChildren", at = @At(value = "HEAD"))
