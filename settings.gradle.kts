@@ -2,11 +2,14 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
-        // Include the local Mojarn build, clone mojarn project and build the classes!
-        includeBuild("../mojarn") {
-            name = "mojarn"
+        maven("https://repo.terradevelopment.net/repository/maven-releases") {
+            // https://maven.galacticraft.net/repository/maven-releases
+            name = "Galacticraft"
+            content {
+                includeGroup("dev.galacticraft")
+                includeGroup("dev.galacticraft.mojarn")
+            }
         }
-
         maven("https://maven.fabricmc.net") {
             name = "Fabric"
             content {
