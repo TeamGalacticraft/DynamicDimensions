@@ -123,6 +123,13 @@ public interface DynamicDimensionRegistry {
     @Nullable ServerLevel createDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
 
     /**
+     * Registers a new dimension and applies optional dynamic-dimension properties.
+     *
+     * @since 0.10.0
+     */
+    @Nullable ServerLevel createDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type, @NotNull DynamicDimensionProperties properties);
+
+    /**
      * Registers a new dimension and updates all clients with the new dimension.
      * If world data already exists for this dimension it will be used, otherwise it will be created.
      * Note: The dimension may not be loaded until the next tick.
@@ -136,6 +143,67 @@ public interface DynamicDimensionRegistry {
      * @since 0.6.0
      */
     @Nullable ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
+
+    /**
+     * Loads a dynamic dimension and applies optional dynamic-dimension properties.
+     *
+     * @since 0.10.0
+     */
+    @Nullable ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type, @NotNull DynamicDimensionProperties properties);
+
+    /**
+     * Sets properties for a dynamic dimension.
+     *
+     * <p>If the dimension is already loaded, compatible backends such as Sable
+     * may apply these immediately.</p>
+     *
+     * @since 0.10.0
+     */
+    void setDimensionProperties(@NotNull ResourceKey<Level> key, @NotNull DynamicDimensionProperties properties);
+
+    /**
+     * Sets properties for a dynamic dimension.
+     *
+     * @since 0.10.0
+     */
+    default void setDimensionProperties(@NotNull ResourceLocation id, @NotNull DynamicDimensionProperties properties) {
+        this.setDimensionProperties(ResourceKey.create(Registries.DIMENSION, id), properties);
+    }
+
+    /**
+     * Gets the currently stored properties for a dynamic dimension.
+     *
+     * @since 0.10.0
+     */
+    @Nullable DynamicDimensionProperties getDimensionProperties(@NotNull ResourceKey<Level> key);
+
+    /**
+     * Gets the currently stored properties for a dynamic dimension.
+     *
+     * @since 0.10.0
+     */
+    default @Nullable DynamicDimensionProperties getDimensionProperties(@NotNull ResourceLocation id) {
+        return this.getDimensionProperties(ResourceKey.create(Registries.DIMENSION, id));
+    }
+
+    /**
+     * Clears stored properties for a dynamic dimension.
+     *
+     * <p>If the dimension has been applied to a compatible backend such as Sable,
+     * this should also remove those backend properties.</p>
+     *
+     * @since 0.10.0
+     */
+    void clearDimensionProperties(@NotNull ResourceKey<Level> key);
+
+    /**
+     * Clears stored properties for a dynamic dimension.
+     *
+     * @since 0.10.0
+     */
+    default void clearDimensionProperties(@NotNull ResourceLocation id) {
+        this.clearDimensionProperties(ResourceKey.create(Registries.DIMENSION, id));
+    }
 
     /**
      * Deletes a dynamic dimension from the server.
