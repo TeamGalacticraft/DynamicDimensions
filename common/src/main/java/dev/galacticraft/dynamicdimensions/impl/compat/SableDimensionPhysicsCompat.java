@@ -1,73 +1,55 @@
+/*
+ * Copyright (c) 2021-2025 Team Galacticraft
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package dev.galacticraft.dynamicdimensions.impl.compat;
 
 import dev.galacticraft.dynamicdimensions.api.DynamicDimensionProperties;
 import dev.galacticraft.dynamicdimensions.impl.Constants;
+import dev.galacticraft.dynamicdimensions.impl.platform.Services;
+import dev.ryanhcode.sable.physics.config.dimension_physics.DimensionPhysics;
+import dev.ryanhcode.sable.physics.config.dimension_physics.DimensionPhysicsData;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.joml.Vector3f;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
 
 final class SableDimensionPhysicsCompat {
-    private static final String DATA_CLASS =
-            "dev.ryanhcode.sable.physics.config.dimension_physics.DimensionPhysicsData";
-
-    private static final String PHYSICS_CLASS =
-            "dev.ryanhcode.sable.physics.config.dimension_physics.DimensionPhysics";
-
-    private static Boolean loaded;
+    static final String SABLE_MOD_ID = "sable";
 
     private SableDimensionPhysicsCompat() {
     }
 
-    private static boolean isLoaded() {
-        if (loaded != null) {
-            return loaded;
-        }
-
-        try {
-            Class.forName(DATA_CLASS);
-            Class.forName(PHYSICS_CLASS);
-            loaded = true;
-        } catch (Throwable ignored) {
-            loaded = false;
-        }
-
-        return loaded;
-    }
-
     static void apply(ResourceKey<Level> key, DynamicDimensionProperties properties) {
-        if (!isLoaded()) {
+        if (!Services.PLATFORM.isModLoaded(SABLE_MOD_ID)) {
             return;
         }
 
         try {
-            Class<?> dataClass = Class.forName(DATA_CLASS);
-            Class<?> physicsClass = Class.forName(PHYSICS_CLASS);
+            Map<ResourceKey<Level>, DimensionPhysics> map = physicsMap();
 
-            Field mapField = dataClass.getDeclaredField("DIMENSION_PHYSICS_DATA");
-            mapField.setAccessible(true);
-
-            @SuppressWarnings("unchecked")
-            Map<ResourceKey<Level>, Object> map =
-                    (Map<ResourceKey<Level>, Object>) mapField.get(null);
-
-            Constructor<?> constructor = physicsClass.getConstructor(
-                    ResourceLocation.class,
-                    int.class,
-                    Optional.class,
-                    Optional.class,
-                    Optional.class,
-                    Optional.class,
-                    Optional.class
-            );
-
-            Object physics = constructor.newInstance(
+            DimensionPhysics physics = new DimensionPhysics(
                     key.location(),
                     properties.priority(),
                     Optional.of(properties.universalDrag()),
@@ -77,43 +59,41 @@ final class SableDimensionPhysicsCompat {
                     Optional.of(copy(properties.magneticNorth()))
             );
 
-            Object existing = map.get(key);
-            if (existing == null || priorityOf(existing) <= properties.priority()) {
+            DimensionPhysics existing = map.get(key);
+
+            if (existing == null || existing.priority() <= properties.priority()) {
                 map.put(key, physics);
             }
         } catch (Throwable throwable) {
-            Constants.LOGGER.warn("Failed to apply Sable physics properties for dynamic dimension '{}'", key.location(), throwable);
+            Constants.LOGGER.warn(
+                    "Failed to apply Sable physics properties for dynamic dimension '{}'",
+                    key.location(),
+                    throwable
+            );
         }
     }
 
     static void remove(ResourceKey<Level> key) {
-        if (!isLoaded()) {
+        if (!Services.PLATFORM.isModLoaded(SABLE_MOD_ID)) {
             return;
         }
 
         try {
-            Class<?> dataClass = Class.forName(DATA_CLASS);
-
-            Field mapField = dataClass.getDeclaredField("DIMENSION_PHYSICS_DATA");
-            mapField.setAccessible(true);
-
-            @SuppressWarnings("unchecked")
-            Map<ResourceKey<Level>, Object> map =
-                    (Map<ResourceKey<Level>, Object>) mapField.get(null);
-
-            map.remove(key);
+            physicsMap().remove(key);
         } catch (Throwable throwable) {
-            Constants.LOGGER.warn("Failed to remove Sable physics properties for dynamic dimension '{}'", key.location(), throwable);
+            Constants.LOGGER.warn(
+                    "Failed to remove Sable physics properties for dynamic dimension '{}'",
+                    key.location(),
+                    throwable
+            );
         }
     }
 
-    private static int priorityOf(Object physics) {
-        try {
-            Method method = physics.getClass().getMethod("priority");
-            return (int) method.invoke(physics);
-        } catch (Throwable ignored) {
-            return Integer.MIN_VALUE;
-        }
+    @SuppressWarnings("unchecked")
+    private static Map<ResourceKey<Level>, DimensionPhysics> physicsMap() throws ReflectiveOperationException {
+        Field field = DimensionPhysicsData.class.getDeclaredField("DIMENSION_PHYSICS_DATA");
+        field.setAccessible(true);
+        return (Map<ResourceKey<Level>, DimensionPhysics>) field.get(null);
     }
 
     private static Vector3f copy(Vector3f vector) {

@@ -32,6 +32,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -83,5 +84,10 @@ public final class ForgePlatformHelper implements PlatformHelper {
         for (DynamicDimensionLoadCallback loadCallback : this.loadCallbacks) {
             loadCallback.loadDimensions(server, loader);
         }
+    }
+
+    @Override
+    public boolean isModLoaded(String modId) {
+        return ModList.get().isLoaded(modId);
     }
 }

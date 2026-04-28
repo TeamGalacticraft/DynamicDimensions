@@ -29,6 +29,7 @@ import dev.galacticraft.dynamicdimensions.impl.config.DynamicDimensionsConfig;
 import dev.galacticraft.dynamicdimensions.impl.fabric.DynamicDimensionsFabric;
 import dev.galacticraft.dynamicdimensions.impl.fabric.config.DynamicDimensionsConfigImpl;
 import dev.galacticraft.dynamicdimensions.impl.platform.services.PlatformHelper;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -71,5 +72,10 @@ public final class FabricPlatformHelper implements PlatformHelper {
     @Override
     public void invokeLoadEvent(MinecraftServer server, DynamicDimensionLoadCallback.DynamicDimensionLoader loader) {
         DynamicDimensionsFabric.DIMENSION_LOAD_EVENT.invoker().loadDimensions(server, loader);
+    }
+
+    @Override
+    public boolean isModLoaded(String modId) {
+        return FabricLoader.getInstance().isModLoaded(modId);
     }
 }

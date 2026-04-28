@@ -46,4 +46,6 @@ public interface PlatformHelper {
     void invokeAddedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level);
 
     void invokeLoadEvent(MinecraftServer server, DynamicDimensionLoadCallback.DynamicDimensionLoader loader);
+
+    boolean isModLoaded(String modId);
 }

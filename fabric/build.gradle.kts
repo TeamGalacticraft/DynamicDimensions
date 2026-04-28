@@ -5,6 +5,8 @@ val fabricLoader = project.property("fabric.loader.version").toString()
 val fabricAPI = project.property("fabric.api.version").toString()
 val fabricModules = project.property("fabric.api.modules").toString().split(',')
 val badpackets = project.property("badpackets.version").toString()
+val sable = project.property("sable.version").toString()
+val veil = project.property("veil.version").toString()
 
 plugins {
     id("fabric-loom")
@@ -60,6 +62,8 @@ dependencies {
     }
     modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:$fabricAPI")
     modRuntimeOnly("lol.bai:badpackets:fabric-$badpackets")
+    compileOnlyApi("dev.ryanhcode.sable:sable-fabric-$minecraft:$sable")
+    compileOnlyApi("foundry.veil:veil-fabric-$veil")
 }
 
 tasks.compileJava {
@@ -76,4 +80,10 @@ tasks.javadoc {
 
 tasks.validateAccessWidener {
     enabled = false // access widener validated by :common
+}
+
+repositories {
+    maven("https://maven.ryanhcode.dev/releases")
+    maven("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
+    maven("https://maven.blamejared.com")
 }

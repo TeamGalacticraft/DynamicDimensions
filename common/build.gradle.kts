@@ -2,6 +2,7 @@ val modId = project.property("mod.id").toString()
 val minecraft = project.property("minecraft.version").toString()
 val yarn = project.property("fabric.yarn.build").toString()
 val fabricLoader = project.property("fabric.loader.version").toString()
+val sable = project.property("sable.version").toString()
 
 plugins {
     id("fabric-loom")
@@ -28,4 +29,12 @@ dependencies {
 
     // loom expects some loader classes to exist, provides mixin and mixin-extras too
     modCompileOnly("net.fabricmc:fabric-loader:${fabricLoader}")
+
+    compileOnlyApi("dev.ryanhcode.sable:sable-common-$minecraft:$sable")
+}
+
+repositories {
+    maven("https://maven.ryanhcode.dev/releases")
+    maven("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
+    maven("https://maven.blamejared.com")
 }

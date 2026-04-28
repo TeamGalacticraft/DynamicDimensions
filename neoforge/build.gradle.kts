@@ -11,6 +11,8 @@ val parchmentVersion = project.property("parchment.version").toString()
 
 val badpackets = project.property("badpackets.version").toString()
 
+val sable = project.property("sable.version").toString()
+
 plugins {
     `java-library`
     `maven-publish`
@@ -61,6 +63,7 @@ neoForge {
 dependencies {
     compileOnly(project(":common", "namedElements"))
     runtimeOnly("lol.bai:badpackets:neo-$badpackets")
+    compileOnlyApi("dev.ryanhcode.sable:sable-neoforge-$minecraft:$sable")
 }
 
 tasks.compileJava {
@@ -82,4 +85,10 @@ tasks.processResources {
 
 tasks.javadoc {
     source(project(":common").sourceSets.main.get().allJava)
+}
+
+repositories {
+    maven("https://maven.ryanhcode.dev/releases")
+    maven("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
+    maven("https://maven.blamejared.com")
 }
