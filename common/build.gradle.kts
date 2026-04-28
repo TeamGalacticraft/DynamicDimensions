@@ -30,7 +30,7 @@ dependencies {
     // loom expects some loader classes to exist, provides mixin and mixin-extras too
     modCompileOnly("net.fabricmc:fabric-loader:${fabricLoader}")
 
-    modCompileOnly("dev.ryanhcode.sable:sable-common-$minecraft:$sable")
+    compileOnly("dev.ryanhcode.sable:sable-common-$minecraft:$sable")
 }
 
 repositories {

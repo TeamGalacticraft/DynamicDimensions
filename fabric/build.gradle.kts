@@ -62,7 +62,7 @@ dependencies {
     }
     modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:$fabricAPI")
     modRuntimeOnly("lol.bai:badpackets:fabric-$badpackets")
-    compileOnlyApi("dev.ryanhcode.sable:sable-common-$minecraft:$sable")
+    compileOnly("dev.ryanhcode.sable:sable-common-$minecraft:$sable")
 }
 
 tasks.compileJava {
