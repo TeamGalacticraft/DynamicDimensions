@@ -28,6 +28,7 @@ import dev.galacticraft.dynamicdimensions.impl.command.DynamicDimensionsCommands
 import dev.galacticraft.dynamicdimensions.impl.forge.config.DynamicDimensionsConfigImpl;
 import dev.galacticraft.dynamicdimensions.impl.gametest.DynamicDimensionsGametest;
 import dev.galacticraft.dynamicdimensions.impl.network.S2CPackets;
+import dev.galacticraft.dynamicdimensions.impl.platform.Services;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -52,6 +53,9 @@ public final class DynamicDimensionsForge {
 
         NeoForge.EVENT_BUS.addListener(this::registerCommands);
         modEventBus.addListener(this::registerGametests);
+
+        Services.PLATFORM.registerAddedEvent((key, level) -> level.getServer().markWorldsDirty());
+        Services.PLATFORM.registerRemovedEvent((key, level) -> level.getServer().markWorldsDirty());
     }
 
     public void registerGametests(@NotNull RegisterGameTestsEvent event) {
