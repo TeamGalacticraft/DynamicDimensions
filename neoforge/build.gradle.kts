@@ -63,6 +63,7 @@ neoForge {
 dependencies {
     compileOnly(project(":common", "namedElements"))
     runtimeOnly("lol.bai:badpackets:neo-$badpackets")
+    compileOnlyApi("dev.ryanhcode.sable:sable-neoforge-$minecraft:$sable")
 }
 
 tasks.compileJava {
