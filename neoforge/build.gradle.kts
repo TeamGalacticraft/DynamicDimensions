@@ -75,11 +75,14 @@ tasks.processResources {
 
     // remove refmap on neoforge
     doLast {
-        file(outputs.files.asFileTree.first { it.name.equals("dynamicdimensions.mixins.json") }.apply {
-            val parse = groovy.json.JsonSlurper().parse(this)!! as MutableMap<*, *>
-            parse.remove("refmap")
-            writeText(groovy.json.JsonOutput.toJson(parse))
-        })
+        listOf("dynamicdimensions.mixins.json", "dynamicdimensions.sable.mixins.json").forEach { configName ->
+            val configFile = outputs.files.asFileTree.find { it.name == configName }
+            if (configFile != null) {
+                val parse = groovy.json.JsonSlurper().parse(configFile)!! as MutableMap<*, *>
+                parse.remove("refmap")
+                configFile.writeText(groovy.json.JsonOutput.toJson(parse))
+            }
+        }
     }
 }
 

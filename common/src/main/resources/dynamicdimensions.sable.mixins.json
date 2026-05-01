@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "package": "dev.galacticraft.dynamicdimensions.impl.mixin.compat.sable",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "dev.galacticraft.dynamicdimensions.impl.mixin.compat.sable.SableMixinPlugin",
+  "mixins": [
+    "SubLevelPhysicsSystemMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

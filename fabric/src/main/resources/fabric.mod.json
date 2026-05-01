@@ -41,7 +41,8 @@
     ]
   },
   "mixins": [
-    "${mod_id}.mixins.json"
+    "${mod_id}.mixins.json",
+    "${mod_id}.sable.mixins.json"
   ],
   "accessWidener": "${mod_id}.accesswidener",
   "depends": {

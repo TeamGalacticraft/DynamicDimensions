@@ -22,6 +22,7 @@
 
 package dev.galacticraft.dynamicdimensions.api.event;
 
+import dev.galacticraft.dynamicdimensions.api.DynamicDimensionRegistry;
 import dev.galacticraft.dynamicdimensions.impl.platform.Services;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -58,5 +59,20 @@ public interface DynamicDimensionLoadCallback {
          * @return the newly loaded level
          */
         @NotNull ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type);
+
+        /**
+         * Creates/loads a new dynamic dimension and applies the given properties before level construction,
+         * so that compatible backends (e.g. Sable) receive the correct physics data from the start.
+         * @param id the id of the dimension. Must be free in the level stem, dimension type, and level registries.
+         * @param chunkGenerator the chunk generator to generate the dimension with
+         * @param type the dimension type
+         * @param properties the dimension properties to apply
+         * @param server the current minecraft server
+         * @return the newly loaded level
+         */
+        default @NotNull ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type, @NotNull dev.galacticraft.dynamicdimensions.api.DynamicDimensionProperties properties, @NotNull MinecraftServer server) {
+            DynamicDimensionRegistry.from(server).setDimensionProperties(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, id), properties);
+            return this.loadDynamicDimension(id, chunkGenerator, type);
+        }
     }
 }

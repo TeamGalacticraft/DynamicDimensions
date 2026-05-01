@@ -44,4 +44,10 @@ public final class DynamicDimensionPhysicsCompat {
             SableDimensionPhysicsCompat.remove(key);
         }
     }
+
+    public static void stage(final ResourceKey<Level> key, final DynamicDimensionProperties properties) {
+        if (Services.PLATFORM.isModLoaded(SABLE_MOD_ID)) {
+            SableDimensionPhysicsCompat.stage(key, properties);
+        }
+    }
 }

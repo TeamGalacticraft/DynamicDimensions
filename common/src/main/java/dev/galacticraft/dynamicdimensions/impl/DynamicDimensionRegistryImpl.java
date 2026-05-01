@@ -87,6 +87,13 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
             Constants.LOGGER.debug("Loading dynamic dimension '{}'", id);
             ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
 
+            // If properties were already registered before this callback fires
+            // (e.g. by the caller calling setDimensionProperties first), stage them now.
+            DynamicDimensionProperties properties = this.dimensionProperties.get(key);
+            if (properties != null) {
+                DynamicDimensionPhysicsCompat.stage(key, properties);
+            }
+
             return this.createDynamicLevel(id, chunkGenerator, type, key);
         });
 
@@ -219,8 +226,14 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
     }
 
     private @NotNull ServerLevel createDynamicLevel(ResourceKey<Level> key, WorldData worldData, LevelStem stem, ServerLevel overworld) {
-        // -- start createLevels --
-        final DerivedLevelData data = new DerivedLevelData(worldData, worldData.overworldData()); //todo: do we want separate data?
+        // Stage physics properties before ServerLevel construction so Sable's
+        // SubLevelPhysicsSystem.initialize() mixin can flush them before reading gravity.
+        DynamicDimensionProperties pendingProperties = this.dimensionProperties.get(key);
+        if (pendingProperties != null) {
+            DynamicDimensionPhysicsCompat.stage(key, pendingProperties);
+        }
+
+        final DerivedLevelData data = new DerivedLevelData(worldData, worldData.overworldData());
         final ServerLevel level = new ServerLevel(
                 this.server,
                 ((MinecraftServerAccessor) this.server).getExecutor(),
@@ -236,17 +249,13 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
                 null
         );
         overworld.getWorldBorder().addListener(new BorderChangeListener.DelegateBorderChangeListener(level.getWorldBorder()));
-        // -- end createLevels --
 
-        // see PlayerList
         level.getChunkSource().setSimulationDistance(((DistanceManagerAccessor) ((ServerChunkCacheAccessor) overworld.getChunkSource()).getDistanceManager()).getSimulationDistance());
         level.getChunkSource().setViewDistance(((ChunkMapAccessor) overworld.getChunkSource().chunkMap).getViewDistance());
 
-        // -- start prepareLevels --
         ForcedChunksSavedData forcedChunksSavedData = level.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
         if (forcedChunksSavedData != null) {
             LongIterator longIterator = forcedChunksSavedData.getChunks().iterator();
-
             while (longIterator.hasNext()) {
                 long l = longIterator.nextLong();
                 ChunkPos chunkPos = new ChunkPos(l);
@@ -255,13 +264,12 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
         }
 
         level.setSpawnSettings(this.server.isSpawningMonsters(), this.server.isSpawningAnimals());
-        // -- end prepareLevels --
 
         ((DynamicDimensionProvider) this.server).dynamicdimensions$registerLevel(level);
 
-        DynamicDimensionProperties properties = this.dimensionProperties.get(key);
-        if (properties != null) {
-            DynamicDimensionPhysicsCompat.apply(key, properties);
+        // Belt-and-suspenders apply after level exists, covers setDimensionProperties called post-creation.
+        if (pendingProperties != null) {
+            DynamicDimensionPhysicsCompat.apply(key, pendingProperties);
         }
 
         final var serializedType = ((CompoundTag) DimensionType.DIRECT_CODEC.encode(stem.type().value(), RegistryOps.create(NbtOps.INSTANCE, this.server.registryAccess()), new CompoundTag()).getOrThrow());
