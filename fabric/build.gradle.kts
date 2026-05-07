@@ -80,9 +80,3 @@ tasks.javadoc {
 tasks.validateAccessWidener {
     enabled = false // access widener validated by :common
 }
-
-repositories {
-    maven("https://maven.ryanhcode.dev/releases")
-    maven("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
-    maven("https://maven.blamejared.com")
-}

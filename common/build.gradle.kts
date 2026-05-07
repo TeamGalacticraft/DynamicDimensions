@@ -32,9 +32,3 @@ dependencies {
 
     compileOnly("dev.ryanhcode.sable:sable-common-$minecraft:$sable")
 }
-
-repositories {
-    maven("https://maven.ryanhcode.dev/releases")
-    maven("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
-    maven("https://maven.blamejared.com")
-}

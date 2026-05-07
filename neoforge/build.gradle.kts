@@ -89,9 +89,3 @@ tasks.processResources {
 tasks.javadoc {
     source(project(":common").sourceSets.main.get().allJava)
 }
-
-repositories {
-    maven("https://maven.ryanhcode.dev/releases")
-    maven("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
-    maven("https://maven.blamejared.com")
-}

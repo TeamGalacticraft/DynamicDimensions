@@ -22,6 +22,7 @@
 
 package dev.galacticraft.dynamicdimensions.impl.mixin.compat.sable;
 
+import dev.galacticraft.dynamicdimensions.impl.Constants;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -39,17 +40,17 @@ public class SableMixinPlugin implements IMixinConfigPlugin {
             Class<?> loaderClass = Class.forName("net.fabricmc.loader.api.FabricLoader");
             Object instance = loaderClass.getMethod("getInstance").invoke(null);
             this.sableLoaded = (boolean) loaderClass.getMethod("isModLoaded", String.class).invoke(instance, "sable");
-            System.out.println("[DynDims/SableMixin] Sable detected via FabricLoader: " + this.sableLoaded);
+            Constants.LOGGER.info("Sable detected via FabricLoader: {}", this.sableLoaded);
         } catch (final Exception e) {
             // Not on Fabric, fall back to checking for NeoForge mod list
             try {
                 Class<?> modListClass = Class.forName("net.neoforged.fml.ModList");
                 Object modList = modListClass.getMethod("get").invoke(null);
                 this.sableLoaded = (boolean) modListClass.getMethod("isLoaded", String.class).invoke(modList, "sable");
-                System.out.println("[DynDims/SableMixin] Sable detected via ModList: " + this.sableLoaded);
+                Constants.LOGGER.info("Sable detected via ModList: {}", this.sableLoaded);
             } catch (final Exception ex) {
                 this.sableLoaded = false;
-                System.out.println("[DynDims/SableMixin] Could not determine if Sable is loaded: " + ex.getMessage());
+                Constants.LOGGER.info("Could not determine if Sable is loaded: {}", ex.getMessage());
             }
         }
     }

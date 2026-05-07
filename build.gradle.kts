@@ -90,6 +90,10 @@ subprojects {
                 includeGroup("lol.bai")
             }
         }
+
+        maven("https://maven.ryanhcode.dev/releases")
+        maven("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
+        maven("https://maven.blamejared.com")
     }
 
     dependencies {

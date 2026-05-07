@@ -22,8 +22,11 @@
 
 package dev.galacticraft.dynamicdimensions.api.event;
 
+import dev.galacticraft.dynamicdimensions.api.DynamicDimensionProperties;
 import dev.galacticraft.dynamicdimensions.api.DynamicDimensionRegistry;
 import dev.galacticraft.dynamicdimensions.impl.platform.Services;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -70,8 +73,8 @@ public interface DynamicDimensionLoadCallback {
          * @param server the current minecraft server
          * @return the newly loaded level
          */
-        default @NotNull ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type, @NotNull dev.galacticraft.dynamicdimensions.api.DynamicDimensionProperties properties, @NotNull MinecraftServer server) {
-            DynamicDimensionRegistry.from(server).setDimensionProperties(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, id), properties);
+        default @NotNull ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator chunkGenerator, @NotNull DimensionType type, @NotNull DynamicDimensionProperties properties, @NotNull MinecraftServer server) {
+            DynamicDimensionRegistry.from(server).setDimensionProperties(ResourceKey.create(Registries.DIMENSION, id), properties);
             return this.loadDynamicDimension(id, chunkGenerator, type);
         }
     }
