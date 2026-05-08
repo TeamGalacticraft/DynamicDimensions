@@ -23,11 +23,13 @@
 package dev.galacticraft.dynamicdimensions.impl;
 
 import com.google.common.collect.ImmutableList;
+import dev.galacticraft.dynamicdimensions.api.DynamicDimensionProperties;
 import dev.galacticraft.dynamicdimensions.api.DynamicDimensionRegistry;
 import dev.galacticraft.dynamicdimensions.api.PlayerRemover;
 import dev.galacticraft.dynamicdimensions.api.event.DynamicDimensionLoadCallback;
 import dev.galacticraft.dynamicdimensions.impl.accessor.DynamicDimensionProvider;
 import dev.galacticraft.dynamicdimensions.impl.accessor.PrimaryLevelDataAccessor;
+import dev.galacticraft.dynamicdimensions.impl.compat.DynamicDimensionPhysicsCompat;
 import dev.galacticraft.dynamicdimensions.impl.mixin.*;
 import dev.galacticraft.dynamicdimensions.impl.network.S2CPackets;
 import dev.galacticraft.dynamicdimensions.impl.registry.RegistryUtil;
@@ -60,7 +62,9 @@ import net.minecraft.world.level.storage.WorldData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
@@ -68,6 +72,8 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
     private final MinecraftServer server;
     private final Registry<DimensionType> dimTypes;
     private final Registry<LevelStem> stems;
+
+    private final Map<ResourceKey<Level>, DynamicDimensionProperties> dimensionProperties = new HashMap<>();
 
     public DynamicDimensionRegistryImpl(MinecraftServer server) {
         this.server = server;
@@ -81,6 +87,13 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
             Constants.LOGGER.debug("Loading dynamic dimension '{}'", id);
             ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
 
+            // If properties were already registered before this callback fires
+            // (e.g. by the caller calling setDimensionProperties first), stage them now.
+            DynamicDimensionProperties properties = this.dimensionProperties.get(key);
+            if (properties != null) {
+                DynamicDimensionPhysicsCompat.stage(key, properties);
+            }
+
             return this.createDynamicLevel(id, chunkGenerator, type, key);
         });
 
@@ -93,8 +106,55 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
     }
 
     @Override
+    public @Nullable ServerLevel createDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type, @NotNull DynamicDimensionProperties properties) {
+        ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
+        this.setDimensionProperties(key, properties);
+
+        ServerLevel level = this.createDynamicLevel(id, generator, type, true);
+        if (level == null) {
+            this.clearDimensionProperties(key);
+        }
+
+        return level;
+    }
+
+    @Override
     public @Nullable ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type) {
         return this.createDynamicLevel(id, generator, type, false);
+    }
+
+    @Override
+    public @Nullable ServerLevel loadDynamicDimension(@NotNull ResourceLocation id, @NotNull ChunkGenerator generator, @NotNull DimensionType type, @NotNull DynamicDimensionProperties properties) {
+        ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
+        this.setDimensionProperties(key, properties);
+
+        ServerLevel level = this.createDynamicLevel(id, generator, type, false);
+        if (level == null) {
+            this.clearDimensionProperties(key);
+        }
+
+        return level;
+    }
+
+    @Override
+    public void setDimensionProperties(@NotNull ResourceKey<Level> key, @NotNull DynamicDimensionProperties properties) {
+        this.dimensionProperties.put(key, properties);
+
+        if (this.server.getLevel(key) != null) {
+            DynamicDimensionPhysicsCompat.apply(key, properties);
+        }
+    }
+
+    @Override
+    public @Nullable DynamicDimensionProperties getDimensionProperties(@NotNull ResourceKey<Level> key) {
+        return this.dimensionProperties.get(key);
+    }
+
+
+    @Override
+    public void clearDimensionProperties(@NotNull ResourceKey<Level> key) {
+        this.dimensionProperties.remove(key);
+        DynamicDimensionPhysicsCompat.remove(key);
     }
 
     @Override
@@ -125,7 +185,9 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
         ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
         if (!this.canDeleteDimension(key)) return false;
 
+        DynamicDimensionPhysicsCompat.remove(key);
         ((DynamicDimensionProvider) this.server).dynamicdimensions$removeLevel(key, remover, true);
+        this.dimensionProperties.remove(key);
 
         return true;
     }
@@ -136,7 +198,9 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
         ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, id);
         if (!this.canDeleteDimension(key)) return false;
 
+        DynamicDimensionPhysicsCompat.remove(key);
         ((DynamicDimensionProvider) this.server).dynamicdimensions$removeLevel(key, remover, false);
+
         return true;
     }
 
@@ -162,8 +226,14 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
     }
 
     private @NotNull ServerLevel createDynamicLevel(ResourceKey<Level> key, WorldData worldData, LevelStem stem, ServerLevel overworld) {
-        // -- start createLevels --
-        final DerivedLevelData data = new DerivedLevelData(worldData, worldData.overworldData()); //todo: do we want separate data?
+        // Stage physics properties before ServerLevel construction so Sable's
+        // SubLevelPhysicsSystem.initialize() mixin can flush them before reading gravity.
+        DynamicDimensionProperties pendingProperties = this.dimensionProperties.get(key);
+        if (pendingProperties != null) {
+            DynamicDimensionPhysicsCompat.stage(key, pendingProperties);
+        }
+
+        final DerivedLevelData data = new DerivedLevelData(worldData, worldData.overworldData());
         final ServerLevel level = new ServerLevel(
                 this.server,
                 ((MinecraftServerAccessor) this.server).getExecutor(),
@@ -179,17 +249,13 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
                 null
         );
         overworld.getWorldBorder().addListener(new BorderChangeListener.DelegateBorderChangeListener(level.getWorldBorder()));
-        // -- end createLevels --
 
-        // see PlayerList
         level.getChunkSource().setSimulationDistance(((DistanceManagerAccessor) ((ServerChunkCacheAccessor) overworld.getChunkSource()).getDistanceManager()).getSimulationDistance());
         level.getChunkSource().setViewDistance(((ChunkMapAccessor) overworld.getChunkSource().chunkMap).getViewDistance());
 
-        // -- start prepareLevels --
         ForcedChunksSavedData forcedChunksSavedData = level.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
         if (forcedChunksSavedData != null) {
             LongIterator longIterator = forcedChunksSavedData.getChunks().iterator();
-
             while (longIterator.hasNext()) {
                 long l = longIterator.nextLong();
                 ChunkPos chunkPos = new ChunkPos(l);
@@ -198,9 +264,13 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
         }
 
         level.setSpawnSettings(this.server.isSpawningMonsters(), this.server.isSpawningAnimals());
-        // -- end prepareLevels --
 
         ((DynamicDimensionProvider) this.server).dynamicdimensions$registerLevel(level);
+
+        // Belt-and-suspenders apply after level exists, covers setDimensionProperties called post-creation.
+        if (pendingProperties != null) {
+            DynamicDimensionPhysicsCompat.apply(key, pendingProperties);
+        }
 
         final var serializedType = ((CompoundTag) DimensionType.DIRECT_CODEC.encode(stem.type().value(), RegistryOps.create(NbtOps.INSTANCE, this.server.registryAccess()), new CompoundTag()).getOrThrow());
         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {

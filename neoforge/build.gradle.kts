@@ -11,6 +11,8 @@ val parchmentVersion = project.property("parchment.version").toString()
 
 val badpackets = project.property("badpackets.version").toString()
 
+val sable = project.property("sable.version").toString()
+
 plugins {
     `java-library`
     `maven-publish`
@@ -61,6 +63,7 @@ neoForge {
 dependencies {
     compileOnly(project(":common", "namedElements"))
     runtimeOnly("lol.bai:badpackets:neo-$badpackets")
+    compileOnly("dev.ryanhcode.sable:sable-neoforge-$minecraft:$sable")
 }
 
 tasks.compileJava {
@@ -72,11 +75,14 @@ tasks.processResources {
 
     // remove refmap on neoforge
     doLast {
-        file(outputs.files.asFileTree.first { it.name.equals("dynamicdimensions.mixins.json") }.apply {
-            val parse = groovy.json.JsonSlurper().parse(this)!! as MutableMap<*, *>
-            parse.remove("refmap")
-            writeText(groovy.json.JsonOutput.toJson(parse))
-        })
+        listOf("dynamicdimensions.mixins.json", "dynamicdimensions.sable.mixins.json").forEach { configName ->
+            val configFile = outputs.files.asFileTree.find { it.name == configName }
+            if (configFile != null) {
+                val parse = groovy.json.JsonSlurper().parse(configFile)!! as MutableMap<*, *>
+                parse.remove("refmap")
+                configFile.writeText(groovy.json.JsonOutput.toJson(parse))
+            }
+        }
     }
 }
 

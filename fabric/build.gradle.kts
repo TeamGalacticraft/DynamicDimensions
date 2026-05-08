@@ -5,6 +5,8 @@ val fabricLoader = project.property("fabric.loader.version").toString()
 val fabricAPI = project.property("fabric.api.version").toString()
 val fabricModules = project.property("fabric.api.modules").toString().split(',')
 val badpackets = project.property("badpackets.version").toString()
+val sable = project.property("sable.version").toString()
+val veil = project.property("veil.version").toString()
 
 plugins {
     id("fabric-loom")
@@ -60,6 +62,7 @@ dependencies {
     }
     modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:$fabricAPI")
     modRuntimeOnly("lol.bai:badpackets:fabric-$badpackets")
+    compileOnly("dev.ryanhcode.sable:sable-common-$minecraft:$sable")
 }
 
 tasks.compileJava {

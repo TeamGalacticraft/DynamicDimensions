@@ -20,32 +20,34 @@
  * SOFTWARE.
  */
 
-package dev.galacticraft.dynamicdimensions.impl.platform.services;
+package dev.galacticraft.dynamicdimensions.impl.compat;
 
-import dev.galacticraft.dynamicdimensions.api.event.DimensionAddedCallback;
-import dev.galacticraft.dynamicdimensions.api.event.DimensionRemovedCallback;
-import dev.galacticraft.dynamicdimensions.api.event.DynamicDimensionLoadCallback;
-import dev.galacticraft.dynamicdimensions.impl.config.DynamicDimensionsConfig;
+import dev.galacticraft.dynamicdimensions.api.DynamicDimensionProperties;
+import dev.galacticraft.dynamicdimensions.impl.platform.Services;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.NotNull;
 
-public interface PlatformHelper {
-    @NotNull DynamicDimensionsConfig getConfig();
+import static dev.galacticraft.dynamicdimensions.impl.compat.SableDimensionPhysicsCompat.SABLE_MOD_ID;
 
-    void registerAddedEvent(DimensionAddedCallback listener);
+public final class DynamicDimensionPhysicsCompat {
+    private DynamicDimensionPhysicsCompat() {
+    }
 
-    void registerRemovedEvent(DimensionRemovedCallback listener);
+    public static void apply(ResourceKey<Level> key, DynamicDimensionProperties properties) {
+        if (Services.PLATFORM.isModLoaded(SABLE_MOD_ID)) {
+            SableDimensionPhysicsCompat.apply(key, properties);
+        }
+    }
 
-    void registerLoadEvent(DynamicDimensionLoadCallback callback);
+    public static void remove(ResourceKey<Level> key) {
+        if (Services.PLATFORM.isModLoaded(SABLE_MOD_ID)) {
+            SableDimensionPhysicsCompat.remove(key);
+        }
+    }
 
-    void invokeRemovedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level);
-
-    void invokeAddedEvent(@NotNull ResourceKey<Level> key, @NotNull ServerLevel level);
-
-    void invokeLoadEvent(MinecraftServer server, DynamicDimensionLoadCallback.DynamicDimensionLoader loader);
-
-    boolean isModLoaded(String modId);
+    public static void stage(final ResourceKey<Level> key, final DynamicDimensionProperties properties) {
+        if (Services.PLATFORM.isModLoaded(SABLE_MOD_ID)) {
+            SableDimensionPhysicsCompat.stage(key, properties);
+        }
+    }
 }
